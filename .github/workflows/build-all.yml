@@ -65,7 +65,7 @@ jobs:
           retention-days: 30
       
       - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && secrets.GITHUB_TOKEN != ''
         uses: softprops/action-gh-release@v1
         with:
           files: release/*Setup*.exe
@@ -73,6 +73,7 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
 
   build-linux:
     name: Build Linux
@@ -104,7 +105,7 @@ jobs:
           retention-days: 30
       
       - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && secrets.GITHUB_TOKEN != ''
         uses: softprops/action-gh-release@v1
         with:
           files: release/*.AppImage
@@ -112,6 +113,7 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
 
   build-macos:
     name: Build macOS
@@ -143,7 +145,7 @@ jobs:
           retention-days: 30
       
       - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && secrets.GITHUB_TOKEN != ''
         uses: softprops/action-gh-release@v1
         with:
           files: release/*.dmg
@@ -151,4 +153,5 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
 

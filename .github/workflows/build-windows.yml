@@ -26,21 +26,33 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      - name: Install SignPath CLI
-        if: env.SIGNPATH_PROJECT_ID != ''
-        run: |
-          choco install signpath-cli -y
-        continue-on-error: true
-      
       - name: Build application
         run: npm run build
       
       - name: Build Windows installer
-        env:
-          SIGNPATH_PROJECT_ID: ${{ secrets.SIGNPATH_PROJECT_ID }}
-          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
-          SIGNPATH_ORGANIZATION_ID: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
         run: npm run dist:win
+      
+      - name: Upload unsigned artifact
+        id: upload-unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: QMLauncher-windows-unsigned
+          path: release/*Setup*.exe
+          retention-days: 1
+      
+      - name: Submit signing request to SignPath
+        if: secrets.SIGNPATH_API_TOKEN != ''
+        id: signpath
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ secrets.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ secrets.SIGNPATH_SIGNING_POLICY_SLUG }}
+          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: release
+        continue-on-error: true
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -48,4 +60,3 @@ jobs:
           name: QMLauncher-Windows
           path: release/*Setup*.exe
           retention-days: 30
-
