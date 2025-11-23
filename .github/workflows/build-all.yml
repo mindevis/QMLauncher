@@ -26,8 +26,8 @@ jobs:
       - name: Build
         run: npm run build
       
-      - name: Build Windows portable
-        run: npx electron-builder --win --config.win.target=portable
+      - name: Build Windows installer
+        run: npx electron-builder --win
       
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -40,7 +40,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: release/*.exe
+          files: release/*Setup*.exe
           draft: false
           prerelease: false
         env:

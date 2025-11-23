@@ -36,6 +36,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: QMLauncher-Windows
-          path: release/*.exe
+          path: release/*Setup*.exe
           retention-days: 30
 
