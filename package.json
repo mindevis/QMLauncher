@@ -55,6 +55,7 @@
   "build": {
     "appId": "com.qmproject.qmlauncher",
     "productName": "QMLauncher",
+    "publish": null,
     "directories": {
       "output": "release"
     },
