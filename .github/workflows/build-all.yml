@@ -1,0 +1,135 @@
+name: Build QMLauncher
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: QMLauncher/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./QMLauncher
+        run: npm ci
+      
+      - name: Build
+        working-directory: ./QMLauncher
+        run: npm run build
+      
+      - name: Build Windows portable
+        working-directory: ./QMLauncher
+        run: npx electron-builder --win --config.win.target=portable
+      
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QMLauncher-windows
+          path: QMLauncher/release/*.exe
+          retention-days: 30
+      
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: QMLauncher/release/*.exe
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: QMLauncher/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./QMLauncher
+        run: npm ci
+      
+      - name: Build
+        working-directory: ./QMLauncher
+        run: npm run build
+      
+      - name: Build Linux AppImage
+        working-directory: ./QMLauncher
+        run: npx electron-builder --linux --config.linux.target=AppImage
+      
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QMLauncher-linux
+          path: QMLauncher/release/*.AppImage
+          retention-days: 30
+      
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: QMLauncher/release/*.AppImage
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: QMLauncher/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./QMLauncher
+        run: npm ci
+      
+      - name: Build
+        working-directory: ./QMLauncher
+        run: npm run build
+      
+      - name: Build macOS DMG
+        working-directory: ./QMLauncher
+        run: npx electron-builder --mac
+      
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QMLauncher-macos
+          path: QMLauncher/release/*.dmg
+          retention-days: 30
+      
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: QMLauncher/release/*.dmg
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

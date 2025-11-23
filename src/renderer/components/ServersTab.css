@@ -1,0 +1,113 @@
+.servers-tab {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.servers-tab h2 {
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
+}
+
+.loading,
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #888;
+}
+
+.empty-state .hint {
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  color: #666;
+}
+
+.servers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.server-card {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.server-card:hover {
+  border-color: #4a9eff;
+  transform: translateY(-2px);
+}
+
+.server-card.selected {
+  border-color: #4a9eff;
+  box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.2);
+}
+
+.server-preview {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  background: #1a1a1a;
+}
+
+.server-info {
+  padding: 1rem;
+}
+
+.server-info h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+}
+
+.server-description {
+  margin: 0.5rem 0;
+  color: #ccc;
+  font-size: 0.875rem;
+}
+
+.server-details {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  flex-wrap: wrap;
+}
+
+.badge {
+  background: #3a3a3a;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #ccc;
+}
+
+.server-address {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.875rem;
+  color: #888;
+  font-family: monospace;
+}
+
+.launch-button {
+  width: 100%;
+  padding: 0.75rem;
+  background: #4a9eff;
+  color: #fff;
+  border: none;
+  border-radius: 0 0 8px 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.launch-button:hover:not(:disabled) {
+  background: #3a8eef;
+}
+
+.launch-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+

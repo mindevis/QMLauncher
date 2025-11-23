@@ -1,0 +1,107 @@
+{
+  "name": "qmlauncher",
+  "version": "1.0.0",
+  "description": "Minecraft launcher built with Electron and React",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:vite\" \"npm run dev:electron\"",
+    "dev:vite": "vite",
+    "dev:electron": "wait-on http://localhost:5175 && electron .",
+    "build": "npm run build:vite && npm run build:electron && npm run build:preload",
+    "build:vite": "vite build",
+    "build:electron": "tsc -p electron/tsconfig.json",
+    "build:preload": "tsc electron/preload.ts --outDir dist-electron --module commonjs --target ES2022 --esModuleInterop",
+    "preview": "vite preview",
+    "pack": "electron-builder",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:linux": "npm run build && electron-builder --linux",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:all": "npm run build && electron-builder --win --linux --mac"
+  },
+  "keywords": [
+    "minecraft",
+    "launcher",
+    "electron",
+    "react"
+  ],
+  "author": "QMProject",
+  "license": "MIT",
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "electron-updater": "^6.1.7",
+    "lucide-react": "^0.554.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "tailwind-merge": "^3.4.0"
+  },
+  "overrides": {
+    "electron": "^33.2.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.12",
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^9.1.0",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "tailwindcss": "^4.1.12",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.2",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.qmproject.qmlauncher",
+    "productName": "QMLauncher",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "sign": false,
+      "signingHashAlgorithms": null,
+      "signDlls": false
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.games"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "Game"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
