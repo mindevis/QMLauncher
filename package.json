@@ -67,7 +67,7 @@
     "win": {
       "target": [
         {
-          "target": "nsis",
+          "target": "portable",
           "arch": ["x64"]
         }
       ],
@@ -99,10 +99,6 @@
       ],
       "icon": "build/icon.png",
       "category": "Game"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
     }
   }
 }

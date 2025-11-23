@@ -35,7 +35,7 @@ jobs:
       - name: Build
         run: npm run build
       
-      - name: Build Windows installer
+      - name: Build Windows portable
         run: npx electron-builder --win
       
       - name: Upload unsigned artifact
@@ -43,7 +43,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: QMLauncher-windows-unsigned
-          path: release/*Setup*.exe
+          path: release/*portable*.exe
           retention-days: 1
       
       - name: Submit signing request to SignPath
@@ -64,14 +64,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: QMLauncher-windows
-          path: release/*Setup*.exe
+          path: release/*portable*.exe
           retention-days: 30
       
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: release/*Setup*.exe
+          files: release/*portable*.exe
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           draft: false
