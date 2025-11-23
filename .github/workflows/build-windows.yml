@@ -26,10 +26,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
+      - name: Install SignPath CLI
+        if: env.SIGNPATH_PROJECT_ID != ''
+        run: |
+          choco install signpath-cli -y
+        continue-on-error: true
+      
       - name: Build application
         run: npm run build
       
       - name: Build Windows installer
+        env:
+          SIGNPATH_PROJECT_ID: ${{ secrets.SIGNPATH_PROJECT_ID }}
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORGANIZATION_ID: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
         run: npm run dist:win
       
       - name: Upload artifacts

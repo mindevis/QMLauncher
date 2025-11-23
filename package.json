@@ -71,9 +71,10 @@
         }
       ],
       "icon": "build/icon.ico",
-      "sign": false,
-      "signingHashAlgorithms": null,
-      "signDlls": false
+      "sign": "${env.SIGNPATH_PROJECT_ID ? 'signpath' : false}",
+      "signingHashAlgorithms": ["sha256"],
+      "signDlls": true,
+      "signAndEditExecutable": true
     },
     "mac": {
       "target": [
