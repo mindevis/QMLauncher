@@ -69,6 +69,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: release/*Setup*.exe
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
         env:
@@ -109,6 +111,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: release/*.AppImage
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
         env:
@@ -149,6 +153,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: release/*.dmg
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
         env:
