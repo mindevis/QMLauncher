@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     name: Build Windows
@@ -73,7 +76,6 @@ jobs:
           name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
-          make_latest: true
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
