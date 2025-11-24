@@ -1,3 +1,5 @@
+## [1.0.22](https://github.com/mindevis/QMLauncher/compare/v1.0.21...v1.0.22) (2025-11-24)
+
 ## [1.0.21](https://github.com/mindevis/QMLauncher/compare/v1.0.20...v1.0.21) (2025-11-24)
 
 ## [1.0.20](https://github.com/mindevis/QMLauncher/compare/v1.0.19...v1.0.20) (2025-11-24)
