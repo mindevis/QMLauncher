@@ -385,6 +385,11 @@ jobs:
           echo "Setting version to $VERSION in package.json"
           npm version $VERSION --no-git-tag-version --allow-same-version
           echo "Version set to: $(node -p "require('./package.json').version")"
+          
+          # Create tag manually to ensure semantic-release uses this version
+          echo "Creating tag v$VERSION to lock version"
+          git tag -a "v$VERSION" -m "chore(release): $VERSION [skip ci]" || true
+          git push origin "v$VERSION" || true
 
       - name: Run semantic-release
         env:
@@ -392,5 +397,7 @@ jobs:
         run: |
           echo "=== Current package.json version ==="
           cat package.json | grep '"version"'
+          echo "=== Current tags ==="
+          git tag -l | tail -5
           echo "=== Running semantic-release ==="
           npx semantic-release
