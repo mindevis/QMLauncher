@@ -92,13 +92,76 @@ export function ServersTab() {
         console.log(`HWID: ${hwid}`)
         // TODO: Send validation request to QMServer with server_uuid and hwid
       }
+
+      // Check and update mods before launch
+      console.log('Checking and updating mods...')
+      const modsCheckResult = await window.electronAPI.checkAndUpdateMods(server.id, API_BASE_URL)
       
-      // Здесь будет логика запуска Minecraft
-      // Пока просто показываем сообщение
-      alert(`Запуск сервера ${server.name}...\nФункционал запуска Minecraft будет реализован позже.`)
+      if (!modsCheckResult.success) {
+        alert(`Ошибка при проверке модов: ${modsCheckResult.error}`)
+        return
+      }
+
+      if (modsCheckResult.updated) {
+        console.log(`Updated ${modsCheckResult.modsUpdated || 0} mod(s)`)
+        // Show notification that mods were updated
+      }
+
+      // Get launcher config
+      const launcherConfig = await window.electronAPI.getLauncherConfig()
+      
+      // Get server config from database
+      const dbConfig = await window.electronAPI.getLauncherDbConfig(server.id)
+      
+      if (!dbConfig.success || !dbConfig.config) {
+        alert('Не удалось загрузить конфигурацию сервера')
+        return
+      }
+
+      // Prepare mods directory path
+      const modsDir = modsCheckResult.modsDir || `~/.qmlauncher/mods/${server.id}`
+      
+      // TODO: Prepare JVM and game arguments from server config
+      // For now, use basic arguments
+      const jvmArgs = [
+        `-Xmx${launcherConfig.maxMemory || 4096}M`,
+        `-Xms${launcherConfig.minMemory || 1024}M`,
+        '-Djava.library.path=natives',
+        '-Dminecraft.launcher.brand=qmlauncher',
+        '-Dminecraft.launcher.version=1.0.0'
+      ]
+
+      const gameArgs = [
+        '--username', 'Player',
+        '--version', server.minecraft_version,
+        '--gameDir', modsDir,
+        '--assetsDir', '~/.qmlauncher/assets',
+        '--assetIndex', server.minecraft_version,
+        '--uuid', hwid || '00000000-0000-0000-0000-000000000000',
+        '--accessToken', 'token',
+        '--userType', 'mojang',
+        '--versionType', 'release',
+        '--server', server.server_address || '',
+        '--port', String(server.server_port || 25565)
+      ]
+
+      // Launch Minecraft
+      const launchResult = await window.electronAPI.launchMinecraft({
+        javaPath: launcherConfig.javaPath || 'java',
+        jvmArgs,
+        gameArgs,
+        workingDirectory: modsDir
+      })
+
+      if (!launchResult.success) {
+        alert(`Ошибка при запуске Minecraft: ${launchResult.error}`)
+        return
+      }
+
+      console.log(`Minecraft launched with PID: ${launchResult.pid}`)
     } catch (error) {
       console.error('Error launching:', error)
-      alert('Ошибка при запуске')
+      alert(`Ошибка при запуске: ${error instanceof Error ? error.message : String(error)}`)
     } finally {
       setIsLaunching(false)
     }

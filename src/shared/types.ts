@@ -74,6 +74,10 @@ declare global {
         workingDirectory: string
       }) => Promise<{ success: boolean; error?: string; pid?: number }>
       stopMinecraft: () => Promise<{ success: boolean; error?: string }>
+      getLauncherDbConfig: (serverId: number) => Promise<{ success: boolean; config?: Record<string, string>; mods?: any[]; plugins?: any[]; error?: string }>
+      getServerMods: (serverId: number, apiBaseUrl: string) => Promise<{ success: boolean; mods?: any[]; error?: string }>
+      downloadMod: (downloadUrl: string, savePath: string) => Promise<{ success: boolean; error?: string }>
+      checkAndUpdateMods: (serverId: number, apiBaseUrl?: string) => Promise<{ success: boolean; updated?: boolean; modsUpdated?: number; modsDir?: string; error?: string }>
       onMinecraftExited: (callback: (code: number | null) => void) => void
       onMinecraftError: (callback: (error: string) => void) => void
     }

@@ -3,6 +3,9 @@ import path from 'path'
 import { spawn, ChildProcess } from 'child_process'
 import fs from 'fs'
 import os from 'os'
+import Database from 'better-sqlite3'
+import https from 'https'
+import http from 'http'
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
@@ -176,5 +179,228 @@ ipcMain.handle('stop-minecraft', async () => {
     return { success: true }
   }
   return { success: false, error: 'No Minecraft process running' }
+})
+
+// Get launcher config from SQLite database
+ipcMain.handle('get-launcher-db-config', async (_event: any, serverId: number) => {
+  try {
+    const configPath = path.join(os.homedir(), '.qmlauncher', 'launcher-config.db')
+    if (!fs.existsSync(configPath)) {
+      return { success: false, error: 'Config database not found' }
+    }
+
+    const db = new Database(configPath)
+    const config: Record<string, string> = {}
+    
+    // Read launcher_config table
+    const configRows = db.prepare('SELECT key, value FROM launcher_config').all() as Array<{ key: string; value: string }>
+    configRows.forEach(row => {
+      config[row.key] = row.value
+    })
+
+    // Read mods
+    const mods = db.prepare('SELECT * FROM mods').all() as Array<any>
+    
+    // Read plugins
+    const plugins = db.prepare('SELECT * FROM plugins').all() as Array<any>
+
+    db.close()
+
+    return {
+      success: true,
+      config,
+      mods,
+      plugins
+    }
+  } catch (error) {
+    console.error('Error reading launcher config:', error)
+    return { success: false, error: String(error) }
+  }
+})
+
+// Get mods list from server
+ipcMain.handle('get-server-mods', async (_event: any, serverId: number, apiBaseUrl: string) => {
+  try {
+    const url = `${apiBaseUrl}/servers/${serverId}/mods`
+    const response = await fetch(url)
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch mods: ${response.statusText}`)
+    }
+
+    const data = await response.json() as { mods?: any[] }
+    return { success: true, mods: data.mods || [] }
+  } catch (error) {
+    console.error('Error fetching server mods:', error)
+    return { success: false, error: String(error) }
+  }
+})
+
+// Download mod file
+ipcMain.handle('download-mod', async (_event: any, downloadUrl: string, savePath: string) => {
+  return new Promise((resolve) => {
+    try {
+      const url = new URL(downloadUrl)
+      const protocol = url.protocol === 'https:' ? https : http
+      
+      // Ensure directory exists
+      const dir = path.dirname(savePath)
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true })
+      }
+
+      const file = fs.createWriteStream(savePath)
+      
+      protocol.get(url.href, (response) => {
+        if (response.statusCode !== 200) {
+          file.close()
+          fs.unlinkSync(savePath)
+          resolve({ success: false, error: `Failed to download: ${response.statusCode}` })
+          return
+        }
+
+        response.pipe(file)
+
+        file.on('finish', () => {
+          file.close()
+          resolve({ success: true })
+        })
+
+        file.on('error', (err) => {
+          file.close()
+          if (fs.existsSync(savePath)) {
+            fs.unlinkSync(savePath)
+          }
+          resolve({ success: false, error: String(err) })
+        })
+      }).on('error', (err) => {
+        if (fs.existsSync(savePath)) {
+          fs.unlinkSync(savePath)
+        }
+        resolve({ success: false, error: String(err) })
+      })
+    } catch (error) {
+      resolve({ success: false, error: String(error) })
+    }
+  })
+})
+
+// Check and update mods
+ipcMain.handle('check-and-update-mods', async (_event: any, serverId: number, apiBaseUrl?: string) => {
+  try {
+    const configPath = path.join(os.homedir(), '.qmlauncher', 'launcher-config.db')
+    if (!fs.existsSync(configPath)) {
+      return { success: false, error: 'Config database not found', updated: false }
+    }
+
+    const db = new Database(configPath)
+    
+    // Get API base URL from config
+    const apiBaseUrlRow = db.prepare('SELECT value FROM launcher_config WHERE key = ?').get('api_base_url') as { value: string } | undefined
+    const apiBaseUrlFromConfig = apiBaseUrlRow?.value || apiBaseUrl || 'http://localhost:8000/api/v1'
+
+    // Get mods from database
+    const dbMods = db.prepare('SELECT * FROM mods').all() as Array<{ filename: string; download_url: string; size: number }>
+    
+    // Get mods from server
+    const serverModsResponse = await fetch(`${apiBaseUrlFromConfig}/servers/${serverId}/mods`)
+    if (!serverModsResponse.ok) {
+      db.close()
+      return { success: false, error: 'Failed to fetch server mods', updated: false }
+    }
+
+    const serverModsData = await serverModsResponse.json() as { mods?: any[] }
+    const serverMods = serverModsData.mods || []
+
+    db.close()
+
+    // Compare mods
+    const modsDir = path.join(os.homedir(), '.qmlauncher', 'mods', String(serverId))
+    if (!fs.existsSync(modsDir)) {
+      fs.mkdirSync(modsDir, { recursive: true })
+    }
+
+    let needsUpdate = false
+    const modsToDownload: Array<{ filename: string; download_url: string }> = []
+
+    // Check each mod from server
+    for (const serverMod of serverMods) {
+      const localModPath = path.join(modsDir, serverMod.filename)
+      const dbMod = dbMods.find(m => m.filename === serverMod.filename)
+
+      // Check if mod needs update (missing or size mismatch)
+      if (!fs.existsSync(localModPath) || !dbMod || dbMod.size !== serverMod.size) {
+        needsUpdate = true
+        modsToDownload.push({
+          filename: serverMod.filename,
+          download_url: serverMod.download_url || `${apiBaseUrlFromConfig}/servers/${serverId}/mods/${serverMod.filename}/download`
+        })
+      }
+    }
+
+    // Remove mods that are no longer on server
+    if (fs.existsSync(modsDir)) {
+      const localModFiles = fs.readdirSync(modsDir).filter(f => f.endsWith('.jar'))
+      for (const localFile of localModFiles) {
+        if (!serverMods.find(m => m.filename === localFile)) {
+          needsUpdate = true
+          fs.unlinkSync(path.join(modsDir, localFile))
+        }
+      }
+    }
+
+    // Download missing/updated mods
+    if (needsUpdate && modsToDownload.length > 0) {
+      for (const mod of modsToDownload) {
+        const savePath = path.join(modsDir, mod.filename)
+        const downloadResult = await new Promise<{ success: boolean; error?: string }>((resolve) => {
+          const url = new URL(mod.download_url)
+          const protocol = url.protocol === 'https:' ? https : http
+          
+          const file = fs.createWriteStream(savePath)
+          
+          protocol.get(url.href, (response) => {
+            if (response.statusCode !== 200) {
+              file.close()
+              if (fs.existsSync(savePath)) {
+                fs.unlinkSync(savePath)
+              }
+              resolve({ success: false, error: `Failed to download: ${response.statusCode}` })
+              return
+            }
+
+            response.pipe(file)
+
+            file.on('finish', () => {
+              file.close()
+              resolve({ success: true })
+            })
+
+            file.on('error', (err) => {
+              file.close()
+              if (fs.existsSync(savePath)) {
+                fs.unlinkSync(savePath)
+              }
+              resolve({ success: false, error: String(err) })
+            })
+          }).on('error', (err) => {
+            if (fs.existsSync(savePath)) {
+              fs.unlinkSync(savePath)
+            }
+            resolve({ success: false, error: String(err) })
+          })
+        })
+
+        if (!downloadResult.success) {
+          return { success: false, error: `Failed to download ${mod.filename}: ${downloadResult.error}`, updated: false }
+        }
+      }
+    }
+
+    return { success: true, updated: needsUpdate, modsUpdated: modsToDownload.length, modsDir }
+  } catch (error) {
+    console.error('Error checking and updating mods:', error)
+    return { success: false, error: String(error), updated: false }
+  }
 })
 

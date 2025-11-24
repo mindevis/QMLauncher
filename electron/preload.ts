@@ -10,6 +10,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveLauncherConfig: (config: any) => ipcRenderer.invoke('save-launcher-config', config),
   launchMinecraft: (launchArgs: any) => ipcRenderer.invoke('launch-minecraft', launchArgs),
   stopMinecraft: () => ipcRenderer.invoke('stop-minecraft'),
+  getLauncherDbConfig: (serverId: number) => ipcRenderer.invoke('get-launcher-db-config', serverId),
+  getServerMods: (serverId: number, apiBaseUrl: string) => ipcRenderer.invoke('get-server-mods', serverId, apiBaseUrl),
+  downloadMod: (downloadUrl: string, savePath: string) => ipcRenderer.invoke('download-mod', downloadUrl, savePath),
+  checkAndUpdateMods: (serverId: number, apiBaseUrl?: string) => ipcRenderer.invoke('check-and-update-mods', serverId, apiBaseUrl),
   onMinecraftExited: (callback: (code: number | null) => void) => {
     ipcRenderer.on('minecraft-exited', (_event, code) => callback(code))
   },
