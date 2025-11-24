@@ -85,7 +85,7 @@
       "sign": false,
       "signingHashAlgorithms": null,
       "signDlls": false,
-      "artifactName": "${productName}-${version}-${env.BUILD_NUMBER}-Windows-${arch}.${ext}"
+      "artifactName": "${productName}-${version}-000-Windows-${arch}.${ext}"
     },
     "mac": {
       "target": [
@@ -99,7 +99,7 @@
       ],
       "icon": "build/icon.icns",
       "category": "public.app-category.games",
-      "artifactName": "${productName}-${version}-${env.BUILD_NUMBER}-macOS-${arch}.${ext}"
+      "artifactName": "${productName}-${version}-000-macOS-${arch}.${ext}"
     },
     "linux": {
       "target": [
@@ -118,7 +118,7 @@
       ],
       "icon": "build/icon.png",
       "category": "Game",
-      "artifactName": "${productName}-${version}-${env.BUILD_NUMBER}-Linux-${arch}.${ext}"
+      "artifactName": "${productName}-${version}-000-Linux-${arch}.${ext}"
     }
   }
 }
