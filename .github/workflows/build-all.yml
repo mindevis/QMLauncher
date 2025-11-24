@@ -65,17 +65,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "=== Checking for tags ==="
+          git tag -l | head -5
+          echo "=== Last tag ==="
+          git describe --tags --abbrev=0 2>/dev/null || echo "No tags found"
+          echo "=== Recent commits ==="
+          git log --oneline -5
+          echo "=== Running semantic-release dry-run ==="
           npx semantic-release --dry-run > release-info.txt 2>&1 || true
+          
+          echo "=== Semantic-release output ==="
+          cat release-info.txt
+          echo "=== End semantic-release output ==="
           
           if grep -q "The next release version is" release-info.txt; then
             VERSION=$(grep "The next release version is" release-info.txt | sed 's/.*The next release version is //' | sed 's/\.$//')
             echo "should-release=true" >> $GITHUB_OUTPUT
             echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "Next version: $VERSION"
+            echo "✓ Next version: $VERSION"
           elif grep -q "No new release" release-info.txt || grep -q "There are no relevant changes" release-info.txt; then
             echo "should-release=false" >> $GITHUB_OUTPUT
             echo "version=" >> $GITHUB_OUTPUT
-            echo "No release needed"
+            echo "⚠ No release needed - no relevant changes"
           else
             LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
             if [ -z "$LAST_TAG" ]; then
@@ -88,14 +99,29 @@ jobs:
               VERSION="$MAJOR.$MINOR.$NEW_PATCH"
               echo "should-release=true" >> $GITHUB_OUTPUT
               echo "version=$VERSION" >> $GITHUB_OUTPUT
-              echo "No tags found, will create first release: $VERSION"
+              echo "✓ No tags found, will create first release: $VERSION"
             else
-              echo "should-release=false" >> $GITHUB_OUTPUT
-              echo "version=" >> $GITHUB_OUTPUT
-              echo "Semantic-release failed and tags exist, skipping release"
+              # Check if there are commits since last tag
+              COMMITS_SINCE_TAG=$(git rev-list ${LAST_TAG}..HEAD --count)
+              if [ "$COMMITS_SINCE_TAG" -gt 0 ]; then
+                # There are commits, create patch release
+                CURRENT_VERSION=$(node -p "require('./package.json').version")
+                IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+                MAJOR=${VERSION_PARTS[0]}
+                MINOR=${VERSION_PARTS[1]}
+                PATCH=${VERSION_PARTS[2]}
+                NEW_PATCH=$((PATCH + 1))
+                VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+                echo "should-release=true" >> $GITHUB_OUTPUT
+                echo "version=$VERSION" >> $GITHUB_OUTPUT
+                echo "✓ Found $COMMITS_SINCE_TAG commits since $LAST_TAG, will create release: $VERSION"
+              else
+                echo "should-release=false" >> $GITHUB_OUTPUT
+                echo "version=" >> $GITHUB_OUTPUT
+                echo "⚠ No commits since last tag $LAST_TAG, skipping release"
+              fi
             fi
           fi
-          cat release-info.txt
 
       - name: Update version in package.json
         if: steps.release.outputs.should-release == 'true'
