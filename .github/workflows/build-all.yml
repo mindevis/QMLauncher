@@ -2,6 +2,8 @@ name: Build QMLauncher
 
 on:
   push:
+    branches:
+      - master
     tags:
       - 'v*'
   workflow_dispatch:
@@ -37,13 +39,33 @@ jobs:
       
       - name: Build Windows portable
         run: npx electron-builder --win
+        continue-on-error: false
+      
+      - name: List release files
+        run: |
+          echo "Files in release directory:"
+          if exist release (
+            dir release /b
+            echo ""
+            echo "Looking for portable exe files:"
+            dir release\*portable*.exe /b 2>nul || echo "No portable exe files found"
+            echo ""
+            echo "All exe files:"
+            dir release\*.exe /b 2>nul || echo "No exe files found"
+            echo ""
+            echo "All files in release:"
+            dir release /s /b
+          ) else (
+            echo "Release directory does not exist!"
+          )
       
       - name: Upload unsigned artifact
         id: upload-unsigned
         uses: actions/upload-artifact@v4
         with:
           name: QMLauncher-windows-unsigned
-          path: release/*portable*.exe
+          path: release/*.exe
+          if-no-files-found: warn
           retention-days: 1
       
       - name: Submit signing request to SignPath
@@ -64,14 +86,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: QMLauncher-windows
-          path: release/*portable*.exe
+          path: release/*.exe
+          if-no-files-found: error
           retention-days: 30
       
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: release/*portable*.exe
+          files: release/*.exe
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
           draft: false
@@ -79,6 +102,15 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ github.token }}
+      
+      - name: Upload build artifacts (no release)
+        if: github.ref == 'refs/heads/master' && !startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: QMLauncher-windows-build
+          path: release/*.exe
+          if-no-files-found: warn
+          retention-days: 7
 
   build-linux:
     name: Build Linux
@@ -117,6 +149,15 @@ jobs:
           tag_name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
+      
+      - name: Upload build artifacts (no release)
+        if: github.ref == 'refs/heads/master' && !startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: QMLauncher-linux-build
+          path: release/*.AppImage
+          if-no-files-found: warn
+          retention-days: 7
 
   build-macos:
     name: Build macOS
@@ -155,4 +196,13 @@ jobs:
           tag_name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
+      
+      - name: Upload build artifacts (no release)
+        if: github.ref == 'refs/heads/master' && !startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: QMLauncher-macos-build
+          path: release/*.dmg
+          if-no-files-found: warn
+          retention-days: 7
 
