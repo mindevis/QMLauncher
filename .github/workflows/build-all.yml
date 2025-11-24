@@ -171,6 +171,8 @@ jobs:
         run: npm run build
       
       - name: Build Windows portable
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
         run: npx electron-builder --win
       
       - name: Upload unsigned artifact
@@ -248,6 +250,8 @@ jobs:
         run: npm run build
       
       - name: Build Linux AppImage
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
         run: npx electron-builder --linux --config.linux.target=AppImage
       
       - name: Upload Linux artifact

@@ -84,7 +84,8 @@
       "icon": "build/icon.ico",
       "sign": false,
       "signingHashAlgorithms": null,
-      "signDlls": false
+      "signDlls": false,
+      "artifactName": "${productName}-${version}-${env.BUILD_NUMBER}-Windows-${arch}.${ext}"
     },
     "mac": {
       "target": [
@@ -97,7 +98,8 @@
         }
       ],
       "icon": "build/icon.icns",
-      "category": "public.app-category.games"
+      "category": "public.app-category.games",
+      "artifactName": "${productName}-${version}-${env.BUILD_NUMBER}-macOS-${arch}.${ext}"
     },
     "linux": {
       "target": [
@@ -115,7 +117,8 @@
         }
       ],
       "icon": "build/icon.png",
-      "category": "Game"
+      "category": "Game",
+      "artifactName": "${productName}-${version}-${env.BUILD_NUMBER}-Linux-${arch}.${ext}"
     }
   }
 }
