@@ -305,6 +305,8 @@ jobs:
         run: npm run build
       
       - name: Build macOS DMG
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
         run: npx electron-builder --mac
       
       - name: Upload macOS artifact
