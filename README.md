@@ -75,3 +75,4 @@ Set the API URL in Settings tab (default: `http://localhost:8000/api/v1`)
 
 This project is part of the QMProject ecosystem.
 
+# Test change
