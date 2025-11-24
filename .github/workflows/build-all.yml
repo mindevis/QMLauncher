@@ -22,8 +22,58 @@ permissions:
   contents: write
 
 jobs:
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Run semantic-release prepare
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Run only prepare plugins to update version
+          npx semantic-release --dry-run > release-info.txt 2>&1 || true
+          if grep -q "The next release version is" release-info.txt; then
+            VERSION=$(grep "The next release version is" release-info.txt | sed 's/.*The next release version is //' | sed 's/\.$//')
+            npm version $VERSION --no-git-tag-version
+            echo "Updated package.json to version $VERSION"
+          else
+            echo "No new release needed"
+            exit 1
+          fi
+
+      - name: Upload package.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-json
+          path: package.json
+          retention-days: 1
+
   build-windows:
     name: Build Windows
+    needs: [prepare]
     if: |
       (github.event.inputs.platform == '' || 
        github.event.inputs.platform == null ||
@@ -32,6 +82,12 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Download package.json
+        uses: actions/download-artifact@v4
+        with:
+          name: package-json
+          path: .
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -59,6 +115,7 @@ jobs:
 
   build-linux:
     name: Build Linux
+    needs: [prepare]
     if: |
       (github.event.inputs.platform == '' || 
        github.event.inputs.platform == null ||
@@ -67,6 +124,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Download package.json
+        uses: actions/download-artifact@v4
+        with:
+          name: package-json
+          path: .
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -94,6 +157,7 @@ jobs:
 
   build-macos:
     name: Build macOS
+    needs: [prepare]
     if: |
       (github.event.inputs.platform == '' || 
        github.event.inputs.platform == null ||
@@ -102,6 +166,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Download package.json
+        uses: actions/download-artifact@v4
+        with:
+          name: package-json
+          path: .
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -129,7 +199,7 @@ jobs:
 
   release:
     name: Create Release
-    needs: [build-windows, build-linux, build-macos]
+    needs: [prepare, build-windows, build-linux, build-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -149,6 +219,12 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Download package.json
+        uses: actions/download-artifact@v4
+        with:
+          name: package-json
+          path: .
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
