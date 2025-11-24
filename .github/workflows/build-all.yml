@@ -53,16 +53,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Run only prepare step to update version
           npx semantic-release --dry-run --extends .releaserc.json > release-info.txt 2>&1 || true
           cat release-info.txt
           
-          # Extract version from semantic-release output
+          # Extract and set version
           if grep -q "The next release version is" release-info.txt; then
             VERSION=$(grep "The next release version is" release-info.txt | sed 's/.*The next release version is //' | sed 's/\.$//')
             echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "Next version: $VERSION"
-            
-            # Update package.json with the version
             npm version $VERSION --no-git-tag-version
             echo "Updated package.json to version $VERSION"
           else
