@@ -402,14 +402,31 @@ jobs:
           else
             echo "Tag v$VERSION already exists"
           fi
+          
+          # Set LAST_RELEASE to force semantic-release to use this version
+          echo "LAST_RELEASE=v$VERSION" >> $GITHUB_ENV
+          echo "Forcing semantic-release to use version: $VERSION"
 
-      - name: Run semantic-release
+      - name: Run semantic-release with forced version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
           echo "=== Current package.json version ==="
           cat package.json | grep '"version"'
           echo "=== Current tags ==="
           git tag -l | tail -5
-          echo "=== Running semantic-release ==="
-          npx semantic-release
+          echo "=== Forcing semantic-release to use version: $VERSION ==="
+          
+          # Calculate previous version to set LAST_RELEASE
+          # This tricks semantic-release into thinking the previous release was one patch version lower
+          # so it will calculate the next version as our target version
+          PREV_VERSION=$(node -e "const v='$VERSION'.split('.'); v[2]=(parseInt(v[2])-1).toString(); console.log(v.join('.'))")
+          PREV_TAG="v$PREV_VERSION"
+          echo "Setting LAST_RELEASE to $PREV_TAG to force semantic-release to use version $VERSION"
+          
+          # Export LAST_RELEASE to environment
+          echo "LAST_RELEASE=$PREV_TAG" >> $GITHUB_ENV
+          
+          echo "=== Running semantic-release with LAST_RELEASE=$PREV_TAG ==="
+          LAST_RELEASE="$PREV_TAG" npx semantic-release
