@@ -114,7 +114,6 @@ jobs:
           retention-days: 30
       
       - name: Upload Windows artifact for release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
         with:
           name: windows-release-artifact
@@ -166,7 +165,6 @@ jobs:
           retention-days: 30
       
       - name: Upload Linux artifact for release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
         with:
           name: linux-release-artifact
@@ -218,7 +216,6 @@ jobs:
           retention-days: 30
       
       - name: Upload macOS artifact for release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
         with:
           name: macos-release-artifact
@@ -264,6 +261,17 @@ jobs:
         with:
           name: macos-release-artifact
           path: ./release-artifacts/macos
+
+      - name: List downloaded artifacts
+        run: |
+          echo "Windows artifacts:"
+          ls -la ./release-artifacts/windows/ 2>/dev/null || echo "No Windows artifacts"
+          echo ""
+          echo "Linux artifacts:"
+          ls -la ./release-artifacts/linux/ 2>/dev/null || echo "No Linux artifacts"
+          echo ""
+          echo "macOS artifacts:"
+          ls -la ./release-artifacts/macos/ 2>/dev/null || echo "No macOS artifacts"
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -366,20 +374,54 @@ jobs:
           git push origin HEAD:master
           echo "Pushed version update to master"
 
+      - name: Download all artifacts for release
+        if: steps.check_tag.outputs.tag_exists == 'false'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-release-artifact'
+          path: ./release-artifacts
+          merge-multiple: false
+
+      - name: List artifacts for release
+        if: steps.check_tag.outputs.tag_exists == 'false'
+        run: |
+          echo "Artifacts downloaded:"
+          find ./release-artifacts -type f || echo "No artifacts found"
+          ls -la ./release-artifacts/*/ 2>/dev/null || echo "No artifacts in subdirectories"
+
       - name: Create and push tag
         if: steps.check_tag.outputs.tag_exists == 'false'
+        id: create_tag
         run: |
           NEXT_VERSION="${{ steps.next_version.outputs.next_version }}"
           TAG_NAME="v$NEXT_VERSION"
           git tag -a "$TAG_NAME" -m "Release $TAG_NAME: Auto-generated after successful build"
           git push origin "$TAG_NAME"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "Created and pushed tag: $TAG_NAME"
-          echo "This will trigger the workflow again to create the release"
+
+      - name: Create Release
+        if: steps.check_tag.outputs.tag_exists == 'false'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ./release-artifacts/**/*
+          tag_name: ${{ steps.create_tag.outputs.tag_name }}
+          name: Release ${{ steps.create_tag.outputs.tag_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Summary
         run: |
           echo "## Version Update Summary" >> $GITHUB_STEP_SUMMARY
           echo "- Previous version: ${{ steps.get_version.outputs.current_version }}" >> $GITHUB_STEP_SUMMARY
           echo "- New version: ${{ steps.next_version.outputs.next_version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Tag created: v${{ steps.next_version.outputs.next_version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- The workflow will automatically run again for the tag to create the release" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.check_tag.outputs.tag_exists }}" == "false" ]; then
+            echo "- Tag created: ${{ steps.create_tag.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Release created: ${{ steps.create_tag.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Tag already exists, skipped" >> $GITHUB_STEP_SUMMARY
+          fi
