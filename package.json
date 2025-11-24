@@ -1,6 +1,6 @@
 {
   "name": "qmlauncher",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "Minecraft launcher built with Electron and React",
   "main": "dist-electron/main.js",
   "scripts": {
