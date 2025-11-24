@@ -69,8 +69,8 @@ jobs:
           git tag -l | head -5
           echo "=== Last tag ==="
           git describe --tags --abbrev=0 2>/dev/null || echo "No tags found"
-          echo "=== Recent commits ==="
-          git log --oneline -5
+          echo "=== Recent commits (should be conventional commits) ==="
+          git log --oneline -10
           echo "=== Running semantic-release dry-run ==="
           npx semantic-release --dry-run > release-info.txt 2>&1 || true
           
@@ -83,44 +83,11 @@ jobs:
             echo "should-release=true" >> $GITHUB_OUTPUT
             echo "version=$VERSION" >> $GITHUB_OUTPUT
             echo "✓ Next version: $VERSION"
-          elif grep -q "No new release" release-info.txt || grep -q "There are no relevant changes" release-info.txt; then
+          else
             echo "should-release=false" >> $GITHUB_OUTPUT
             echo "version=" >> $GITHUB_OUTPUT
-            echo "⚠ No release needed - no relevant changes"
-          else
-            LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-            if [ -z "$LAST_TAG" ]; then
-              CURRENT_VERSION=$(node -p "require('./package.json').version")
-              IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
-              MAJOR=${VERSION_PARTS[0]}
-              MINOR=${VERSION_PARTS[1]}
-              PATCH=${VERSION_PARTS[2]}
-              NEW_PATCH=$((PATCH + 1))
-              VERSION="$MAJOR.$MINOR.$NEW_PATCH"
-              echo "should-release=true" >> $GITHUB_OUTPUT
-              echo "version=$VERSION" >> $GITHUB_OUTPUT
-              echo "✓ No tags found, will create first release: $VERSION"
-            else
-              # Check if there are commits since last tag
-              COMMITS_SINCE_TAG=$(git rev-list ${LAST_TAG}..HEAD --count)
-              if [ "$COMMITS_SINCE_TAG" -gt 0 ]; then
-                # There are commits, create patch release
-                CURRENT_VERSION=$(node -p "require('./package.json').version")
-                IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
-                MAJOR=${VERSION_PARTS[0]}
-                MINOR=${VERSION_PARTS[1]}
-                PATCH=${VERSION_PARTS[2]}
-                NEW_PATCH=$((PATCH + 1))
-                VERSION="$MAJOR.$MINOR.$NEW_PATCH"
-                echo "should-release=true" >> $GITHUB_OUTPUT
-                echo "version=$VERSION" >> $GITHUB_OUTPUT
-                echo "✓ Found $COMMITS_SINCE_TAG commits since $LAST_TAG, will create release: $VERSION"
-              else
-                echo "should-release=false" >> $GITHUB_OUTPUT
-                echo "version=" >> $GITHUB_OUTPUT
-                echo "⚠ No commits since last tag $LAST_TAG, skipping release"
-              fi
-            fi
+            echo "⚠ No release needed - use conventional commits (feat:, fix:, chore:, etc.) to trigger releases"
+            echo "Example: feat: add new feature, fix: bug fix, chore: update dependencies"
           fi
 
       - name: Update version in package.json
