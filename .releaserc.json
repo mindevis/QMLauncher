@@ -4,7 +4,6 @@
     "main"
   ],
   "plugins": [
-    "./scripts/force-version-plugin.js",
     [
       "@semantic-release/commit-analyzer",
       {
