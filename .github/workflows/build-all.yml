@@ -326,6 +326,8 @@ jobs:
       needs.build-windows.result == 'success' &&
       needs.build-linux.result == 'success' &&
       needs.build-macos.result == 'success'
+    outputs:
+      version: ${{ needs.prepare-release.outputs.version }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -355,9 +357,13 @@ jobs:
       - name: Get version from prepare-release
         id: version
         run: |
-          VERSION=$(node -p "require('./package.json').version")
+          # Use version from prepare-release output, fallback to package.json
+          VERSION="${{ needs.prepare-release.outputs.version }}"
+          if [ -z "$VERSION" ]; then
+            VERSION=$(node -p "require('./package.json').version")
+          fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Using version: $VERSION"
+          echo "Using version: $VERSION (from prepare-release output)"
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -387,9 +393,15 @@ jobs:
           echo "Version set to: $(node -p "require('./package.json').version")"
           
           # Create tag manually to ensure semantic-release uses this version
+          # This prevents semantic-release from analyzing commits and determining a different version
           echo "Creating tag v$VERSION to lock version"
-          git tag -a "v$VERSION" -m "chore(release): $VERSION [skip ci]" || true
-          git push origin "v$VERSION" || true
+          if ! git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            git tag -a "v$VERSION" -m "chore(release): $VERSION [skip ci]"
+            git push origin "v$VERSION"
+            echo "Tag v$VERSION created and pushed"
+          else
+            echo "Tag v$VERSION already exists"
+          fi
 
       - name: Run semantic-release
         env:
