@@ -7,11 +7,6 @@ on:
       - main
     tags:
       - 'v*'
-    paths:
-      - 'QMLauncher/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/**'
   workflow_dispatch:
     inputs:
       platform:
