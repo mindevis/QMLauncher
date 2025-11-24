@@ -69,15 +69,15 @@
         "assets": [
           {
             "path": "release/QMLauncher-*.exe",
-            "label": "Windows"
+            "label": "QMLauncher-${nextRelease.version}-000-Windows-x64.exe"
           },
           {
             "path": "release/QMLauncher-*.AppImage",
-            "label": "Linux"
+            "label": "QMLauncher-${nextRelease.version}-000-Linux-x64.AppImage"
           },
           {
             "path": "release/QMLauncher-*.dmg",
-            "label": "macOS"
+            "label": "QMLauncher-${nextRelease.version}-000-macOS-x64.dmg"
           }
         ],
         "successComment": false,
