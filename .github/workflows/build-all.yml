@@ -4,9 +4,26 @@ on:
   push:
     branches:
       - master
+      - main
     tags:
       - 'v*'
+    paths:
+      - 'QMLauncher/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/**'
   workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build (all, windows, linux, macos)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - windows
+          - linux
+          - macos
 
 permissions:
   contents: write
@@ -14,6 +31,10 @@ permissions:
 jobs:
   build-windows:
     name: Build Windows
+    if: |
+      github.event.inputs.platform == '' || 
+      github.event.inputs.platform == 'all' || 
+      github.event.inputs.platform == 'windows'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -115,6 +136,10 @@ jobs:
 
   build-linux:
     name: Build Linux
+    if: |
+      github.event.inputs.platform == '' || 
+      github.event.inputs.platform == 'all' || 
+      github.event.inputs.platform == 'linux'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -162,6 +187,10 @@ jobs:
 
   build-macos:
     name: Build macOS
+    if: |
+      github.event.inputs.platform == '' || 
+      github.event.inputs.platform == 'all' || 
+      github.event.inputs.platform == 'macos'
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -212,8 +241,9 @@ jobs:
     needs: [build-windows, build-linux, build-macos]
     if: |
       github.event_name == 'push' &&
-      github.ref == 'refs/heads/master' &&
+      (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') &&
       !startsWith(github.ref, 'refs/tags/') &&
+      (github.event.inputs.platform == '' || github.event.inputs.platform == 'all') &&
       needs.build-windows.result == 'success' &&
       needs.build-linux.result == 'success' &&
       needs.build-macos.result == 'success'
