@@ -71,6 +71,16 @@ jobs:
           git describe --tags --abbrev=0 2>/dev/null || echo "No tags found"
           echo "=== Recent commits (should be conventional commits) ==="
           git log --oneline -10
+          echo "=== Commits since last tag ==="
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            echo "Last tag: $LAST_TAG"
+            git log ${LAST_TAG}..HEAD --oneline --format="%h %s" | head -10
+          else
+            echo "No tags found, showing last 10 commits:"
+            git log --oneline -10
+          fi
+          
           echo "=== Running semantic-release dry-run ==="
           npx semantic-release --dry-run > release-info.txt 2>&1 || true
           
@@ -83,11 +93,30 @@ jobs:
             echo "should-release=true" >> $GITHUB_OUTPUT
             echo "version=$VERSION" >> $GITHUB_OUTPUT
             echo "✓ Next version: $VERSION"
-          else
+          elif grep -q "No new release" release-info.txt || grep -q "There are no relevant changes" release-info.txt; then
             echo "should-release=false" >> $GITHUB_OUTPUT
             echo "version=" >> $GITHUB_OUTPUT
-            echo "⚠ No release needed - use conventional commits (feat:, fix:, chore:, etc.) to trigger releases"
-            echo "Example: feat: add new feature, fix: bug fix, chore: update dependencies"
+            echo "⚠ Semantic-release determined: No new release needed"
+            echo "Check if commits follow conventional commit format (feat:, fix:, chore:, etc.)"
+          else
+            # If semantic-release output is unclear, check for conventional commits manually
+            if [ -n "$LAST_TAG" ]; then
+              CONVENTIONAL_COMMITS=$(git log ${LAST_TAG}..HEAD --oneline --format="%s" | grep -E "^(feat|fix|chore|perf|refactor|docs|style|test|build|ci|revert)(\(.+\))?:" | wc -l)
+              if [ "$CONVENTIONAL_COMMITS" -gt 0 ]; then
+                echo "Found $CONVENTIONAL_COMMITS conventional commit(s) since $LAST_TAG"
+                echo "should-release=true" >> $GITHUB_OUTPUT
+                echo "version=" >> $GITHUB_OUTPUT
+                echo "⚠ Semantic-release didn't output version, but conventional commits found - will let semantic-release determine version"
+              else
+                echo "should-release=false" >> $GITHUB_OUTPUT
+                echo "version=" >> $GITHUB_OUTPUT
+                echo "⚠ No conventional commits found since $LAST_TAG"
+              fi
+            else
+              echo "should-release=false" >> $GITHUB_OUTPUT
+              echo "version=" >> $GITHUB_OUTPUT
+              echo "⚠ No tags found and semantic-release didn't determine version"
+            fi
           fi
 
       - name: Update version in package.json
