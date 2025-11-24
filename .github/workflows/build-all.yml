@@ -29,26 +29,120 @@ permissions:
   contents: write
 
 jobs:
+  prepare-release:
+    name: Prepare Release
+    if: |
+      (github.event_name == 'push' &&
+       (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') &&
+       !startsWith(github.ref, 'refs/tags/') &&
+       (github.event.inputs.platform == '' || github.event.inputs.platform == null || github.event.inputs.platform == 'all')) ||
+      (github.event_name == 'workflow_dispatch' && (github.event.inputs.platform == '' || github.event.inputs.platform == null || github.event.inputs.platform == 'all'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      should-release: ${{ steps.release.outputs.should-release }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Analyze commits and determine version
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx semantic-release --dry-run > release-info.txt 2>&1 || true
+          
+          if grep -q "The next release version is" release-info.txt; then
+            VERSION=$(grep "The next release version is" release-info.txt | sed 's/.*The next release version is //' | sed 's/\.$//')
+            echo "should-release=true" >> $GITHUB_OUTPUT
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "Next version: $VERSION"
+          elif grep -q "No new release" release-info.txt || grep -q "There are no relevant changes" release-info.txt; then
+            echo "should-release=false" >> $GITHUB_OUTPUT
+            echo "version=" >> $GITHUB_OUTPUT
+            echo "No release needed"
+          else
+            LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+            if [ -z "$LAST_TAG" ]; then
+              CURRENT_VERSION=$(node -p "require('./package.json').version")
+              IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
+              MAJOR=${VERSION_PARTS[0]}
+              MINOR=${VERSION_PARTS[1]}
+              PATCH=${VERSION_PARTS[2]}
+              NEW_PATCH=$((PATCH + 1))
+              VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+              echo "should-release=true" >> $GITHUB_OUTPUT
+              echo "version=$VERSION" >> $GITHUB_OUTPUT
+              echo "No tags found, will create first release: $VERSION"
+            else
+              echo "should-release=false" >> $GITHUB_OUTPUT
+              echo "version=" >> $GITHUB_OUTPUT
+              echo "Semantic-release failed and tags exist, skipping release"
+            fi
+          fi
+          cat release-info.txt
+
+      - name: Update version in package.json
+        if: steps.release.outputs.should-release == 'true'
+        run: |
+          VERSION="${{ steps.release.outputs.version }}"
+          npm version $VERSION --no-git-tag-version
+          echo "Updated package.json version to $VERSION"
+
+      - name: Upload updated package.json
+        if: steps.release.outputs.should-release == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-json
+          path: package.json
+          retention-days: 1
+
   build-windows:
     name: Build Windows
+    needs: [prepare-release]
     if: |
-      github.event.inputs.platform == '' || 
-      github.event.inputs.platform == null ||
-      github.event.inputs.platform == 'all' || 
-      github.event.inputs.platform == 'windows'
+      (github.event.inputs.platform == '' || 
+       github.event.inputs.platform == null ||
+       github.event.inputs.platform == 'all' || 
+       github.event.inputs.platform == 'windows') &&
+      (needs.prepare-release.result == 'success' || 
+       github.event_name == 'workflow_dispatch' ||
+       startsWith(github.ref, 'refs/tags/'))
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       
+      - name: Download updated package.json
+        if: needs.prepare-release.outputs.should-release == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: package-json
+          path: .
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: package-lock.json
       
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       
       - name: Install SignPath CLI
         if: env.SIGNPATH_PROJECT_ID != ''
@@ -61,26 +155,6 @@ jobs:
       
       - name: Build Windows portable
         run: npx electron-builder --win
-        continue-on-error: false
-      
-      - name: List release files
-        shell: cmd
-        run: |
-          echo "Files in release directory:"
-          if exist release (
-            dir release /b
-            echo.
-            echo "Looking for portable exe files:"
-            dir release\*portable*.exe /b 2>nul || echo "No portable exe files found"
-            echo.
-            echo "All exe files:"
-            dir release\*.exe /b 2>nul || echo "No exe files found"
-            echo.
-            echo "All files in release:"
-            dir release /s /b
-          ) else (
-            echo "Release directory does not exist!"
-          )
       
       - name: Upload unsigned artifact
         id: upload-unsigned
@@ -120,36 +194,38 @@ jobs:
           path: release/*.exe
           if-no-files-found: error
           retention-days: 1
-      
-      - name: Upload build artifacts (no release)
-        if: github.ref == 'refs/heads/master' && !startsWith(github.ref, 'refs/tags/')
-        uses: actions/upload-artifact@v4
-        with:
-          name: QMLauncher-windows-build
-          path: release/*.exe
-          if-no-files-found: warn
-          retention-days: 7
 
   build-linux:
     name: Build Linux
+    needs: [prepare-release]
     if: |
-      github.event.inputs.platform == '' || 
-      github.event.inputs.platform == null ||
-      github.event.inputs.platform == 'all' || 
-      github.event.inputs.platform == 'linux'
+      (github.event.inputs.platform == '' || 
+       github.event.inputs.platform == null ||
+       github.event.inputs.platform == 'all' || 
+       github.event.inputs.platform == 'linux') &&
+      (needs.prepare-release.result == 'success' || 
+       github.event_name == 'workflow_dispatch' ||
+       startsWith(github.ref, 'refs/tags/'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
+      - name: Download updated package.json
+        if: needs.prepare-release.outputs.should-release == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: package-json
+          path: .
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: package-lock.json
       
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       
       - name: Build
         run: npm run build
@@ -171,36 +247,38 @@ jobs:
           path: release/*.AppImage
           if-no-files-found: error
           retention-days: 1
-      
-      - name: Upload build artifacts (no release)
-        if: github.ref == 'refs/heads/master' && !startsWith(github.ref, 'refs/tags/')
-        uses: actions/upload-artifact@v4
-        with:
-          name: QMLauncher-linux-build
-          path: release/*.AppImage
-          if-no-files-found: warn
-          retention-days: 7
 
   build-macos:
     name: Build macOS
+    needs: [prepare-release]
     if: |
-      github.event.inputs.platform == '' || 
-      github.event.inputs.platform == null ||
-      github.event.inputs.platform == 'all' || 
-      github.event.inputs.platform == 'macos'
+      (github.event.inputs.platform == '' || 
+       github.event.inputs.platform == null ||
+       github.event.inputs.platform == 'all' || 
+       github.event.inputs.platform == 'macos') &&
+      (needs.prepare-release.result == 'success' || 
+       github.event_name == 'workflow_dispatch' ||
+       startsWith(github.ref, 'refs/tags/'))
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       
+      - name: Download updated package.json
+        if: needs.prepare-release.outputs.should-release == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: package-json
+          path: .
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: package-lock.json
       
       - name: Install dependencies
-        run: npm ci
+        run: npm install
       
       - name: Build
         run: npm run build
@@ -222,80 +300,12 @@ jobs:
           path: release/*.dmg
           if-no-files-found: error
           retention-days: 1
-      
-      - name: Upload build artifacts (no release)
-        if: github.ref == 'refs/heads/master' && !startsWith(github.ref, 'refs/tags/')
-        uses: actions/upload-artifact@v4
-        with:
-          name: QMLauncher-macos-build
-          path: release/*.dmg
-          if-no-files-found: warn
-          retention-days: 7
 
-  create-release:
-    name: Create Release
-    needs: [build-windows, build-linux, build-macos]
+  create-release-semantic:
+    name: Create Release with Semantic Release
+    needs: [prepare-release, build-windows, build-linux, build-macos]
     if: |
-      startsWith(github.ref, 'refs/tags/') &&
-      needs.build-windows.result == 'success' &&
-      needs.build-linux.result == 'success' &&
-      needs.build-macos.result == 'success'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download Windows artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-release-artifact
-          path: ./release-artifacts/windows
-
-      - name: Download Linux artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-release-artifact
-          path: ./release-artifacts/linux
-
-      - name: Download macOS artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: macos-release-artifact
-          path: ./release-artifacts/macos
-
-      - name: List downloaded artifacts
-        run: |
-          echo "Windows artifacts:"
-          ls -la ./release-artifacts/windows/ 2>/dev/null || echo "No Windows artifacts"
-          echo ""
-          echo "Linux artifacts:"
-          ls -la ./release-artifacts/linux/ 2>/dev/null || echo "No Linux artifacts"
-          echo ""
-          echo "macOS artifacts:"
-          ls -la ./release-artifacts/macos/ 2>/dev/null || echo "No macOS artifacts"
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            ./release-artifacts/windows/*
-            ./release-artifacts/linux/*
-            ./release-artifacts/macos/*
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  auto-version-and-tag:
-    name: Auto Version and Tag
-    needs: [build-windows, build-linux, build-macos]
-    if: |
-      github.event_name == 'push' &&
-      (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') &&
-      !startsWith(github.ref, 'refs/tags/') &&
-      (github.event.inputs.platform == '' || github.event.inputs.platform == null || github.event.inputs.platform == 'all') &&
+      needs.prepare-release.outputs.should-release == 'true' &&
       needs.build-windows.result == 'success' &&
       needs.build-linux.result == 'success' &&
       needs.build-macos.result == 'success'
@@ -312,116 +322,39 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
 
-      - name: Get current version
-        id: get_version
-        run: |
-          CURRENT_VERSION=$(node -p "require('./package.json').version")
-          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-          echo "Current version: $CURRENT_VERSION"
+      - name: Install dependencies
+        run: npm install
 
-      - name: Calculate next version
-        id: next_version
-        run: |
-          CURRENT_VERSION="${{ steps.get_version.outputs.current_version }}"
-          IFS='.' read -ra VERSION_PARTS <<< "$CURRENT_VERSION"
-          MAJOR=${VERSION_PARTS[0]}
-          MINOR=${VERSION_PARTS[1]}
-          PATCH=${VERSION_PARTS[2]}
-          
-          # Increment patch version
-          NEW_PATCH=$((PATCH + 1))
-          NEXT_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
-          
-          echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
-          echo "Next version: $NEXT_VERSION"
+      - name: Download updated package.json
+        uses: actions/download-artifact@v4
+        with:
+          name: package-json
+          path: .
 
-      - name: Update version in package.json
-        run: |
-          NEXT_VERSION="${{ steps.next_version.outputs.next_version }}"
-          npm version $NEXT_VERSION --no-git-tag-version
-          echo "Updated package.json version to $NEXT_VERSION"
-
-      - name: Configure Git
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-      - name: Commit version update
-        id: commit
-        run: |
-          git add package.json
-          git commit -m "chore: bump version to ${{ steps.next_version.outputs.next_version }}" || exit 0
-          echo "commit_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-
-      - name: Check if tag already exists
-        id: check_tag
-        run: |
-          NEXT_VERSION="${{ steps.next_version.outputs.next_version }}"
-          TAG_NAME="v$NEXT_VERSION"
-          if git ls-remote --tags origin "$TAG_NAME" | grep -q "$TAG_NAME"; then
-            echo "tag_exists=true" >> $GITHUB_OUTPUT
-            echo "Tag $TAG_NAME already exists, skipping tag creation"
-          else
-            echo "tag_exists=false" >> $GITHUB_OUTPUT
-            echo "Tag $TAG_NAME does not exist, will create it"
-          fi
-
-      - name: Commit and push version update
-        if: steps.check_tag.outputs.tag_exists == 'false'
-        run: |
-          git push origin HEAD:master
-          echo "Pushed version update to master"
-
-      - name: Download all artifacts for release
-        if: steps.check_tag.outputs.tag_exists == 'false'
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: '*-release-artifact'
           path: ./release-artifacts
           merge-multiple: false
 
-      - name: List artifacts for release
-        if: steps.check_tag.outputs.tag_exists == 'false'
+      - name: Configure Git
         run: |
-          echo "Artifacts downloaded:"
-          find ./release-artifacts -type f || echo "No artifacts found"
-          ls -la ./release-artifacts/*/ 2>/dev/null || echo "No artifacts in subdirectories"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
 
-      - name: Create and push tag
-        if: steps.check_tag.outputs.tag_exists == 'false'
-        id: create_tag
+      - name: Prepare artifacts for semantic-release
         run: |
-          NEXT_VERSION="${{ steps.next_version.outputs.next_version }}"
-          TAG_NAME="v$NEXT_VERSION"
-          git tag -a "$TAG_NAME" -m "Release $TAG_NAME: Auto-generated after successful build"
-          git push origin "$TAG_NAME"
-          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
-          echo "Created and pushed tag: $TAG_NAME"
+          mkdir -p release
+          find ./release-artifacts -type f -exec cp {} release/ \;
+          ls -la release/
 
-      - name: Create Release
-        if: steps.check_tag.outputs.tag_exists == 'false'
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            ./release-artifacts/**/*
-          tag_name: ${{ steps.create_tag.outputs.tag_name }}
-          name: Release ${{ steps.create_tag.outputs.tag_name }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
+      - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Summary
         run: |
-          echo "## Version Update Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- Previous version: ${{ steps.get_version.outputs.current_version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- New version: ${{ steps.next_version.outputs.next_version }}" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ steps.check_tag.outputs.tag_exists }}" == "false" ]; then
-            echo "- Tag created: ${{ steps.create_tag.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
-            echo "- Release created: ${{ steps.create_tag.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- Tag already exists, skipped" >> $GITHUB_STEP_SUMMARY
-          fi
+          npx semantic-release

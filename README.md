@@ -12,7 +12,7 @@ A Minecraft launcher built with Electron, React, and TypeScript.
 
 ## Requirements
 
-- Node.js 18+
+- Node.js 22.14.0 or higher (required for semantic-release)
 - npm or yarn
 
 ## Installation

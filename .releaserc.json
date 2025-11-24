@@ -1,0 +1,56 @@
+{
+  "branches": [
+    "master",
+    "main"
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md"
+      }
+    ],
+    [
+      "@semantic-release/npm",
+      {
+        "npmPublish": false
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "package.json",
+          "package-lock.json",
+          "CHANGELOG.md"
+        ],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "release/*.exe",
+            "label": "Windows Portable"
+          },
+          {
+            "path": "release/*.AppImage",
+            "label": "Linux AppImage"
+          },
+          {
+            "path": "release/*.dmg",
+            "label": "macOS DMG"
+          }
+        ],
+        "successComment": false,
+        "releasedLabels": false,
+        "name": "${nextRelease.version}"
+      }
+    ]
+  ]
+}
+
