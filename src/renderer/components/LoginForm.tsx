@@ -28,28 +28,13 @@ export function LoginForm({ onLoginSuccess, qmWebUrl = 'https://qmweb.example.co
     setShowRegistrationLink(false)
 
     try {
-      // Сначала получаем список серверов, чтобы использовать первый доступный
-      let serverId = 1 // Дефолтный server_id
-      try {
-        const serversResponse = await fetch(`${API_BASE_URL}/servers`)
-        if (serversResponse.ok) {
-          const serversData = await serversResponse.json()
-          if (serversData.servers && serversData.servers.length > 0) {
-            serverId = serversData.servers[0].id
-          }
-        }
-      } catch (err) {
-        // Используем дефолтный server_id если не удалось получить список
-        console.warn('Could not fetch servers list, using default server_id:', err)
-      }
-
-      // Авторизация через игровой аккаунт
-      const response = await fetch(`${API_BASE_URL}/game-accounts/login`, {
+      // Авторизация через QMAdmin аккаунт
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username: login, password, server_id: serverId }),
+        body: JSON.stringify({ username: login, password }),
       })
 
       if (response.ok) {

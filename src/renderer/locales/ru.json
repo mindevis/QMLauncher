@@ -68,7 +68,8 @@
     "installError": "Ошибка при установке: {error}",
     "electronApiUnavailable": "Electron API не доступен",
     "installClientUnavailable": "Функция установки клиента недоступна",
-    "checkClientUnavailable": "Функция проверки установки клиента недоступна"
+    "checkClientUnavailable": "Функция проверки установки клиента недоступна",
+    "selectGameAccount": "Выберите игровой аккаунт"
   },
   "settings": {
     "title": "Настройки лаунчера",

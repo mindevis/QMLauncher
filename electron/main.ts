@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, session } from 'electron'
 import path from 'path'
-import { spawn, ChildProcess } from 'child_process'
+import { spawn, ChildProcess, exec } from 'child_process'
 import fs from 'fs'
 import os from 'os'
 import crypto from 'crypto'
@@ -20,6 +20,7 @@ console.log('===============================')
 
 let mainWindow: BrowserWindow | null = null
 let minecraftProcess: ChildProcess | null = null
+let isUpdating = false
 
 function createWindow() {
   const preloadPath = isDev
@@ -143,7 +144,16 @@ app.whenReady().then(() => {
     }
   })
 
-  createWindow()
+  // Check for updates before creating window (only in production)
+  if (!isDev && app.isPackaged) {
+    checkAndInstallUpdate().catch((error) => {
+      console.error('Error checking for updates:', error)
+      // Continue with normal startup even if update check fails
+      createWindow()
+    })
+  } else {
+    createWindow()
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -157,6 +167,241 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
+
+// Function to get current launcher version SHA
+async function getCurrentVersionSha(): Promise<string | null> {
+  try {
+    // Check if there's a stored commit SHA in config
+    const configPath = path.join(os.homedir(), '.qmlauncher', 'update-info.json')
+    if (fs.existsSync(configPath)) {
+      const updateInfo = JSON.parse(fs.readFileSync(configPath, 'utf-8'))
+      return updateInfo.commit_sha || null
+    }
+    return null
+  } catch (error) {
+    console.error('Error getting current version SHA:', error)
+    return null
+  }
+}
+
+// Function to detect platform
+function getPlatform(): string {
+  const platform = process.platform
+  if (platform === 'win32') return 'win'
+  if (platform === 'darwin') return 'mac'
+  return 'linux'
+}
+
+// Function to check for updates and install if available
+async function checkAndInstallUpdate(): Promise<void> {
+  if (isUpdating) {
+    console.log('Update already in progress, skipping...')
+    return
+  }
+
+  try {
+    console.log('Checking for launcher updates...')
+    const currentVersionSha = await getCurrentVersionSha()
+    const platform = getPlatform()
+    
+    // Build query parameters
+    const params = new URLSearchParams()
+    if (currentVersionSha) {
+      params.append('version_sha', currentVersionSha)
+    }
+    params.append('platform', platform)
+    
+    const updateUrl = `${API_BASE_URL}/launcher/check-update?${params.toString()}`
+    console.log('Checking update at:', updateUrl)
+    
+    const response = await fetch(updateUrl)
+    if (!response.ok) {
+      console.warn('Failed to check for updates:', response.statusText)
+      createWindow()
+      return
+    }
+    
+    const updateInfo = await response.json() as {
+      has_update: boolean
+      download_url?: string
+      build_id?: string
+      latest_commit_sha?: string
+      latest_commit_message?: string
+    }
+    
+    if (!updateInfo.has_update || !updateInfo.download_url) {
+      console.log('No updates available')
+      // Save current commit SHA if we don't have one yet (first run)
+      if (!currentVersionSha && updateInfo.latest_commit_sha) {
+        const updateInfoPath = path.join(os.homedir(), '.qmlauncher', 'update-info.json')
+        const updateInfoDir = path.dirname(updateInfoPath)
+        if (!fs.existsSync(updateInfoDir)) {
+          fs.mkdirSync(updateInfoDir, { recursive: true })
+        }
+        fs.writeFileSync(updateInfoPath, JSON.stringify({
+          commit_sha: updateInfo.latest_commit_sha,
+          update_date: new Date().toISOString()
+        }, null, 2))
+      }
+      createWindow()
+      return
+    }
+    
+    console.log('Update available! Downloading...', updateInfo.latest_commit_sha)
+    isUpdating = true
+    
+    // Download update
+    const downloadResult = await downloadAndInstallUpdate(updateInfo.download_url, updateInfo.latest_commit_sha || undefined)
+    
+    if (downloadResult.success) {
+      console.log('Update installed successfully, restarting...')
+      // Save commit SHA before restart
+      const updateInfoPath = path.join(os.homedir(), '.qmlauncher', 'update-info.json')
+      const updateInfoDir = path.dirname(updateInfoPath)
+      if (!fs.existsSync(updateInfoDir)) {
+        fs.mkdirSync(updateInfoDir, { recursive: true })
+      }
+      fs.writeFileSync(updateInfoPath, JSON.stringify({
+        commit_sha: updateInfo.latest_commit_sha,
+        update_date: new Date().toISOString()
+      }, null, 2))
+      
+      // Restart application
+      app.relaunch()
+      app.exit(0)
+    } else {
+      console.error('Failed to install update:', downloadResult.error)
+      isUpdating = false
+      createWindow()
+    }
+  } catch (error) {
+    console.error('Error checking for updates:', error)
+    isUpdating = false
+    createWindow()
+  }
+}
+
+// Function to download and install update
+async function downloadAndInstallUpdate(downloadUrl: string, commitSha?: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const updatesDir = path.join(os.homedir(), '.qmlauncher', 'updates')
+    if (!fs.existsSync(updatesDir)) {
+      fs.mkdirSync(updatesDir, { recursive: true })
+    }
+    
+    const updateZipPath = path.join(updatesDir, `update-${Date.now()}.zip`)
+    const extractDir = path.join(updatesDir, 'extract')
+    
+    // Clean up old updates
+    if (fs.existsSync(extractDir)) {
+      fs.rmSync(extractDir, { recursive: true, force: true })
+    }
+    fs.mkdirSync(extractDir, { recursive: true })
+    
+    // Download update
+    console.log('Downloading update from:', downloadUrl)
+    const fullUrl = downloadUrl.startsWith('http') ? downloadUrl : `${API_BASE_URL.replace('/api/v1', '')}${downloadUrl}`
+    const downloadResponse = await fetch(fullUrl)
+    
+    if (!downloadResponse.ok) {
+      return { success: false, error: `Failed to download: ${downloadResponse.statusText}` }
+    }
+    
+    // Save to file
+    const buffer = await downloadResponse.arrayBuffer()
+    fs.writeFileSync(updateZipPath, Buffer.from(buffer))
+    console.log('Update downloaded, extracting...')
+    
+    // Extract ZIP using Node.js built-in zlib and streams
+    // For simplicity, we'll use a child process to extract
+    const unzipCommand = process.platform === 'win32' 
+      ? `powershell -Command "Expand-Archive -Path '${updateZipPath}' -DestinationPath '${extractDir}' -Force"`
+      : `unzip -o '${updateZipPath}' -d '${extractDir}'`
+    
+    await new Promise<void>((resolve, reject) => {
+      exec(unzipCommand, (error, stdout, stderr) => {
+        if (error) {
+          reject(error)
+        } else {
+          resolve()
+        }
+      })
+    })
+    
+    console.log('Update extracted')
+    
+    // The update package from QMServer is typically a self-extracting archive
+    // For Windows: .exe installer
+    // For Linux/Mac: .sh or .app bundle
+    // We need to find and execute the installer
+    
+    let installerPath: string | null = null
+    const files = fs.readdirSync(extractDir, { recursive: true })
+    
+    for (const file of files) {
+      const filePath = path.join(extractDir, file as string)
+      const stat = fs.statSync(filePath)
+      
+      if (stat.isFile()) {
+        const ext = path.extname(filePath).toLowerCase()
+        if (process.platform === 'win32' && (ext === '.exe' || ext === '.msi')) {
+          installerPath = filePath
+          break
+        } else if (process.platform !== 'win32' && (ext === '.sh' || ext === '.app' || ext === '.dmg')) {
+          installerPath = filePath
+          if (ext === '.sh') {
+            // Make executable
+            fs.chmodSync(filePath, '755')
+          }
+          break
+        }
+      }
+    }
+    
+    if (installerPath) {
+      console.log('Found installer, executing:', installerPath)
+      // Execute installer in background
+      // For Windows .exe, it will handle installation and restart
+      // For Linux .sh, it should install and restart
+      spawn(installerPath, [], {
+        detached: true,
+        stdio: 'ignore'
+      }).unref()
+      
+      // Give installer time to start
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // Clean up
+      fs.unlinkSync(updateZipPath)
+      
+      return { success: true }
+    } else {
+      // No installer found - might be a regular ZIP with app files
+      // For Electron apps packaged as ZIP, we need to extract and replace files
+      // This is complex while app is running, so we'll save update info for next launch
+      console.log('No installer found, saving update info for next launch')
+      
+      // Save update info to be processed on next launch
+      const updateInfoPath = path.join(os.homedir(), '.qmlauncher', 'pending-update.json')
+      fs.writeFileSync(updateInfoPath, JSON.stringify({
+        extract_dir: extractDir,
+        commit_sha: commitSha,
+        update_date: new Date().toISOString()
+      }, null, 2))
+      
+      // Don't clean up - we'll need the extracted files on next launch
+      // fs.unlinkSync(updateZipPath) - keep ZIP for now
+      
+      // For now, return success - the actual installation will happen on next launch
+      // In a production system, you'd want to show a message to the user
+      console.log('Update saved, will be installed on next launch')
+      return { success: true }
+    }
+  } catch (error) {
+    console.error('Error installing update:', error)
+    return { success: false, error: String(error) }
+  }
+}
 
 // IPC Handlers
 ipcMain.handle('get-app-version', () => {

@@ -9,7 +9,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Progress } from './ui/progress'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
+import { Label } from './ui/label'
 import { useI18n } from '../contexts/I18nContext'
+
+interface GameAccount {
+  id: number
+  username: string
+  email?: string
+  uuid?: string
+  server_id: number
+}
 
 interface ServersTabProps {
   authToken?: string | null
@@ -22,9 +32,12 @@ export function ServersTab({ authToken }: ServersTabProps) {
   const [isLaunching, setIsLaunching] = useState(false)
   const [installingServerId, setInstallingServerId] = useState<number | null>(null)
   const [installationProgress, setInstallationProgress] = useState<{ stage: string; progress: number } | null>(null)
+  const [gameAccounts, setGameAccounts] = useState<GameAccount[]>([])
+  const [selectedGameAccounts, setSelectedGameAccounts] = useState<Record<number, number>>({}) // server_id -> game_account_id
 
   useEffect(() => {
     loadServers()
+    loadGameAccounts()
     
     // Listen for installation progress updates
     if (window.electronAPI?.onInstallationProgress) {
@@ -32,7 +45,35 @@ export function ServersTab({ authToken }: ServersTabProps) {
         setInstallationProgress(progress)
       })
     }
-  }, [])
+  }, [authToken])
+
+  const loadGameAccounts = async () => {
+    if (!authToken) return
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/game-accounts/my-accounts`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+        },
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setGameAccounts(data.accounts || [])
+        
+        // Auto-select first account for each server if not already selected
+        const newSelections: Record<number, number> = { ...selectedGameAccounts }
+        data.accounts?.forEach((account: GameAccount) => {
+          if (!newSelections[account.server_id]) {
+            newSelections[account.server_id] = account.id
+          }
+        })
+        setSelectedGameAccounts(newSelections)
+      }
+    } catch (error) {
+      console.error('Error loading game accounts:', error)
+    }
+  }
 
   useEffect(() => {
     // Check installation status for all servers when servers list changes
@@ -588,17 +629,47 @@ export function ServersTab({ authToken }: ServersTabProps) {
                     </CardDescription>
                   )}
 
+                  {/* Game Account Selection */}
+                  {authToken && gameAccounts.filter(acc => acc.server_id === server.id).length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor={`game-account-${server.id}`} className="text-xs">
+                        {t('servers.selectGameAccount')}
+                      </Label>
+                      <Select
+                        value={selectedGameAccounts[server.id]?.toString() || ''}
+                        onValueChange={(value: string) => {
+                          setSelectedGameAccounts(prev => ({
+                            ...prev,
+                            [server.id]: parseInt(value)
+                          }))
+                        }}
+                      >
+                        <SelectTrigger id={`game-account-${server.id}`} className="w-full">
+                          <SelectValue placeholder={t('servers.selectGameAccount')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {gameAccounts
+                            .filter(acc => acc.server_id === server.id)
+                            .map((account) => (
+                              <SelectItem key={account.id} value={account.id.toString()}>
+                                {account.username}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </CardContent>
 
-                <CardFooter className="flex gap-2">
+                <CardFooter className="flex gap-2 flex-col">
                   {isClientInstalled(server) ? (
                     <Button
                       onClick={(e) => {
                         e.stopPropagation()
                         handleLaunch(server)
                       }}
-                      disabled={isLaunching || server.server_status === "offline"}
-                      className="flex-1"
+                      disabled={isLaunching || server.server_status === "offline" || (authToken && gameAccounts.filter(acc => acc.server_id === server.id).length > 0 && !selectedGameAccounts[server.id]) || false}
+                      className="w-full"
                       size="sm"
                     >
                       {isLaunching ? (

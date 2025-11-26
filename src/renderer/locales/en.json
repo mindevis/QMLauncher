@@ -68,7 +68,8 @@
     "installError": "Error installing: {error}",
     "electronApiUnavailable": "Electron API is not available",
     "installClientUnavailable": "Client installation function is not available",
-    "checkClientUnavailable": "Client installation check function is not available"
+    "checkClientUnavailable": "Client installation check function is not available",
+    "selectGameAccount": "Select game account"
   },
   "settings": {
     "title": "Launcher settings",
