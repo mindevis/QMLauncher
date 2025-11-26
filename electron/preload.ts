@@ -19,6 +19,29 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   onMinecraftError: (callback: (error: string) => void) => {
     ipcRenderer.on('minecraft-error', (_event, error) => callback(error))
+  },
+  // Window controls
+  windowMinimize: () => ipcRenderer.invoke('window-minimize'),
+  windowMaximize: () => ipcRenderer.invoke('window-maximize'),
+  windowClose: () => ipcRenderer.invoke('window-close'),
+  windowIsMaximized: () => ipcRenderer.invoke('window-is-maximized'),
+  // Theme management
+  getCustomThemes: () => ipcRenderer.invoke('get-custom-themes'),
+  saveCustomTheme: (theme: any) => ipcRenderer.invoke('save-custom-theme', theme),
+  removeCustomTheme: (themeId: string) => ipcRenderer.invoke('remove-custom-theme', themeId),
+  // Embedded servers
+  getEmbeddedServers: () => ipcRenderer.invoke('get-embedded-servers'),
+  // Auth token management
+  saveAuthToken: (token: string) => ipcRenderer.invoke('save-auth-token', token),
+  getAuthToken: () => ipcRenderer.invoke('get-auth-token'),
+  clearAuthToken: () => ipcRenderer.invoke('clear-auth-token'),
+  // Client installation check
+  checkClientInstalled: (serverId: number) => ipcRenderer.invoke('check-client-installed', serverId),
+  // Minecraft client installation
+  installMinecraftClient: (version: string) => ipcRenderer.invoke('install-minecraft-client', version),
+  // Installation progress listener
+  onInstallationProgress: (callback: (progress: { stage: string; progress: number }) => void) => {
+    ipcRenderer.on('installation-progress', (_event, progress) => callback(progress))
   }
 })
 

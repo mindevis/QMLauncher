@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { User, Plus, Trash2, Edit2 } from 'lucide-react'
 import { cn } from '../lib/utils'
+import { useI18n } from '../contexts/I18nContext'
 import './ProfilesTab.css'
 
 interface Profile {
@@ -12,6 +13,7 @@ interface Profile {
 }
 
 export function ProfilesTab() {
+  const { t } = useI18n()
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
 
@@ -19,7 +21,7 @@ export function ProfilesTab() {
   const mockProfiles: Profile[] = [
     {
       id: '1',
-      name: 'Основной профиль',
+      name: t('profiles.defaultProfile'),
       username: 'Player1',
       serverId: 1,
       lastPlayed: '2024-01-15',
@@ -36,21 +38,21 @@ export function ProfilesTab() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
           <User className="w-6 h-6" />
-          Профили игроков
+          {t('profiles.title')}
         </h2>
         <button className="minecraft-button px-4 py-2 flex items-center gap-2">
           <Plus className="w-4 h-4" />
-          Создать профиль
+          {t('profiles.create')}
         </button>
       </div>
 
       {profiles.length === 0 ? (
         <div className="minecraft-card p-12 text-center">
           <User className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-          <p className="text-xl text-gray-300 mb-2">Нет профилей</p>
-          <p className="text-gray-500 mb-4">Создайте профиль для игры на серверах</p>
+          <p className="text-xl text-gray-300 mb-2">{t('profiles.noProfiles')}</p>
+          <p className="text-gray-500 mb-4">{t('profiles.noProfilesDescription')}</p>
           <button className="minecraft-button">
-            Создать первый профиль
+            {t('profiles.createFirst')}
           </button>
         </div>
       ) : (
@@ -86,7 +88,7 @@ export function ProfilesTab() {
 
               {profile.lastPlayed && (
                 <p className="text-xs text-gray-500">
-                  Последний раз играл: {new Date(profile.lastPlayed).toLocaleDateString('ru-RU')}
+                  {t('profiles.lastPlayed', { date: new Date(profile.lastPlayed).toLocaleDateString() })}
                 </p>
               )}
             </div>

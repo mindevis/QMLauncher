@@ -72,6 +72,9 @@ declare global {
         gameArgs: string[]
         jvmArgs: string[]
         workingDirectory: string
+        minecraftVersion?: string
+        hwid?: string | null
+        launcherConfig?: any
       }) => Promise<{ success: boolean; error?: string; pid?: number }>
       stopMinecraft: () => Promise<{ success: boolean; error?: string }>
       getLauncherDbConfig: (serverId: number) => Promise<{ success: boolean; config?: Record<string, string>; mods?: any[]; plugins?: any[]; error?: string }>

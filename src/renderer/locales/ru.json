@@ -1,0 +1,110 @@
+{
+  "common": {
+    "close": "Закрыть",
+    "retry": "Попробовать снова",
+    "loading": "Загрузка...",
+    "error": "Ошибка",
+    "unknownError": "Неизвестная ошибка",
+    "save": "Сохранить",
+    "refresh": "Обновить"
+  },
+  "app": {
+    "title": "QMLauncher",
+    "servers": "Сервера",
+    "news": "Новости"
+  },
+  "login": {
+    "title": "Вход в лаунчер",
+    "description": "Введите логин и пароль для входа",
+    "loginLabel": "Логин",
+    "loginPlaceholder": "Введите логин",
+    "passwordLabel": "Пароль",
+    "passwordPlaceholder": "Введите пароль",
+    "submitButton": "Войти",
+    "submitting": "Вход...",
+    "authError": "Ошибка авторизации",
+    "connectionError": "Не удалось подключиться к серверу",
+    "registerLink": "Зарегистрироваться в QMWeb"
+  },
+  "error": {
+    "connectionTitle": "Ошибка подключения",
+    "connectionFailed": "Не удалось подключиться к серверу: {error}"
+  },
+  "window": {
+    "minimize": "Свернуть",
+    "maximize": "Развернуть",
+    "restore": "Восстановить",
+    "close": "Закрыть"
+  },
+  "connection": {
+    "checking": "Проверка подключения к серверу..."
+  },
+  "news": {
+    "title": "Новости",
+    "welcomeTitle": "Добро пожаловать в QMLauncher",
+    "welcomeDescription": "Новый современный лаунчер для Minecraft серверов с красивым интерфейсом и удобным управлением."
+  },
+  "servers": {
+    "title": "Сервера",
+    "loading": "Загрузка серверов...",
+    "server": "сервер",
+    "servers2": "сервера",
+    "servers5": "серверов",
+    "refresh": "Обновить список",
+    "play": "Играть",
+    "install": "Установить",
+    "installing": "Установка...",
+    "settings": "Настройки сервера",
+    "serverAddressMissing": "Адрес или порт сервера не указаны",
+    "serverConfigError": "Не удалось загрузить конфигурацию сервера",
+    "clientNotInstalled": "Клиент Minecraft {version} не установлен. Пожалуйста, установите его через кнопку \"Установить\".",
+    "modsCheckError": "Ошибка при проверке модов: {error}",
+    "launchError": "Ошибка при запуске Minecraft: {error}",
+    "launchErrorGeneric": "Ошибка при запуске: {error}",
+    "installClientError": "Ошибка при установке клиента: {error}",
+    "installModsError": "Ошибка при загрузке модов: {error}",
+    "installConfigError": "Не удалось проверить конфигурацию сервера",
+    "installComplete": "Установка завершена! Клиент и моды для сервера \"{name}\" готовы к запуску.",
+    "installError": "Ошибка при установке: {error}",
+    "electronApiUnavailable": "Electron API не доступен",
+    "installClientUnavailable": "Функция установки клиента недоступна",
+    "checkClientUnavailable": "Функция проверки установки клиента недоступна"
+  },
+  "settings": {
+    "title": "Настройки лаунчера",
+    "save": "Сохранить",
+    "saved": "Настройки сохранены!",
+    "javaSettings": "Настройки Java",
+    "javaPath": "Путь к Java",
+    "javaPathPlaceholder": "Автоопределение",
+    "memory": "Память (MB): {value}",
+    "memoryMin": "1 GB",
+    "memoryMax": "8 GB",
+    "displaySettings": "Настройки отображения",
+    "windowWidth": "Ширина окна",
+    "windowHeight": "Высота окна",
+    "fullscreen": "Полноэкранный режим",
+    "about": "О лаунчере",
+    "aboutDescription": "QMLauncher - современный лаунчер для Minecraft серверов",
+    "version": "Версия: {version}",
+    "versionLoading": "Загрузка...",
+    "versionN/A": "N/A"
+  },
+  "profiles": {
+    "title": "Профили игроков",
+    "create": "Создать профиль",
+    "createFirst": "Создать первый профиль",
+    "noProfiles": "Нет профилей",
+    "noProfilesDescription": "Создайте профиль для игры на серверах",
+    "lastPlayed": "Последний раз играл: {date}",
+    "defaultProfile": "Основной профиль"
+  },
+  "theme": {
+    "switchToLight": "Переключить на светлую тему",
+    "switchToDark": "Переключить на темную тему"
+  },
+  "language": {
+    "switch": "Переключить язык"
+  }
+}
+

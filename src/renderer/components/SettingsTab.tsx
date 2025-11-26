@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Settings as SettingsIcon, Save, Monitor, HardDrive } from 'lucide-react'
+import { useI18n } from '../contexts/I18nContext'
 import './SettingsTab.css'
 
 export function SettingsTab() {
+  const { t } = useI18n()
   const [settings, setSettings] = useState({
     javaPath: '',
     memory: 2048,
@@ -13,7 +15,7 @@ export function SettingsTab() {
 
   const handleSave = () => {
     // Save settings logic
-    alert('Настройки сохранены!')
+    alert(t('settings.saved'))
   }
 
   return (
@@ -21,14 +23,14 @@ export function SettingsTab() {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
           <SettingsIcon className="w-6 h-6" />
-          Настройки лаунчера
+          {t('settings.title')}
         </h2>
         <button
           onClick={handleSave}
           className="minecraft-button px-4 py-2 flex items-center gap-2"
         >
           <Save className="w-4 h-4" />
-          Сохранить
+          {t('settings.save')}
         </button>
       </div>
 
@@ -37,24 +39,24 @@ export function SettingsTab() {
         <div className="minecraft-card p-6">
           <div className="flex items-center gap-2 mb-4">
             <Monitor className="w-5 h-5 text-minecraft-button-green" />
-            <h3 className="text-lg font-bold text-white">Настройки Java</h3>
+            <h3 className="text-lg font-bold text-white">{t('settings.javaSettings')}</h3>
           </div>
           <div className="space-y-4">
             <div>
               <label className="block text-sm text-gray-400 mb-2">
-                Путь к Java
+                {t('settings.javaPath')}
               </label>
               <input
                 type="text"
                 value={settings.javaPath}
                 onChange={(e) => setSettings({ ...settings, javaPath: e.target.value })}
-                placeholder="Автоопределение"
+                placeholder={t('settings.javaPathPlaceholder')}
                 className="minecraft-input w-full"
               />
             </div>
             <div>
               <label className="block text-sm text-gray-400 mb-2">
-                Память (MB): {settings.memory}
+                {t('settings.memory', { value: settings.memory })}
               </label>
               <input
                 type="range"
@@ -66,8 +68,8 @@ export function SettingsTab() {
                 className="w-full"
               />
               <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>1 GB</span>
-                <span>8 GB</span>
+                <span>{t('settings.memoryMin')}</span>
+                <span>{t('settings.memoryMax')}</span>
               </div>
             </div>
           </div>
@@ -77,13 +79,13 @@ export function SettingsTab() {
         <div className="minecraft-card p-6">
           <div className="flex items-center gap-2 mb-4">
             <HardDrive className="w-5 h-5 text-minecraft-button-green" />
-            <h3 className="text-lg font-bold text-white">Настройки отображения</h3>
+            <h3 className="text-lg font-bold text-white">{t('settings.displaySettings')}</h3>
           </div>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-gray-400 mb-2">
-                  Ширина окна
+                  {t('settings.windowWidth')}
                 </label>
                 <input
                   type="number"
@@ -94,7 +96,7 @@ export function SettingsTab() {
               </div>
               <div>
                 <label className="block text-sm text-gray-400 mb-2">
-                  Высота окна
+                  {t('settings.windowHeight')}
                 </label>
                 <input
                   type="number"
@@ -112,7 +114,7 @@ export function SettingsTab() {
                   onChange={(e) => setSettings({ ...settings, fullscreen: e.target.checked })}
                   className="w-4 h-4 rounded"
                 />
-                <span className="text-sm text-gray-400">Полноэкранный режим</span>
+                <span className="text-sm text-gray-400">{t('settings.fullscreen')}</span>
               </label>
             </div>
           </div>
@@ -121,10 +123,10 @@ export function SettingsTab() {
 
       {/* About */}
       <div className="minecraft-card p-6">
-        <h3 className="text-lg font-bold text-white mb-4">О лаунчере</h3>
+        <h3 className="text-lg font-bold text-white mb-4">{t('settings.about')}</h3>
         <div className="space-y-2 text-sm text-gray-400">
-          <p>QMLauncher - современный лаунчер для Minecraft серверов</p>
-          <p>Версия: {window.electronAPI ? 'Загрузка...' : 'N/A'}</p>
+          <p>{t('settings.aboutDescription')}</p>
+          <p>{t('settings.version', { version: window.electronAPI ? t('settings.versionLoading') : t('settings.versionN/A') })}</p>
         </div>
       </div>
     </div>

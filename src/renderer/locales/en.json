@@ -1,0 +1,110 @@
+{
+  "common": {
+    "close": "Close",
+    "retry": "Try again",
+    "loading": "Loading...",
+    "error": "Error",
+    "unknownError": "Unknown error",
+    "save": "Save",
+    "refresh": "Refresh"
+  },
+  "app": {
+    "title": "QMLauncher",
+    "servers": "Servers",
+    "news": "News"
+  },
+  "login": {
+    "title": "Login to launcher",
+    "description": "Enter login and password to sign in",
+    "loginLabel": "Login",
+    "loginPlaceholder": "Enter login",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter password",
+    "submitButton": "Sign In",
+    "submitting": "Signing in...",
+    "authError": "Authentication error",
+    "connectionError": "Failed to connect to server",
+    "registerLink": "Register in QMWeb"
+  },
+  "error": {
+    "connectionTitle": "Connection Error",
+    "connectionFailed": "Failed to connect to server: {error}"
+  },
+  "window": {
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close"
+  },
+  "connection": {
+    "checking": "Checking server connection..."
+  },
+  "news": {
+    "title": "News",
+    "welcomeTitle": "Welcome to QMLauncher",
+    "welcomeDescription": "A new modern launcher for Minecraft servers with a beautiful interface and convenient management."
+  },
+  "servers": {
+    "title": "Servers",
+    "loading": "Loading servers...",
+    "server": "server",
+    "servers2": "servers",
+    "servers5": "servers",
+    "refresh": "Refresh list",
+    "play": "Play",
+    "install": "Install",
+    "installing": "Installing...",
+    "settings": "Server settings",
+    "serverAddressMissing": "Server address or port not specified",
+    "serverConfigError": "Failed to load server configuration",
+    "clientNotInstalled": "Minecraft client {version} is not installed. Please install it using the \"Install\" button.",
+    "modsCheckError": "Error checking mods: {error}",
+    "launchError": "Error launching Minecraft: {error}",
+    "launchErrorGeneric": "Error launching: {error}",
+    "installClientError": "Error installing client: {error}",
+    "installModsError": "Error loading mods: {error}",
+    "installConfigError": "Failed to verify server configuration",
+    "installComplete": "Installation complete! Client and mods for server \"{name}\" are ready to launch.",
+    "installError": "Error installing: {error}",
+    "electronApiUnavailable": "Electron API is not available",
+    "installClientUnavailable": "Client installation function is not available",
+    "checkClientUnavailable": "Client installation check function is not available"
+  },
+  "settings": {
+    "title": "Launcher settings",
+    "save": "Save",
+    "saved": "Settings saved!",
+    "javaSettings": "Java Settings",
+    "javaPath": "Java Path",
+    "javaPathPlaceholder": "Auto-detect",
+    "memory": "Memory (MB): {value}",
+    "memoryMin": "1 GB",
+    "memoryMax": "8 GB",
+    "displaySettings": "Display Settings",
+    "windowWidth": "Window Width",
+    "windowHeight": "Window Height",
+    "fullscreen": "Fullscreen Mode",
+    "about": "About Launcher",
+    "aboutDescription": "QMLauncher - a modern launcher for Minecraft servers",
+    "version": "Version: {version}",
+    "versionLoading": "Loading...",
+    "versionN/A": "N/A"
+  },
+  "profiles": {
+    "title": "Player Profiles",
+    "create": "Create Profile",
+    "createFirst": "Create First Profile",
+    "noProfiles": "No profiles",
+    "noProfilesDescription": "Create a profile to play on servers",
+    "lastPlayed": "Last played: {date}",
+    "defaultProfile": "Default Profile"
+  },
+  "theme": {
+    "switchToLight": "Switch to light theme",
+    "switchToDark": "Switch to dark theme"
+  },
+  "language": {
+    "switch": "Switch language"
+  }
+}
+

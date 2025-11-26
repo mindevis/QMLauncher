@@ -1,163 +1,168 @@
 import { useState, useEffect } from 'react'
 import { ServersTab } from './components/ServersTab'
-import { ProfilesTab } from './components/ProfilesTab'
-import { SettingsTab } from './components/SettingsTab'
-import { Server, Settings, Bell, Search, HelpCircle, Newspaper } from 'lucide-react'
+import { NewsTab } from './components/NewsTab'
+import { TitleBar } from './components/TitleBar'
+import { ServerConnectionCheck } from './components/ServerConnectionCheck'
+import { LoginForm } from './components/LoginForm'
+import { ErrorModal } from './components/ErrorModal'
+import { QMLogo } from './components/QMLogo'
+import { Server, Newspaper } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Button } from './components/ui/button'
+import { useI18n } from './contexts/I18nContext'
 import './App.css'
 
-type Tab = 'servers' | 'profiles' | 'settings' | 'news' | 'support'
+type Tab = 'servers' | 'news'
+type AppState = 'checking' | 'login' | 'authenticated' | 'error'
 
 function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('servers')
+  const { t } = useI18n()
+  const [activeTab, setActiveTab] = useState<Tab>('news')
   const [appVersion, setAppVersion] = useState<string>('')
+  const [appState, setAppState] = useState<AppState>('checking')
+  const [authToken, setAuthToken] = useState<string | null>(null)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
+  const [showErrorModal, setShowErrorModal] = useState(false)
 
   useEffect(() => {
-    if (window.electronAPI) {
+    // Get version from build-time constant or Electron API
+    const buildVersion = typeof __QM_LAUNCHER_VERSION__ !== 'undefined' ? __QM_LAUNCHER_VERSION__ : undefined
+    if (buildVersion) {
+      setAppVersion(buildVersion)
+    } else if (window.electronAPI) {
       window.electronAPI.getAppVersion().then((version: string) => {
         setAppVersion(version)
+      }).catch(() => {
+        // Fallback if getAppVersion fails
+      })
+    }
+    
+    // Check if user is already authenticated
+    if (window.electronAPI) {
+      window.electronAPI.getAuthToken?.().then((token: string | null) => {
+        if (token) {
+          setAuthToken(token)
+          setAppState('authenticated')
+        }
+      }).catch(() => {
+        // No token, will show login form after server check
       })
     }
   }, [])
 
-  return (
-    <div className="h-screen flex bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      {/* Left Sidebar */}
-      <aside className="w-64 bg-gray-800/90 border-r-2 border-gray-700/50 flex flex-col">
-        <div className="p-4 border-b border-gray-700/50">
-          <h1 className="text-xl font-bold text-white">QMLauncher</h1>
-          {appVersion && (
-            <span className="text-xs text-gray-400">v{appVersion}</span>
-          )}
-        </div>
-        
-        <nav className="flex-1 p-4 space-y-2">
-          <button
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-all ${
-              activeTab === 'servers'
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'text-gray-300 hover:bg-gray-700/50'
-            }`}
-            onClick={() => setActiveTab('servers')}
-          >
-            <Server className="w-5 h-5" />
-            Сервера
-          </button>
-          
-          <button
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-all ${
-              activeTab === 'profiles'
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'text-gray-300 hover:bg-gray-700/50'
-            }`}
-            onClick={() => setActiveTab('profiles')}
-          >
-            <Server className="w-5 h-5" />
-            Сервера
-          </button>
-          
-          <button
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-all ${
-              activeTab === 'settings'
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'text-gray-300 hover:bg-gray-700/50'
-            }`}
-            onClick={() => setActiveTab('settings')}
-          >
-            <Settings className="w-5 h-5" />
-            Настройки
-          </button>
-          
-          <button
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-all ${
-              activeTab === 'news'
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'text-gray-300 hover:bg-gray-700/50'
-            }`}
-            onClick={() => setActiveTab('news')}
-          >
-            <Newspaper className="w-5 h-5" />
-            Новости
-          </button>
-          
-          <button
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-all ${
-              activeTab === 'support'
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'text-gray-300 hover:bg-gray-700/50'
-            }`}
-            onClick={() => setActiveTab('support')}
-          >
-            <HelpCircle className="w-5 h-5" />
-            Поддержка
-          </button>
-        </nav>
-        
-        <div className="p-4 border-t border-gray-700/50">
-          <a
-            href="#"
-            className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-2"
-          >
-            <span className="text-gray-500">&lt;</span> QMWeb
-          </a>
-        </div>
-      </aside>
+  const handleServerAvailable = () => {
+    if (authToken) {
+      setAppState('authenticated')
+    } else {
+      setAppState('login')
+    }
+  }
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="bg-gray-800/90 border-b-2 border-gray-700/50 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">
-              {activeTab === 'servers' && 'Сервера'}
-              {activeTab === 'profiles' && 'Профили'}
-              {activeTab === 'settings' && 'Настройки'}
-              {activeTab === 'news' && 'Новости'}
-              {activeTab === 'support' && 'Поддержка'}
-            </h2>
-            
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Q Search"
-                  className="bg-gray-700/50 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 w-64"
-                />
-              </div>
-              
-              <button className="p-2 text-gray-400 hover:text-white transition-colors">
-                <Bell className="w-5 h-5" />
-              </button>
-              
-              <button className="p-2 text-gray-400 hover:text-white transition-colors">
-                <Settings className="w-5 h-5" />
-              </button>
-              
-              <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center">
-                <span className="text-white text-xs font-bold">U</span>
+  const handleServerUnavailable = (error: string) => {
+    setConnectionError(error)
+    setShowErrorModal(true)
+    setAppState('login') // Показываем форму авторизации за модальным окном
+  }
+
+  const handleRetryConnection = () => {
+    setShowErrorModal(false)
+    setConnectionError(null)
+    setAppState('checking')
+  }
+
+  const handleCloseErrorModal = () => {
+    setShowErrorModal(false)
+  }
+
+  const handleLoginSuccess = (token: string) => {
+    setAuthToken(token)
+    setAppState('authenticated')
+  }
+
+  return (
+    <div className="h-screen flex flex-col overflow-hidden drag-region bg-transparent">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Title Bar */}
+        <TitleBar />
+
+        <div className="flex flex-1 overflow-hidden bg-card">
+        {/* Left Sidebar Menu */}
+        <aside className="w-64 backdrop-blur-xl flex flex-col bg-card">
+          {/* Logo */}
+          <div className="p-6">
+            <div className="flex items-center gap-3">
+              <QMLogo className="h-10 w-10 dark:invert" />
+              <div>
+                <h1 className="text-xl font-bold text-foreground">
+                  QMLauncher
+                </h1>
+                {appVersion && (
+                  <span className="text-xs font-mono text-muted-foreground">
+                    v{appVersion}
+                  </span>
+                )}
               </div>
             </div>
           </div>
-        </header>
+          
+          {/* Navigation */}
+          <nav className="flex-1 p-4 space-y-2 no-drag">
+            <Button
+              variant={activeTab === 'news' ? 'default' : 'ghost'}
+              className="w-full justify-start no-drag"
+              onClick={() => setActiveTab('news')}
+            >
+              <Newspaper className="w-5 h-5 mr-3" />
+              {t('app.news')}
+            </Button>
+            
+            <Button
+              variant={activeTab === 'servers' ? 'default' : 'ghost'}
+              className="w-full justify-start no-drag"
+              onClick={() => setActiveTab('servers')}
+            >
+              <Server className="w-5 h-5 mr-3" />
+              {t('app.servers')}
+            </Button>
+          </nav>
+        </aside>
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-auto p-6">
-          {activeTab === 'servers' && <ServersTab />}
-          {activeTab === 'profiles' && <ProfilesTab />}
-          {activeTab === 'settings' && <SettingsTab />}
-          {activeTab === 'news' && (
-            <div className="text-center py-12">
-              <Newspaper className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-xl text-gray-400">Новости</p>
-            </div>
+        {/* Main Content */}
+        <main className="flex-1 overflow-hidden no-drag bg-background rounded-2xl m-2 ml-0">
+          {appState === 'checking' && (
+            <ServerConnectionCheck
+              onServerAvailable={handleServerAvailable}
+              onServerUnavailable={handleServerUnavailable}
+            />
           )}
-          {activeTab === 'support' && (
-            <div className="text-center py-12">
-              <HelpCircle className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-xl text-gray-400">Поддержка</p>
-            </div>
+          
+          {appState === 'login' && (
+            <LoginForm onLoginSuccess={handleLoginSuccess} />
           )}
+          
+          {appState === 'authenticated' && (
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="h-full overflow-auto no-drag"
+            >
+              {activeTab === 'servers' && <ServersTab authToken={authToken} />}
+              {activeTab === 'news' && <NewsTab />}
+            </motion.div>
+          )}
+        </main>
         </div>
+        
+        {/* Модальное окно ошибки - показывается поверх всего приложения */}
+        <ErrorModal
+          isOpen={showErrorModal}
+          error={connectionError}
+          onClose={handleCloseErrorModal}
+          onRetry={handleRetryConnection}
+        />
       </div>
     </div>
   )
