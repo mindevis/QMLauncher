@@ -32,6 +32,5 @@ npm-debug.log*
 *.pyc
 __pycache__/
 core/
-ui/
 requirements.txt
 main.py
