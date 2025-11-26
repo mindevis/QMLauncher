@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, session } from 'electron'
 import path from 'path'
 import { spawn, ChildProcess } from 'child_process'
 import fs from 'fs'
@@ -10,6 +10,13 @@ import http from 'http'
 import { API_BASE_URL } from './config/api'
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
+
+// Логирование для отладки
+console.log('=== QMLauncher Dev Mode Check ===')
+console.log('isDev:', isDev)
+console.log('NODE_ENV:', process.env.NODE_ENV)
+console.log('isPackaged:', app.isPackaged)
+console.log('===============================')
 
 let mainWindow: BrowserWindow | null = null
 let minecraftProcess: ChildProcess | null = null
@@ -33,7 +40,8 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       backgroundThrottling: false,
-      devTools: false // Отключаем DevTools в режиме разработки
+      devTools: false, // DevTools полностью отключены
+      webSecurity: true // Включаем webSecurity, но разрешаем localhost через session
     },
     icon: path.join(__dirname, '../build/icon.png'),
     titleBarStyle: 'hidden',
@@ -46,7 +54,8 @@ function createWindow() {
     mainWindow?.show()
   })
 
-  // Блокируем открытие DevTools любыми способами
+
+  // Блокируем открытие DevTools всегда
   mainWindow.webContents.on('devtools-opened', () => {
     mainWindow?.webContents.closeDevTools()
   })
@@ -96,9 +105,44 @@ function createWindow() {
   ipcMain.handle('window-is-maximized', () => {
     return mainWindow ? mainWindow.isMaximized() : false
   })
+
 }
 
 app.whenReady().then(() => {
+  // Configure session to allow requests to localhost
+  const ses = session.defaultSession
+  
+  // Allow requests to localhost and local network
+  ses.webRequest.onBeforeSendHeaders((details, callback) => {
+    // Add CORS headers for localhost requests
+    if (details.url.includes('localhost') || details.url.includes('127.0.0.1')) {
+      callback({
+        requestHeaders: {
+          ...details.requestHeaders,
+          'Origin': details.url.split('/').slice(0, 3).join('/'),
+        }
+      })
+    } else {
+      callback({ requestHeaders: details.requestHeaders })
+    }
+  })
+  
+  // Handle CORS preflight requests
+  ses.webRequest.onHeadersReceived((details, callback) => {
+    if (details.url.includes('localhost') || details.url.includes('127.0.0.1')) {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Access-Control-Allow-Origin': ['*'],
+          'Access-Control-Allow-Methods': ['GET, POST, PUT, DELETE, OPTIONS'],
+          'Access-Control-Allow-Headers': ['Content-Type, Authorization'],
+        }
+      })
+    } else {
+      callback({ responseHeaders: details.responseHeaders })
+    }
+  })
+
   createWindow()
 
   app.on('activate', () => {

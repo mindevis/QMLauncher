@@ -42,6 +42,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Installation progress listener
   onInstallationProgress: (callback: (progress: { stage: string; progress: number }) => void) => {
     ipcRenderer.on('installation-progress', (_event, progress) => callback(progress))
-  }
+  },
 })
 

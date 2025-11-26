@@ -28,12 +28,28 @@ export function LoginForm({ onLoginSuccess, qmWebUrl = 'https://qmweb.example.co
     setShowRegistrationLink(false)
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      // Сначала получаем список серверов, чтобы использовать первый доступный
+      let serverId = 1 // Дефолтный server_id
+      try {
+        const serversResponse = await fetch(`${API_BASE_URL}/servers`)
+        if (serversResponse.ok) {
+          const serversData = await serversResponse.json()
+          if (serversData.servers && serversData.servers.length > 0) {
+            serverId = serversData.servers[0].id
+          }
+        }
+      } catch (err) {
+        // Используем дефолтный server_id если не удалось получить список
+        console.warn('Could not fetch servers list, using default server_id:', err)
+      }
+
+      // Авторизация через игровой аккаунт
+      const response = await fetch(`${API_BASE_URL}/game-accounts/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: login, password }),
+        body: JSON.stringify({ username: login, password, server_id: serverId }),
       })
 
       if (response.ok) {
@@ -45,7 +61,25 @@ export function LoginForm({ onLoginSuccess, qmWebUrl = 'https://qmweb.example.co
         onLoginSuccess(data.access_token)
       } else {
         const errorData = await response.json().catch(() => ({ detail: t('login.authError') }))
-        const errorMessage = errorData.detail || t('login.authError')
+        
+        // Обрабатываем ошибки валидации FastAPI (422)
+        let errorMessage: string
+        if (Array.isArray(errorData.detail)) {
+          // Если detail - массив ошибок валидации
+          errorMessage = errorData.detail
+            .map((err: any) => {
+              if (typeof err === 'string') return err
+              if (err.msg) return err.msg
+              return JSON.stringify(err)
+            })
+            .join(', ')
+        } else if (typeof errorData.detail === 'string') {
+          errorMessage = errorData.detail
+        } else if (errorData.message) {
+          errorMessage = errorData.message
+        } else {
+          errorMessage = t('login.authError')
+        }
         
         // Check if user doesn't exist
         if (errorMessage.includes('Incorrect') || errorMessage.includes('not found')) {
