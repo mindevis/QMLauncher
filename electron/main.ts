@@ -4,10 +4,12 @@ import { spawn, ChildProcess, exec } from 'child_process'
 import fs from 'fs'
 import os from 'os'
 import crypto from 'crypto'
-import Database from 'better-sqlite3'
+// SQLite removed - using API instead
 import https from 'https'
 import http from 'http'
 import { API_BASE_URL } from './config/api'
+import * as configManager from './utils/config-manager'
+import { encrypt, decrypt } from './utils/encryption'
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
@@ -109,7 +111,20 @@ function createWindow() {
 
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // Initialize config: sync with server on first launch or if config is outdated
+  try {
+    const needsUpdate = await configManager.checkConfigNeedsUpdate()
+    if (needsUpdate) {
+      console.log('Syncing config with QMServer...')
+      await configManager.syncConfigWithServer()
+      console.log('Config synced successfully')
+    }
+  } catch (error) {
+    console.error('Error initializing config:', error)
+    // Continue even if sync fails - will use cached config or defaults
+  }
+
   // Configure session to allow requests to localhost
   const ses = session.defaultSession
   
@@ -437,40 +452,14 @@ ipcMain.handle('get-hwid', async () => {
 })
 
 ipcMain.handle('get-launcher-config', async () => {
-  const configPath = path.join(os.homedir(), '.qmlauncher', 'config.json')
-  try {
-    if (fs.existsSync(configPath)) {
-      const data = fs.readFileSync(configPath, 'utf-8')
-      return JSON.parse(data)
-    }
-  } catch (error: unknown) {
-    console.error('Error reading config:', error)
-  }
-  return {
-    javaPath: 'java',
-    minMemory: 1024,
-    maxMemory: 4096,
-    windowWidth: 1200,
-    windowHeight: 800,
-    themeId: 'dark',
-    selectedProfile: null,
-    profiles: {}
-  }
+  // Return settings from encrypted config
+  return configManager.getSettings()
 })
 
 ipcMain.handle('save-launcher-config', async (_event: any, config: any) => {
-  const configDir = path.join(os.homedir(), '.qmlauncher')
-  const configPath = path.join(configDir, 'config.json')
-  try {
-    if (!fs.existsSync(configDir)) {
-      fs.mkdirSync(configDir, { recursive: true })
-    }
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8')
-    return { success: true }
-  } catch (error) {
-    console.error('Error saving config:', error)
-    return { success: false, error: String(error) }
-  }
+  // Save settings to encrypted config
+  const success = configManager.updateSettings(config)
+  return { success, error: success ? undefined : 'Failed to save config' }
 })
 
 ipcMain.handle('launch-minecraft', async (_event: any, launchArgs: any) => {
@@ -705,70 +694,51 @@ ipcMain.handle('stop-minecraft', async () => {
   return { success: false, error: 'No Minecraft process running' }
 })
 
-// Get launcher config from SQLite database
+// Get launcher config from encrypted config (synced with QMServer)
 ipcMain.handle('get-launcher-db-config', async (_event: any, serverId: number) => {
   try {
-    const configPath = path.join(os.homedir(), '.qmlauncher', 'launcher-config.db')
-    if (!fs.existsSync(configPath)) {
-      return { success: false, error: 'Config database not found' }
-    }
-
-    const db = new Database(configPath)
-    const config: Record<string, string> = {}
-    
-    // Read launcher_config table
-    const configRows = db.prepare('SELECT key, value FROM launcher_config').all() as Array<{ key: string; value: string }>
-    configRows.forEach(row => {
-      config[row.key] = row.value
-    })
-
-    // Read mods
-    const mods = db.prepare('SELECT * FROM mods').all() as Array<any>
-    
-    // Read plugins
-    const plugins = db.prepare('SELECT * FROM plugins').all() as Array<any>
-
-    db.close()
+    // Get mods from encrypted config
+    const mods = configManager.getMods(serverId)
+    const settings = configManager.getSettings()
 
     return {
       success: true,
-      config,
-      mods,
-      plugins
+      config: {
+        api_base_url: settings.apiBaseUrl || API_BASE_URL
+      },
+      mods: mods.map(mod => ({
+        id: mod.id,
+        name: mod.name,
+        version: mod.version,
+        filename: mod.filename,
+        size: mod.size
+      }))
     }
   } catch (error) {
-    console.error('Error reading launcher config:', error)
+    console.error('Error getting launcher config from encrypted config:', error)
     return { success: false, error: String(error) }
   }
 })
 
-// Get embedded servers from config database
+// Get servers from encrypted config (synced with QMServer)
 ipcMain.handle('get-embedded-servers', async () => {
   try {
-    const configPath = path.join(os.homedir(), '.qmlauncher', 'launcher-config.db')
-    if (!fs.existsSync(configPath)) {
-      return []
-    }
-
-    const db = new Database(configPath)
+    const servers = configManager.getServers()
     
-    // Read embedded_servers table
-    const servers = db.prepare('SELECT * FROM embedded_servers WHERE enabled = 1').all() as Array<{
-      server_id: number
-      server_uuid: string
-      server_name: string | null
-      server_address: string | null
-      server_port: number | null
-      minecraft_version: string | null
-      description: string | null
-      preview_image_url: string | null
-      enabled: number
-    }>
-
-    db.close()
-    return servers
+    // Transform to match expected format
+    return servers.map((server) => ({
+      server_id: server.id,
+      server_uuid: server.server_uuid || '',
+      server_name: server.name || server.server_name,
+      server_address: server.server_address,
+      server_port: server.server_port,
+      minecraft_version: server.minecraft_version,
+      description: server.description,
+      preview_image_url: server.preview_image_url,
+      enabled: 1
+    }))
   } catch (error) {
-    console.error('Error reading embedded servers:', error)
+    console.error('Error getting servers from config:', error)
     return []
   }
 })
@@ -840,35 +810,20 @@ ipcMain.handle('download-mod', async (_event: any, downloadUrl: string, savePath
   })
 })
 
-// Check and update mods
+// Check and update mods (replaced SQLite with API)
 ipcMain.handle('check-and-update-mods', async (_event: any, serverId: number, apiBaseUrl?: string) => {
   try {
-    const configPath = path.join(os.homedir(), '.qmlauncher', 'launcher-config.db')
-    if (!fs.existsSync(configPath)) {
-      return { success: false, error: 'Config database not found', updated: false }
-    }
-
-    const db = new Database(configPath)
+    // Use built-in API URL from config (set at build time) or passed parameter
+    const apiBaseUrlFromConfig = apiBaseUrl || API_BASE_URL
     
-    // Use built-in API URL from config (set at build time)
-    // Fallback to passed parameter or database config if needed
-    const apiBaseUrlRow = db.prepare('SELECT value FROM launcher_config WHERE key = ?').get('api_base_url') as { value: string } | undefined
-    const apiBaseUrlFromConfig = apiBaseUrl || apiBaseUrlRow?.value || API_BASE_URL
-
-    // Get mods from database
-    const dbMods = db.prepare('SELECT * FROM mods').all() as Array<{ filename: string; download_url: string; size: number }>
-    
-    // Get mods from server
+    // Get mods from server API
     const serverModsResponse = await fetch(`${apiBaseUrlFromConfig}/servers/${serverId}/mods`)
     if (!serverModsResponse.ok) {
-      db.close()
       return { success: false, error: 'Failed to fetch server mods', updated: false }
     }
 
     const serverModsData = await serverModsResponse.json() as { mods?: any[] }
     const serverMods = serverModsData.mods || []
-
-    db.close()
 
     // Compare mods
     const modsDir = path.join(os.homedir(), '.qmlauncher', 'mods', String(serverId))
@@ -882,10 +837,10 @@ ipcMain.handle('check-and-update-mods', async (_event: any, serverId: number, ap
     // Check each mod from server
     for (const serverMod of serverMods) {
       const localModPath = path.join(modsDir, serverMod.filename)
-      const dbMod = dbMods.find(m => m.filename === serverMod.filename)
+      const localModStats = fs.existsSync(localModPath) ? fs.statSync(localModPath) : null
 
       // Check if mod needs update (missing or size mismatch)
-      if (!fs.existsSync(localModPath) || !dbMod || dbMod.size !== serverMod.size) {
+      if (!localModStats || localModStats.size !== serverMod.size) {
         needsUpdate = true
         modsToDownload.push({
           filename: serverMod.filename,
@@ -1076,7 +1031,6 @@ ipcMain.handle('check-client-installed', async (_event: any, serverId: number) =
   try {
     const modsDir = path.join(os.homedir(), '.qmlauncher', 'mods', String(serverId))
     const versionsDir = path.join(os.homedir(), '.qmlauncher', 'versions')
-    const configPath = path.join(os.homedir(), '.qmlauncher', 'launcher-config.db')
     
     // Check if mods directory exists and has mods
     let hasMods = false
@@ -1085,20 +1039,26 @@ ipcMain.handle('check-client-installed', async (_event: any, serverId: number) =
       hasMods = modFiles.length > 0
     }
     
-    // Check if mods are configured in database
+    // Get server info from API (replaced SQLite)
     let hasModsConfig = false
     let minecraftVersion: string | null = null
-    if (fs.existsSync(configPath)) {
-      const db = new Database(configPath)
-      const mods = db.prepare('SELECT COUNT(*) as count FROM mods').get() as { count: number }
-      hasModsConfig = (mods?.count || 0) > 0
-      
-      // Get server version from embedded servers
-      const server = db.prepare('SELECT minecraft_version FROM embedded_servers WHERE server_id = ?').get(serverId) as { minecraft_version: string } | undefined
-      if (server) {
-        minecraftVersion = server.minecraft_version
+    try {
+      const serverResponse = await fetch(`${API_BASE_URL}/servers/${serverId}`)
+      if (serverResponse.ok) {
+        const serverData = await serverResponse.json() as { server?: any }
+        const server = serverData.server
+        if (server) {
+          minecraftVersion = server.minecraft_version
+          // Check if server has mods configured
+          const modsResponse = await fetch(`${API_BASE_URL}/servers/${serverId}/mods`)
+          if (modsResponse.ok) {
+            const modsData = await modsResponse.json() as { mods?: any[] }
+            hasModsConfig = (modsData.mods?.length || 0) > 0
+          }
+        }
       }
-      db.close()
+    } catch (error) {
+      console.error('Error fetching server info from API:', error)
     }
     
     // Check if Minecraft client version is installed
@@ -1498,6 +1458,39 @@ ipcMain.handle('install-minecraft-client', async (event: any, version: string) =
       success: false,
       error: String(error)
     }
+  }
+})
+
+// Sync config with QMServer
+ipcMain.handle('sync-config-with-server', async () => {
+  try {
+    const success = await configManager.syncConfigWithServer()
+    return { success, error: success ? undefined : 'Failed to sync config' }
+  } catch (error) {
+    console.error('Error syncing config:', error)
+    return { success: false, error: String(error) }
+  }
+})
+
+// Check if config needs update
+ipcMain.handle('check-config-needs-update', async () => {
+  try {
+    const needsUpdate = await configManager.checkConfigNeedsUpdate()
+    return { needsUpdate }
+  } catch (error) {
+    console.error('Error checking config update:', error)
+    return { needsUpdate: true } // Assume update needed on error
+  }
+})
+
+// Get mods from encrypted config
+ipcMain.handle('get-config-mods', async (_event: any, serverId?: number) => {
+  try {
+    const mods = configManager.getMods(serverId)
+    return { success: true, mods }
+  } catch (error) {
+    console.error('Error getting mods from config:', error)
+    return { success: false, mods: [], error: String(error) }
   }
 })
 

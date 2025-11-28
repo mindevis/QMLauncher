@@ -1,4 +1,21 @@
-# Changelog
+## 2025-11-29
+
+### Added
+- Encrypted configuration system with AES-256-GCM encryption
+- Automatic synchronization with QMServer on first launch
+- Config update detection and automatic sync
+- Config manager for encrypted data storage
+
+### Changed
+- Replaced SQLite database with encrypted JSON config file
+- Removed plugin support (launcher now works only with mods)
+- Config data is now fetched from QMServer and cached locally in encrypted format
+- Launcher settings are stored in encrypted config.json
+
+### Removed
+- SQLite database (better-sqlite3 dependency)
+- Plugin management functionality
+- Direct API calls for server/mod data (now uses cached encrypted config)
 
 ## 2024-11-28
 

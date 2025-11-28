@@ -1,4 +1,4 @@
-// Utility for reading embedded server data from SQLite config database
+// Utility for reading server data from API (replaced SQLite)
 
 export interface EmbeddedServer {
   server_id: number
@@ -18,7 +18,7 @@ export async function getEmbeddedServers(): Promise<EmbeddedServer[]> {
       return []
     }
     
-    // Read embedded servers from database
+    // Get servers from API
     const servers = await window.electronAPI.getEmbeddedServers()
     return servers || []
   } catch (error) {

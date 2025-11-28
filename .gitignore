@@ -6,6 +6,10 @@ dist/
 dist-electron/
 release/
 
+# Logs
+*.log
+npm-debug.log*
+
 # Environment
 .env
 .env.local
@@ -20,17 +24,7 @@ release/
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
-npm-debug.log*
-
-# Launcher data
-.qmlauncher/
-
-# Old Python files (legacy)
-*.py
-*.pyc
-__pycache__/
-core/
-requirements.txt
-main.py
+# Build artifacts (but keep icon source)
+# build/icon.png should be committed
+# build/icon.ico and build/icon.icns will be generated automatically during build
+!build/icon.png

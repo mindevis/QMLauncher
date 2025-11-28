@@ -16,7 +16,8 @@
     "paths": {
       "@shared/*": ["../src/shared/*"]
     },
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "composite": true
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules"]

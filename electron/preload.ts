@@ -43,5 +43,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onInstallationProgress: (callback: (progress: { stage: string; progress: number }) => void) => {
     ipcRenderer.on('installation-progress', (_event, progress) => callback(progress))
   },
+  // Config synchronization
+  syncConfigWithServer: () => ipcRenderer.invoke('sync-config-with-server'),
+  checkConfigNeedsUpdate: () => ipcRenderer.invoke('check-config-needs-update'),
+  getConfigMods: (serverId?: number) => ipcRenderer.invoke('get-config-mods', serverId),
 })
 
