@@ -149,7 +149,7 @@ app.whenReady().then(() => {
     checkAndInstallUpdate().catch((error) => {
       console.error('Error checking for updates:', error)
       // Continue with normal startup even if update check fails
-      createWindow()
+  createWindow()
     })
   } else {
     createWindow()

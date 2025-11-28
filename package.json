@@ -1,6 +1,6 @@
 {
   "name": "qmlauncher",
-  "version": "1.0.23",
+  "version": "0.0.0",
   "description": "Minecraft launcher built with Electron and React",
   "main": "dist-electron/main.js",
   "scripts": {
@@ -101,7 +101,7 @@
       "sign": false,
       "signingHashAlgorithms": null,
       "signDlls": false,
-      "artifactName": "${productName}-${version}-000-Windows-${arch}.${ext}"
+      "artifactName": "${productName}-${version}-Windows-${arch}.${ext}"
     },
     "mac": {
       "target": [
@@ -115,7 +115,7 @@
       ],
       "icon": "build/icon.icns",
       "category": "public.app-category.games",
-      "artifactName": "${productName}-${version}-000-macOS-${arch}.${ext}"
+      "artifactName": "${productName}-${version}-macOS-${arch}.${ext}"
     },
     "linux": {
       "target": [
@@ -134,7 +134,7 @@
       ],
       "icon": "build/icon.png",
       "category": "Game",
-      "artifactName": "${productName}-${version}-000-Linux-${arch}.${ext}"
+      "artifactName": "${productName}-${version}-Linux-${arch}.${ext}"
     }
   }
 }
