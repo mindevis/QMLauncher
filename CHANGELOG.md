@@ -5,6 +5,22 @@ All notable changes to QMLauncher will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-01-11
+
+### Security
+- **Fixed hardcoded access token**: Replaced hardcoded `'token'` with empty string `''` for `--accessToken` argument in Minecraft launch (offline mode requirement)
+- **Removed unused secureStorage**: Deleted `secureStorage.ts` that was created but never used in the codebase
+
+### Changed
+- **Improved logging**: Replaced critical `console.log/error` calls with `logger` utility (only active in development mode)
+- **Production build optimization**: Configured Vite with terser to automatically remove all `console.log` statements in production builds
+- **Code cleanup**: Removed unused code and improved code quality
+
+### Technical Details
+- Added terser as dev dependency for production builds
+- Configured `drop_console: true` in Vite build configuration
+- Logger utility now respects `import.meta.env.DEV` for conditional logging
+
 ## [1.0.0] - 2025-01-11
 
 ### Added
