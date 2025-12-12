@@ -440,9 +440,9 @@ export function ServersTab({ authToken }: ServersTabProps) {
         setInstallationProgress({ stage: t('servers.installingJava') || 'Установка Java...', progress: 30 })
         try {
           await wailsAPI.installJava(javaVendor, javaVersion, serverUuid)
-          console.log('[Install] Java installation completed')
+          logger.debug('Java installation completed')
         } catch (err) {
-          console.error('[Install] Exception from installJava:', err)
+          logger.error('Exception from installJava', err instanceof Error ? err : new Error(String(err)))
           toast.error(t('servers.installJavaError') || 'Ошибка установки Java', {
             description: err instanceof Error ? err.message : String(err)
           })
@@ -451,13 +451,16 @@ export function ServersTab({ authToken }: ServersTabProps) {
         
         // Download and install Minecraft client
         setInstallationProgress({ stage: t('servers.installingClient') || 'Установка клиента Minecraft...', progress: 50 })
-      console.log('[Install] Calling installMinecraftClient...')
+      logger.debug('Calling installMinecraftClient')
       logBackend('[Install] Calling installMinecraftClient', { version: minecraftVersion, serverUuid, javaVendor, javaVersion })
         try {
           const installResult = await wailsAPI.installMinecraftClient(minecraftVersion, javaVendor, javaVersion, serverUuid)
-          console.log('[Install] installMinecraftClient result:', installResult)
-          console.log('[Install] installMinecraftClient result type:', typeof installResult)
-          console.log('[Install] installMinecraftClient result keys:', installResult ? Object.keys(installResult) : 'null/undefined')
+          if (import.meta.env.DEV) {
+            logger.debug('installMinecraftClient result', { 
+              type: typeof installResult,
+              keys: installResult ? Object.keys(installResult) : null
+            })
+          }
         logBackend('[Install] installMinecraftClient result', installResult)
           
           // Если функция вернула результат без исключения, считаем установку успешной
@@ -468,7 +471,7 @@ export function ServersTab({ authToken }: ServersTabProps) {
             
             if (hasError && isFailed) {
               const desc = hasError || installResult?.Message || (installResult as any)?.message || t('common.unknownError')
-              console.error('[Install] Installation failed with error:', desc)
+              logger.error('Installation failed', undefined, { error: desc })
               toast.error(t('servers.installClientError') || 'Ошибка установки клиента', {
                 description: desc
               })
@@ -476,9 +479,9 @@ export function ServersTab({ authToken }: ServersTabProps) {
             }
           }
           
-          console.log('[Install] Client installation completed successfully (no exception thrown)')
+          logger.debug('Client installation completed successfully')
         } catch (err) {
-          console.error('[Install] Exception from installMinecraftClient:', err)
+          logger.error('Exception from installMinecraftClient', err instanceof Error ? err : new Error(String(err)))
         logBackend('[Install] Exception from installMinecraftClient', { error: err instanceof Error ? err.message : String(err) })
           toast.error(t('servers.installClientError') || 'Ошибка установки клиента', {
             description: err instanceof Error ? err.message : String(err)
@@ -490,52 +493,56 @@ export function ServersTab({ authToken }: ServersTabProps) {
       }
       
       // Step 2: Download and install mods (only after client is installed)
-      console.log('[Install] Step 2: Checking mods...')
+      logger.debug('Step 2: Checking mods')
       logBackend('[Install] Step 2: Checking mods', { serverId: server.id })
       setInstallationProgress({ stage: t('servers.checkingMods') || 'Проверка модов...', progress: 80 })
       let modsCheckResult
       try {
         modsCheckResult = await wailsAPI.checkAndUpdateMods(server.id, API_BASE_URL)
-        console.log('[Install] checkAndUpdateMods result:', modsCheckResult)
+        if (import.meta.env.DEV) {
+          logger.debug('checkAndUpdateMods result', { result: modsCheckResult })
+        }
         logBackend('[Install] checkAndUpdateMods result', modsCheckResult)
       } catch (err) {
-        console.error('[Install] Exception from checkAndUpdateMods:', err)
+        logger.error('Exception from checkAndUpdateMods', err instanceof Error ? err : new Error(String(err)))
         logBackend('[Install] Exception from checkAndUpdateMods', { error: err instanceof Error ? err.message : String(err) })
         throw err
       }
       
       if (!modsCheckResult.success) {
-        console.error('[Install] Mods check failed:', modsCheckResult.error)
+        logger.error('Mods check failed', undefined, { error: modsCheckResult.error })
         toast.error(t('servers.installModsError') || 'Ошибка установки модов', {
           description: modsCheckResult.error
         })
         return
       }
 
-      console.log('[Install] Mods check completed')
+      logger.debug('Mods check completed')
       // Mods check completed (no notification if no mods)
 
       // Step 3: Verify installation
-      console.log('[Install] Step 3: Verifying installation...')
+      logger.debug('Step 3: Verifying installation')
       logBackend('[Install] Step 3: Verifying installation', { serverId: server.id })
       let dbConfig
       try {
         dbConfig = await wailsAPI.getLauncherDbConfig(server.id)
-        console.log('[Install] getLauncherDbConfig result:', dbConfig)
+        if (import.meta.env.DEV) {
+          logger.debug('getLauncherDbConfig result', { config: dbConfig })
+        }
         logBackend('[Install] getLauncherDbConfig result', dbConfig)
       } catch (err) {
-        console.error('[Install] Exception from getLauncherDbConfig:', err)
+        logger.error('Exception from getLauncherDbConfig', err instanceof Error ? err : new Error(String(err)))
         logBackend('[Install] Exception from getLauncherDbConfig', { error: err instanceof Error ? err.message : String(err) })
         throw err
       }
       
       if (!dbConfig.success) {
-        console.error('[Install] Config check failed')
+        logger.error('Config check failed')
         toast.error(t('servers.installConfigError') || 'Ошибка получения конфигурации')
         return
       }
       
-      console.log('[Install] All steps completed successfully')
+      logger.debug('All steps completed successfully')
 
       // Installation complete - show success notification
       setInstallationProgress({ stage: t('servers.installationComplete') || 'Установка завершена', progress: 100 })
@@ -560,52 +567,51 @@ export function ServersTab({ authToken }: ServersTabProps) {
         const serverUuid = server.server_uuid || (server as any).embedded?.server_uuid || String(server.id)
         try {
           const checkResult = await wailsAPI.checkClientInstalled(server.id, serverUuid)
-          console.log(`[Install] Verification check for server ${server.id}:`, checkResult)
+          if (import.meta.env.DEV) {
+            logger.debug(`Verification check for server ${server.id}`, { checkResult })
+          }
           // ClientCheckResult doesn't have Success field, check Installed or HasClient directly
           if (checkResult.installed || checkResult.hasClient) {
             // Use HasClient as primary indicator (client is installed if JAR exists)
             // Installed flag may require mods, but HasClient just checks for JAR
             const isInstalled = checkResult.hasClient || checkResult.installed
-            console.log(`[Install] Server ${server.id} - hasClient: ${checkResult.hasClient}, installed: ${checkResult.installed}, setting to: ${isInstalled}`)
+            if (import.meta.env.DEV) {
+              logger.debug(`Server ${server.id} installation status`, { hasClient: checkResult.hasClient, installed: checkResult.installed, settingTo: isInstalled })
+            }
             // Only update if check confirms installation, don't overwrite true with false
             if (isInstalled) {
               setServers(prev => prev.map(s => 
                 s.id === server.id ? { ...s, clientInstalled: true } : s
               ))
             } else {
-              console.warn(`[Install] Check returned false for server ${server.id}, but keeping optimistic true state`)
+              logger.warn(`Check returned false for server ${server.id}, but keeping optimistic true state`)
               // Keep optimistic true state - don't overwrite
             }
           } else {
             // If check failed, keep the optimistic true value
-            console.warn(`[Install] Check failed for server ${server.id}, keeping optimistic installed state`)
+            logger.warn(`Check failed for server ${server.id}, keeping optimistic installed state`)
           }
         } catch (error) {
-          console.error(`[Install] Error during verification check for server ${server.id}:`, error)
+          logger.error(`Error during verification check for server ${server.id}`, error instanceof Error ? error : new Error(String(error)))
           // Keep optimistic true state on error
         }
       }, 3000) // Increased timeout to 3 seconds to ensure files are fully written
       
       // No alert - installation is complete, button will change automatically
-      console.log('[Install] Installation flow completed without errors')
+      logger.debug('Installation flow completed without errors')
     } catch (error) {
-      console.error('[Install] Error installing (frontend):', error)
-      console.error('[Install] Error stack:', error instanceof Error ? error.stack : 'No stack')
-      console.error('[Install] Error details:', {
+      logger.error('Error installing (frontend)', error instanceof Error ? error : new Error(String(error)), {
         name: error instanceof Error ? error.name : 'Unknown',
-        message: error instanceof Error ? error.message : String(error),
         type: typeof error,
-        value: error
       })
       setInstallationProgress(null)
       setInstallingServerId(null)
       const errorMessage = error instanceof Error ? error.message : String(error)
-      console.error('[Install] Showing error toast:', errorMessage)
       toast.error(t('servers.installError') || 'Ошибка установки', {
         description: errorMessage || t('common.unknownError')
       })
     } finally {
-      console.log('[Install] Finally block: resetting installation state')
+      logger.debug('Finally block: resetting installation state')
       setInstallingServerId(null)
       setInstallationProgress(null)
     }
@@ -774,7 +780,7 @@ export function ServersTab({ authToken }: ServersTabProps) {
         '--assetsDir', `${minecraftBasePath}/assets`,
         '--assetIndex', minecraftVersion,
         '--uuid', hwid || '00000000-0000-0000-0000-000000000000',
-        '--accessToken', 'token',
+        '--accessToken', '', // Пустой токен для офлайн режима (Minecraft требует этот аргумент)
         '--userType', 'mojang',
         '--versionType', 'release',
         '--width', String(windowWidth),
@@ -786,11 +792,16 @@ export function ServersTab({ authToken }: ServersTabProps) {
         '--quickPlayMultiplayer', serverConnectionString // Новый формат для автоматического подключения
       ]
       
-      console.log('[Launch] Server connection string:', serverConnectionString)
-      console.log('[Launch] Game args with server:', gameArgs.filter((arg, i) => 
-        arg === '--server' || arg === '--port' || arg === '--quickPlayMultiplayer' || 
-        (i > 0 && (gameArgs[i-1] === '--server' || gameArgs[i-1] === '--port' || gameArgs[i-1] === '--quickPlayMultiplayer'))
-      ))
+      // Логирование только в dev режиме
+      if (import.meta.env.DEV) {
+        logger.debug('Server connection string', { serverConnectionString })
+        logger.debug('Game args with server', { 
+          args: gameArgs.filter((arg, i) => 
+            arg === '--server' || arg === '--port' || arg === '--quickPlayMultiplayer' || 
+            (i > 0 && (gameArgs[i-1] === '--server' || gameArgs[i-1] === '--port' || gameArgs[i-1] === '--quickPlayMultiplayer'))
+          )
+        })
+      }
 
       // Launch Minecraft
       

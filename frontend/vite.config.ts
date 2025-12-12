@@ -15,6 +15,16 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    minify: 'terser',
+    terserOptions: {
+      format: {
+        comments: false,
+      },
+      compress: {
+        drop_console: true, // Удалить console.log в production
+        drop_debugger: true,
+      },
+    },
     rollupOptions: {
       external: ['wailsjs/runtime/runtime'],
       output: {
