@@ -1,0 +1,53 @@
+# Build outputs
+build/
+dist/
+*.exe
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Wails
+.wails/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak

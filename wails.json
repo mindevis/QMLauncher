@@ -1,0 +1,29 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "QMLauncher",
+  "outputfilename": "QMLauncher",
+  "frontend": {
+    "dir": "./frontend",
+    "install": "npm install",
+    "build": "npm run build",
+    "dev": "npm run dev",
+    "bridge": "src/bridge.ts",
+    "serve": "npm run dev"
+  },
+  "author": {
+    "name": "QMProject",
+    "email": ""
+  },
+  "info": {
+    "companyName": "QMProject",
+    "productName": "QMLauncher",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright © 2024 QMProject",
+    "comments": "Minecraft launcher built with Wails"
+  },
+  "nsisType": "portable",
+  "obfuscated": true,
+  "garbleargs": "",
+  "compress": true
+}
+
