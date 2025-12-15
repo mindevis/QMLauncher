@@ -21,7 +21,7 @@
     "copyright": "Copyright © 2024 QMProject",
     "comments": "Minecraft launcher built with Wails"
   },
-  "nsisType": "portable",
+  "nsisType": "nsis",
   "obfuscated": true,
   "garbleargs": "",
   "compress": true

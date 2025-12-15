@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Build script for QMLauncher Windows
-# This script builds the frontend and then builds the Windows executable
+# This script builds the frontend and then builds the Windows installer
 
 set -e  # Exit on error
 
@@ -37,9 +37,9 @@ fi
 echo "✓ Frontend build completed successfully"
 cd ..
 
-# Step 2: Build Windows executable
+# Step 2: Build Windows installer
 echo ""
-echo "Step 2: Building Windows executable..."
+echo "Step 2: Building Windows installer..."
 echo "----------------------------------------"
 
 if ! command -v wails &> /dev/null; then
@@ -48,7 +48,7 @@ if ! command -v wails &> /dev/null; then
     exit 1
 fi
 
-wails build -platform windows/amd64
+wails build -platform windows/amd64 -nsis
 
 if [ $? -ne 0 ]; then
     echo "Error: Windows build failed"
@@ -60,6 +60,6 @@ echo "=========================================="
 echo "✓ Build completed successfully!"
 echo "=========================================="
 echo ""
-echo "Windows executable should be in: build/bin/"
+echo "Windows installer (.msi) should be in: build/bin/"
 echo ""
 

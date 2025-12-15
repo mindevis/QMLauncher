@@ -222,6 +222,29 @@ function AppContent() {
           }
           
           settings.apiBaseUrl = normalizedUrl
+          
+          // Получаем UUID сервера от QMServer (берем первый доступный сервер)
+          try {
+            const serversResponse = await fetch(`${normalizedUrl}/servers`, {
+              method: 'GET',
+              mode: 'cors',
+            })
+            
+            if (serversResponse.ok) {
+              const serversData = await serversResponse.json()
+              const servers = serversData.servers || []
+              
+              // Берем UUID первого сервера, если он есть
+              if (servers.length > 0 && servers[0].server_uuid) {
+                settings.serverUuid = servers[0].server_uuid
+                console.log('[App] Server UUID obtained from QMServer:', settings.serverUuid)
+              }
+            }
+          } catch (error) {
+            console.warn('[App] Failed to get server UUID from QMServer:', error)
+            // Продолжаем без UUID, он может быть получен позже
+          }
+          
           await wailsAPI.saveSettings(settings)
           console.log('[App] Server URL saved:', normalizedUrl)
         }

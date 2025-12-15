@@ -53,18 +53,21 @@ wails build
 ```bash
 wails build -platform windows/amd64
 ```
+This will create an NSIS installer (`.msi`) by default when using the `-nsis` flag or when `nsisType` is set to `"nsis"` in `wails.json`.
 
 **Build for Linux:**
 ```bash
 wails build -platform linux/amd64
 ```
+This will create an AppImage (`.AppImage`) by default. For `.deb` or `.rpm` packages, additional tools may be required.
 
 **Build for macOS:**
 ```bash
 wails build -platform darwin/amd64
 ```
+This will create a disk image (`.dmg`) or package (`.pkg`) by default.
 
-The built executable will be in the `build/bin/` directory.
+**Note:** The built files (executables or installers) will be in the `build/bin/` directory. Installer packages are automatically created based on the platform and configuration in `wails.json`.
 
 ## Project Structure
 

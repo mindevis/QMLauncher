@@ -5,7 +5,35 @@ All notable changes to QMLauncher will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] - 2025-01-11
+## [1.0.2] - 2025-12-15
+
+### Added
+- **Installer Package Support**: Added support for creating installer packages for different operating systems
+  - Windows: NSIS installer (`.msi` file) via `-nsis` flag
+  - Linux: AppImage package (`.AppImage` file)
+  - macOS: Disk image (`.dmg`) or package (`.pkg`)
+- **Embedded Configuration Support**: Automatic copying of embedded `config.json` when launcher is built by QMServer
+  - Config is automatically copied from build directory on first launch
+  - Supports various installation locations (app bundle, executable directory)
+  - Falls back to default settings if embedded config is not available
+- **Server UUID Auto-Detection**: Automatic server UUID retrieval from QMServer when connecting in server mode
+  - Fetches server list from configured API endpoint
+  - Extracts UUID from first available server
+  - Saves UUID to local settings for proper server identification
+
+### Changed
+- **Build Scripts**: Updated `build-windows.sh` to use `-nsis` flag for installer generation
+- **Build Documentation**: Enhanced `BUILD.md` with instructions for building installer packages on all platforms
+- **Configuration Management**: Improved `config.go` to handle embedded configuration files from QMServer builds
+- **Wails Configuration**: Updated `wails.json` to use `"nsisType": "nsis"` for Windows installer generation
+
+### Technical Details
+- NSIS installer creation is now the default for Windows builds
+- Embedded config is searched in multiple locations (executable directory, app bundle, build directory)
+- Server UUID is automatically fetched when launcher connects to QMServer in server mode
+- Configuration copying happens transparently on first launch if embedded config exists
+
+## [1.0.1] - 2025-12-12
 
 ### Security
 - **Fixed hardcoded access token**: Replaced hardcoded `'token'` with empty string `''` for `--accessToken` argument in Minecraft launch (offline mode requirement)
@@ -21,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configured `drop_console: true` in Vite build configuration
 - Logger utility now respects `import.meta.env.DEV` for conditional logging
 
-## [1.0.0] - 2025-01-11
+## [1.0.0] - 2025-12-12
 
 ### Added
 - **Complete migration from Electron to Wails framework**

@@ -19,10 +19,15 @@ func NewConfigService(app *App) *ConfigService {
 // GetSettings возвращает настройки
 func (c *ConfigService) GetSettings() (*Settings, error) {
 	configPath := c.getConfigPath()
+	configDir := filepath.Dir(configPath)
 
+	// If config doesn't exist, try to copy from embedded resources (if built by QMServer)
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		// Возвращаем настройки по умолчанию
-		return c.getDefaultSettings(), nil
+		// Try to copy from embedded config (if available)
+		if err := c.copyEmbeddedConfig(configPath, configDir); err != nil {
+			// If embedded config doesn't exist, return default settings
+			return c.getDefaultSettings(), nil
+		}
 	}
 
 	data, err := os.ReadFile(configPath)
@@ -36,6 +41,48 @@ func (c *ConfigService) GetSettings() (*Settings, error) {
 	}
 
 	return &settings, nil
+}
+
+// copyEmbeddedConfig tries to copy config from embedded resources
+// This is used when QMLauncher is built by QMServer with pre-configured settings
+func (c *ConfigService) copyEmbeddedConfig(destPath, destDir string) error {
+	// Check if config exists in build directory (relative to executable)
+	execPath, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	execDir := filepath.Dir(execPath)
+
+	// Try different possible locations for embedded config
+	possiblePaths := []string{
+		filepath.Join(execDir, "config", "config.json"),             // Windows/Linux: next to executable
+		filepath.Join(execDir, "..", "config", "config.json"),       // macOS: in app bundle
+		filepath.Join(execDir, "..", "Resources", "config.json"),    // macOS: in Resources
+		filepath.Join(execDir, "..", "..", "config", "config.json"), // macOS: deeper in bundle
+	}
+
+	for _, srcPath := range possiblePaths {
+		if _, err := os.Stat(srcPath); err == nil {
+			// Create destination directory
+			if err := os.MkdirAll(destDir, 0755); err != nil {
+				return fmt.Errorf("failed to create config directory: %v", err)
+			}
+
+			// Copy file
+			srcData, err := os.ReadFile(srcPath)
+			if err != nil {
+				continue
+			}
+
+			if err := os.WriteFile(destPath, srcData, 0644); err != nil {
+				return fmt.Errorf("failed to write config file: %v", err)
+			}
+
+			return nil
+		}
+	}
+
+	return fmt.Errorf("embedded config not found")
 }
 
 // SaveSettings сохраняет настройки
@@ -226,6 +273,7 @@ func (c *ConfigService) getModsConfigPath() string {
 // Settings структура настроек
 type Settings struct {
 	APIBaseURL       string   `json:"apiBaseUrl"`
+	ServerUUID       string   `json:"serverUuid,omitempty"` // Server UUID for launcher identification
 	MinecraftPath    string   `json:"minecraftPath"`
 	JavaPath         string   `json:"javaPath"`
 	MinMemory        int      `json:"minMemory"`
