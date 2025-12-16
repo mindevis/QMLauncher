@@ -184,6 +184,28 @@ Use the `t()` function from `useI18n()` hook in components.
 4. Test thoroughly
 5. Submit a pull request
 
+## Releases
+
+QMLauncher uses GitHub Actions for automated releases. When a new tag is pushed (e.g., `v1.0.3` or `v1.0.3-rc1`), the workflow automatically:
+
+- Builds launcher for Windows, Linux, and macOS
+- Extracts release notes from `CHANGELOG.md`
+- Creates a GitHub release with all platform binaries
+- Marks prereleases (`-rc`, `-alpha`, `-beta`) automatically
+
+### Creating a Release
+
+1. Update `CHANGELOG.md` and `CHANGELOG.ru.md` with new version
+2. Update `wails.json` `productVersion`
+3. Commit and tag:
+   ```bash
+   git commit -m "chore: prepare release v1.0.3"
+   git tag -a v1.0.3 -m "Release v1.0.3"
+   git push origin v1.0.3
+   ```
+
+The GitHub Actions workflow will handle the rest automatically.
+
 ## License
 
 Copyright © 2024 QMProject
