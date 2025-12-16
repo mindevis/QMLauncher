@@ -67,6 +67,8 @@ jobs:
             ls -la
             exit 1
           fi
+          # Remove ./ prefix if present
+          FILE=$(echo "$FILE" | sed 's|^\./||')
           echo "file=$FILE" >> $GITHUB_OUTPUT
           echo "Found file: $FILE"
 
@@ -139,6 +141,8 @@ jobs:
             ls -la
             exit 1
           fi
+          # Remove ./ prefix if present
+          FILE=$(echo "$FILE" | sed 's|^\./||')
           echo "file=$FILE" >> $GITHUB_OUTPUT
           echo "Found file: $FILE"
 
@@ -210,6 +214,8 @@ jobs:
             # Try to find .app directory
             APP_DIR=$(find . -type d -name "*.app" | head -1)
             if [ -n "$APP_DIR" ]; then
+              # Remove ./ prefix if present
+              APP_DIR=$(echo "$APP_DIR" | sed 's|^\./||')
               # Create zip from .app
               zip -r QMLauncher-macos-amd64.zip "$APP_DIR"
               echo "file=QMLauncher-macos-amd64.zip" >> $GITHUB_OUTPUT
@@ -219,6 +225,8 @@ jobs:
               exit 1
             fi
           else
+            # Remove ./ prefix if present
+            FILE=$(echo "$FILE" | sed 's|^\./||')
             if [[ "$FILE" == *.dmg ]]; then
               cp "$FILE" QMLauncher-macos-amd64.dmg
               echo "file=QMLauncher-macos-amd64.dmg" >> $GITHUB_OUTPUT
