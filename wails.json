@@ -17,7 +17,7 @@
   "info": {
     "companyName": "QMProject",
     "productName": "QMLauncher",
-    "productVersion": "1.0.0",
+    "productVersion": "1.0.3-rc1",
     "copyright": "Copyright © 2024 QMProject",
     "comments": "Minecraft launcher built with Wails"
   },

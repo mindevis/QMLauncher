@@ -5,6 +5,22 @@ All notable changes to QMLauncher will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3-rc1] - 2025-12-16
+
+### Added
+- **Enhanced Version Display**: Improved launcher version display in QMAdmin with commit information and build dates
+- **Automatic Version Detection**: QMServer now automatically retrieves version from GitHub releases when building launcher
+- **Commit Message Integration**: Commit messages are now displayed alongside version information in build lists
+
+### Changed
+- **Version Format**: Updated version display format to `QMLauncher v1.0.0 (2e83ccd) - 16.12.2024` for better readability
+- **Build Status**: Enhanced build status to include commit message, server information, and improved metadata
+
+### Technical Details
+- Version is automatically fetched from GitHub releases API if not explicitly provided
+- Commit messages are truncated to 40 characters for display
+- Build dates are formatted in locale-specific format (ru-RU)
+
 ## [1.0.3] - 2025-12-16
 
 ### Added
