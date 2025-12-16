@@ -318,6 +318,50 @@ jobs:
         with:
           path: ./artifacts
 
+      - name: Rename files with version
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          TAG=${{ steps.version.outputs.tag }}
+          
+          cd artifacts
+          
+          # Rename Linux file
+          if [ -f "QMLauncher-linux-amd64/QMLauncher" ]; then
+            mv "QMLauncher-linux-amd64/QMLauncher" "QMLauncher-${TAG}-linux-amd64"
+            rmdir "QMLauncher-linux-amd64" || true
+          elif [ -f "QMLauncher-linux-amd64" ]; then
+            mv "QMLauncher-linux-amd64" "QMLauncher-${TAG}-linux-amd64"
+          fi
+          
+          # Rename Windows file
+          if [ -f "QMLauncher-windows-amd64/QMLauncher.exe" ]; then
+            mv "QMLauncher-windows-amd64/QMLauncher.exe" "QMLauncher-${TAG}-windows-amd64.exe"
+            rmdir "QMLauncher-windows-amd64" || true
+          elif [ -f "QMLauncher-windows-amd64.exe" ]; then
+            mv "QMLauncher-windows-amd64.exe" "QMLauncher-${TAG}-windows-amd64.exe"
+          fi
+          
+          # Rename macOS file
+          if [ -f "QMLauncher-macos-amd64/QMLauncher-macos-amd64.zip" ]; then
+            mv "QMLauncher-macos-amd64/QMLauncher-macos-amd64.zip" "QMLauncher-${TAG}-macos-amd64.zip"
+            rmdir "QMLauncher-macos-amd64" || true
+          elif [ -f "QMLauncher-macos-amd64/QMLauncher-macos-amd64.dmg" ]; then
+            mv "QMLauncher-macos-amd64/QMLauncher-macos-amd64.dmg" "QMLauncher-${TAG}-macos-amd64.dmg"
+            rmdir "QMLauncher-macos-amd64" || true
+          elif [ -f "QMLauncher-macos-amd64/QMLauncher-macos-amd64.pkg" ]; then
+            mv "QMLauncher-macos-amd64/QMLauncher-macos-amd64.pkg" "QMLauncher-${TAG}-macos-amd64.pkg"
+            rmdir "QMLauncher-macos-amd64" || true
+          elif [ -f "QMLauncher-macos-amd64.zip" ]; then
+            mv "QMLauncher-macos-amd64.zip" "QMLauncher-${TAG}-macos-amd64.zip"
+          elif [ -f "QMLauncher-macos-amd64.dmg" ]; then
+            mv "QMLauncher-macos-amd64.dmg" "QMLauncher-${TAG}-macos-amd64.dmg"
+          elif [ -f "QMLauncher-macos-amd64.pkg" ]; then
+            mv "QMLauncher-macos-amd64.pkg" "QMLauncher-${TAG}-macos-amd64.pkg"
+          fi
+          
+          echo "Renamed files:"
+          ls -lh
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
