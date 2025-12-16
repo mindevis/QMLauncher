@@ -141,7 +141,7 @@ jobs:
         run: npm run build
 
       - name: Build Linux launcher
-        run: wails build -platform linux/amd64 -obfuscated
+        run: wails build -platform linux/amd64 -obfuscated -tags webkit2_41
 
       - name: Find Linux executable
         id: find-linux
