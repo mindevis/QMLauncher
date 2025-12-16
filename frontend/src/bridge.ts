@@ -120,5 +120,8 @@ export const wailsAPI = {
   
   // Check if .qmlauncher directory exists (for first launch detection)
   checkQMLauncherDirExists: () => WailsApp.CheckQMLauncherDirExists(),
+  
+  // Check if embedded config exists (Mode 3 - built by QMServer)
+  hasEmbeddedConfig: () => WailsApp.HasEmbeddedConfig(),
 }
 

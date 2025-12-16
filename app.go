@@ -124,6 +124,13 @@ func (a *App) SaveSettings(settings *Settings) error {
 	return configService.SaveSettings(settings)
 }
 
+// HasEmbeddedConfig проверяет наличие встроенного конфига рядом с исполняемым файлом
+// Возвращает true, если найден встроенный конфиг с apiBaseUrl (режим 3 - сборка через QMServer)
+func (a *App) HasEmbeddedConfig() (bool, error) {
+	configService := NewConfigService(a)
+	return configService.HasEmbeddedConfig()
+}
+
 // InstallJava устанавливает Java
 func (a *App) InstallJava(vendor string, version string, serverUuid string) error {
 	javaService := NewJavaService(a)

@@ -265,6 +265,7 @@ export namespace main {
 	}
 	export class Settings {
 	    apiBaseUrl: string;
+	    serverUuid?: string;
 	    minecraftPath: string;
 	    javaPath: string;
 	    minMemory: number;
@@ -282,6 +283,7 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.apiBaseUrl = source["apiBaseUrl"];
+	        this.serverUuid = source["serverUuid"];
 	        this.minecraftPath = source["minecraftPath"];
 	        this.javaPath = source["javaPath"];
 	        this.minMemory = source["minMemory"];

@@ -30,6 +30,8 @@ export function GetServerMods(arg1:number,arg2:string):Promise<main.ServerModsRe
 
 export function GetSettings():Promise<main.Settings>;
 
+export function HasEmbeddedConfig():Promise<boolean>;
+
 export function InstallJava(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function SaveSettings(arg1:main.Settings):Promise<void>;

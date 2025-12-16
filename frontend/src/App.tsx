@@ -60,6 +60,27 @@ function AppContent() {
     // Check if this is first launch
     const checkFirstLaunch = async () => {
       try {
+        // First, check if embedded config exists (Mode 3 - built by QMServer)
+        const hasEmbedded = await wailsAPI.hasEmbeddedConfig()
+        console.log('[App] Has embedded config:', hasEmbedded)
+        
+        if (hasEmbedded) {
+          // Mode 3: Embedded config found - automatically use it
+          console.log('[App] Embedded config detected (Mode 3), copying to user config...')
+          try {
+            const settings = await wailsAPI.getSettings()
+            if (settings && settings.apiBaseUrl) {
+              // Config was automatically copied by GetSettings, continue with normal flow
+              console.log('[App] Embedded config copied, API URL:', settings.apiBaseUrl)
+              setIsCheckingFirstLaunch(false)
+              return
+            }
+          } catch (error) {
+            console.error('[App] Error loading embedded config:', error)
+          }
+        }
+        
+        // Check if .qmlauncher directory exists (for Mode 1 and Mode 2)
         const dirExists = await wailsAPI.checkQMLauncherDirExists()
         console.log('[App] .qmlauncher directory exists:', dirExists)
         if (!dirExists) {
@@ -67,7 +88,7 @@ function AppContent() {
           setShowModeDialog(true)
         }
       } catch (error) {
-        console.error('[App] Error checking .qmlauncher directory:', error)
+        console.error('[App] Error checking first launch:', error)
         // On error, assume it's not first launch
       } finally {
         setIsCheckingFirstLaunch(false)

@@ -10,6 +10,8 @@ export function GetServers():Promise<Array<main.ServerData>>;
 
 export function GetSettings():Promise<main.Settings>;
 
+export function HasEmbeddedConfig():Promise<boolean>;
+
 export function SaveSettings(arg1:main.Settings):Promise<void>;
 
 export function SyncConfigWithServer():Promise<void>;

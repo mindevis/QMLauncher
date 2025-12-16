@@ -5,6 +5,43 @@ All notable changes to QMLauncher will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2025-12-16
+
+### Added
+- **Code Obfuscation**: Added garble-based code obfuscation for all platforms to protect against reverse engineering
+  - Enabled via `-obfuscated` flag in wails build command
+  - Applied to Windows, Linux, and macOS builds
+  - Requires garble tool (automatically installed in QMServer build environment)
+- **Embedded Encrypted Configuration**: Configuration is now embedded directly into the executable file (`.exe`)
+  - Config is encrypted using AES-256-GCM before embedding
+  - Automatically decrypted and copied to user directory on first launch
+  - Only available when launcher is built through QMServer (Mode 3)
+- **Three Operation Modes**: Launcher now supports three distinct operation modes
+  - **Mode 1 (Standalone)**: Works without QMServer connection, user selects mode on first launch
+  - **Mode 2 (Manual)**: User manually enters QMServer address on first launch
+  - **Mode 3 (Embedded)**: Pre-configured when built by QMServer, no mode selection dialog shown
+
+### Changed
+- **Build Process**: Removed NSIS installer support, now builds executable files directly
+  - Windows: Creates `.exe` file instead of `.msi` installer
+  - All platforms use `-obfuscated` flag for code protection
+- **Configuration Embedding**: Config is now embedded in binary via Go `embed` directive instead of external files
+  - Uses `embedded_config.json` file that gets compiled into the executable
+  - Config is encrypted before embedding for security
+- **Build Scripts**: Updated `build-windows.sh` to use `-obfuscated` flag instead of `-nsis`
+- **Documentation**: Updated `BUILD.md` and `README.md` to reflect obfuscation and removed NSIS references
+
+### Security
+- **Encrypted Embedded Config**: Configuration embedded in launcher built by QMServer is encrypted using AES-256-GCM
+  - Uses fixed encryption key known to both QMServer and QMLauncher
+  - Protects sensitive server configuration data from casual inspection
+
+### Technical Details
+- Embedded config is stored in `embedded_config.json` and compiled into binary using `//go:embed`
+- Config decryption happens automatically on first launch if embedded config exists
+- Code obfuscation is applied to all builds through QMServer for enhanced security
+- Mode detection: Launcher automatically detects embedded config and skips mode selection dialog
+
 ## [1.0.2] - 2025-12-15
 
 ### Added

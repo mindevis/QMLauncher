@@ -46,26 +46,27 @@ A modern Minecraft launcher built with [Wails](https://wails.io/) (Go + WebView)
 
 **Build for current platform:**
 ```bash
-wails build
+wails build -obfuscated
 ```
+This will create an executable with code obfuscation enabled using garble.
 
 **Build for Windows (from Linux/macOS):**
 ```bash
-wails build -platform windows/amd64
+wails build -platform windows/amd64 -obfuscated
 ```
-This will create an NSIS installer (`.msi`) by default when using the `-nsis` flag or when `nsisType` is set to `"nsis"` in `wails.json`.
+This will create an executable file (`.exe`) with code obfuscation enabled using garble.
 
 **Build for Linux:**
 ```bash
-wails build -platform linux/amd64
+wails build -platform linux/amd64 -obfuscated
 ```
-This will create an AppImage (`.AppImage`) by default. For `.deb` or `.rpm` packages, additional tools may be required.
+This will create an AppImage (`.AppImage`) with code obfuscation enabled. For `.deb` or `.rpm` packages, additional tools may be required.
 
 **Build for macOS:**
 ```bash
-wails build -platform darwin/amd64
+wails build -platform darwin/amd64 -obfuscated
 ```
-This will create a disk image (`.dmg`) or package (`.pkg`) by default.
+This will create a disk image (`.dmg`) or package (`.pkg`) with code obfuscation enabled.
 
 **Note:** The built files (executables or installers) will be in the `build/bin/` directory. Installer packages are automatically created based on the platform and configuration in `wails.json`.
 

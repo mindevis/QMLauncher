@@ -58,34 +58,38 @@ export function GetSettings() {
   return ObfuscatedCall(13, []);
 }
 
+export function HasEmbeddedConfig() {
+  return ObfuscatedCall(14, []);
+}
+
 export function InstallJava(arg1, arg2, arg3) {
-  return ObfuscatedCall(14, [arg1, arg2, arg3]);
+  return ObfuscatedCall(15, [arg1, arg2, arg3]);
 }
 
 export function SaveSettings(arg1) {
-  return ObfuscatedCall(15, [arg1]);
-}
-
-export function UninstallMinecraft(arg1) {
   return ObfuscatedCall(16, [arg1]);
 }
 
-export function ValidateJavaPath(arg1) {
+export function UninstallMinecraft(arg1) {
   return ObfuscatedCall(17, [arg1]);
 }
 
-export function WindowClose() {
-  return ObfuscatedCall(18, []);
+export function ValidateJavaPath(arg1) {
+  return ObfuscatedCall(18, [arg1]);
 }
 
-export function WindowIsMaximized() {
+export function WindowClose() {
   return ObfuscatedCall(19, []);
 }
 
-export function WindowMaximize() {
+export function WindowIsMaximized() {
   return ObfuscatedCall(20, []);
 }
 
-export function WindowMinimize() {
+export function WindowMaximize() {
   return ObfuscatedCall(21, []);
+}
+
+export function WindowMinimize() {
+  return ObfuscatedCall(22, []);
 }

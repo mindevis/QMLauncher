@@ -2,7 +2,7 @@
 
 ## Windows Build
 
-Для сборки Windows установщика используйте скрипт:
+Для сборки Windows исполняемого файла используйте скрипт:
 
 ```bash
 ./build-windows.sh
@@ -17,9 +17,9 @@ chmod +x build-windows.sh
 
 Скрипт автоматически:
 1. Соберет фронтенд (`npm run build` в директории `frontend/`)
-2. Соберет Windows установщик (`wails build -platform windows/amd64 -nsis`)
+2. Соберет Windows исполняемый файл с обфускацией (`wails build -platform windows/amd64 -obfuscated`)
 
-Результат будет в директории `build/bin/` в виде NSIS установщика (`.msi` файл).
+Результат будет в директории `build/bin/` в виде исполняемого файла (`.exe` файл).
 
 ## Manual Build
 
@@ -31,11 +31,11 @@ cd frontend
 npm run build
 cd ..
 
-# 2. Собрать Windows установщик
-wails build -platform windows/amd64 -nsis
+# 2. Собрать Windows исполняемый файл с обфускацией
+wails build -platform windows/amd64 -obfuscated
 ```
 
-**Примечание:** С флагом `-nsis` будет создан установочный пакет (`.msi`). Без этого флага будет создан только исполняемый файл (`.exe`). В `wails.json` настроено `"nsisType": "nsis"`, что означает создание установщика по умолчанию.
+**Примечание:** Флаг `-obfuscated` используется для всех платформ и обфусцирует код с помощью garble для защиты от реверс-инжиниринга. Без этого флага будет создан обычный исполняемый файл без обфускации.
 
 ## Linux Build
 
@@ -47,11 +47,11 @@ cd frontend
 npm run build
 cd ..
 
-# 2. Собрать Linux AppImage
-wails build -platform linux/amd64
+# 2. Собрать Linux AppImage с обфускацией
+wails build -platform linux/amd64 -obfuscated
 ```
 
-Результат будет в директории `build/bin/` в виде AppImage файла (`.AppImage`).
+Результат будет в директории `build/bin/` в виде AppImage файла (`.AppImage`) с обфусцированным кодом.
 
 ## macOS Build
 
@@ -63,18 +63,18 @@ cd frontend
 npm run build
 cd ..
 
-# 2. Собрать macOS disk image
-wails build -platform darwin/amd64
+# 2. Собрать macOS disk image с обфускацией
+wails build -platform darwin/amd64 -obfuscated
 ```
 
-Результат будет в директории `build/bin/` в виде disk image (`.dmg`) или package (`.pkg`).
+Результат будет в директории `build/bin/` в виде disk image (`.dmg`) или package (`.pkg`) с обфусцированным кодом.
 
 ## Requirements
 
 - Node.js и npm (для сборки фронтенда)
 - Go (для сборки бэкенда)
 - Wails CLI (установлен через `go install github.com/wailsapp/wails/v2/cmd/wails@latest`)
-- **Для Windows установщиков**: NSIS (автоматически обрабатывается Wails)
+- **Для обфускации**: Garble (установлен через `go install mvdan.cc/garble@latest`)
 - **Для Linux пакетов**: `dpkg-deb` для `.deb`, `rpmbuild` для `.rpm` (опционально, по умолчанию создается AppImage)
 - **Для macOS пакетов**: Xcode Command Line Tools (если сборка выполняется на macOS)
 

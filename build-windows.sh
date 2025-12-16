@@ -37,9 +37,9 @@ fi
 echo "✓ Frontend build completed successfully"
 cd ..
 
-# Step 2: Build Windows installer
+# Step 2: Build Windows executable
 echo ""
-echo "Step 2: Building Windows installer..."
+echo "Step 2: Building Windows executable..."
 echo "----------------------------------------"
 
 if ! command -v wails &> /dev/null; then
@@ -48,7 +48,7 @@ if ! command -v wails &> /dev/null; then
     exit 1
 fi
 
-wails build -platform windows/amd64 -nsis
+wails build -platform windows/amd64 -obfuscated
 
 if [ $? -ne 0 ]; then
     echo "Error: Windows build failed"
@@ -60,6 +60,6 @@ echo "=========================================="
 echo "✓ Build completed successfully!"
 echo "=========================================="
 echo ""
-echo "Windows installer (.msi) should be in: build/bin/"
+echo "Windows executable (.exe) should be in: build/bin/"
 echo ""
 
