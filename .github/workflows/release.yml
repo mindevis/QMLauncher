@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 jobs:
-  build-and-release:
+  build-windows:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -60,6 +60,164 @@ jobs:
           echo "file=$FILE" >> $GITHUB_OUTPUT
           echo "Found file: $FILE"
 
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QMLauncher-windows-amd64.exe
+          path: build/bin/${{ steps.find-exe.outputs.file }}
+          retention-days: 1
+
+  build-linux:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Install garble (for obfuscation)
+        run: go install mvdan.cc/garble@latest
+
+      - name: Add Go bin to PATH
+        run: echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Build Linux launcher
+        run: wails build -platform linux/amd64 -obfuscated
+
+      - name: Find Linux executable
+        id: find-linux
+        run: |
+          cd build/bin
+          # Look for executable or AppImage
+          FILE=$(find . -type f \( -name "QMLauncher" -o -name "*.AppImage" \) | head -1)
+          if [ -z "$FILE" ]; then
+            echo "No Linux executable found!"
+            ls -la
+            exit 1
+          fi
+          echo "file=$FILE" >> $GITHUB_OUTPUT
+          echo "Found file: $FILE"
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QMLauncher-linux-amd64
+          path: build/bin/${{ steps.find-linux.outputs.file }}
+          retention-days: 1
+
+  build-macos:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Install garble (for obfuscation)
+        run: go install mvdan.cc/garble@latest
+
+      - name: Add Go bin to PATH
+        run: echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Build macOS launcher
+        run: wails build -platform darwin/amd64 -obfuscated
+
+      - name: Find macOS executable
+        id: find-macos
+        run: |
+          cd build/bin
+          # Look for .app, .dmg, or .pkg
+          FILE=$(find . -type f \( -name "*.dmg" -o -name "*.pkg" \) | head -1)
+          if [ -z "$FILE" ]; then
+            # Try to find .app directory
+            APP_DIR=$(find . -type d -name "*.app" | head -1)
+            if [ -n "$APP_DIR" ]; then
+              # Create zip from .app
+              zip -r QMLauncher-macos-amd64.zip "$APP_DIR"
+              echo "file=QMLauncher-macos-amd64.zip" >> $GITHUB_OUTPUT
+            else
+              echo "No macOS build file found!"
+              ls -la
+              exit 1
+            fi
+          else
+            if [[ "$FILE" == *.dmg ]]; then
+              cp "$FILE" QMLauncher-macos-amd64.dmg
+              echo "file=QMLauncher-macos-amd64.dmg" >> $GITHUB_OUTPUT
+            elif [[ "$FILE" == *.pkg ]]; then
+              cp "$FILE" QMLauncher-macos-amd64.pkg
+              echo "file=QMLauncher-macos-amd64.pkg" >> $GITHUB_OUTPUT
+            fi
+          fi
+          echo "Found file: $FILE"
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QMLauncher-macos-amd64
+          path: build/bin/${{ steps.find-macos.outputs.file }}
+          retention-days: 1
+
+  create-release:
+    needs: [build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Extract version from tag
         id: version
         run: |
@@ -104,6 +262,11 @@ jobs:
           echo "Release notes:"
           cat release_notes.md
 
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -112,4 +275,4 @@ jobs:
           draft: false
           prerelease: ${{ contains(steps.version.outputs.version, '-rc') || contains(steps.version.outputs.version, '-alpha') || contains(steps.version.outputs.version, '-beta') }}
           files: |
-            build/bin/${{ steps.find-exe.outputs.file }}
+            artifacts/**/*
