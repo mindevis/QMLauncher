@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2025-12-27
+
 ### Added
 - Initial project setup with Wails v2.11.0
 - Vue.js 3 frontend with Vite build system
