@@ -3,6 +3,7 @@
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/mindeivs/QMLauncher/releases/tag/v1.0.0)
 [![Go](https://img.shields.io/badge/Go-1.23+-00ADD8.svg)](https://golang.org)
 [![Vue.js](https://img.shields.io/badge/Vue.js-3.2+-4FC08D.svg)](https://vuejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-3178C6.svg)](https://www.typescriptlang.org)
 [![Wails](https://img.shields.io/badge/Wails-2.11+-00ADD8.svg)](https://wails.io)
 
 A modern desktop application built with Go and Vue.js using the Wails framework.
@@ -17,6 +18,7 @@ QMLauncher is a cross-platform desktop application that serves as a launcher for
 - 🔄 Hot reload during development
 - 📦 Cross-platform support (Windows, macOS, Linux)
 - 🎨 Modern Vue.js frontend with shadcn-vue components
+- 🔷 Full TypeScript support for type safety
 - ⚡ Native performance with Go backend
 - 🛠️ Easy configuration and customization
 - 🎯 Beautiful UI with Tailwind CSS

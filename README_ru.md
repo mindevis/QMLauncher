@@ -3,6 +3,7 @@
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/mindeivs/QMLauncher/releases/tag/v1.0.0)
 [![Go](https://img.shields.io/badge/Go-1.23+-00ADD8.svg)](https://golang.org)
 [![Vue.js](https://img.shields.io/badge/Vue.js-3.2+-4FC08D.svg)](https://vuejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-3178C6.svg)](https://www.typescriptlang.org)
 [![Wails](https://img.shields.io/badge/Wails-2.11+-00ADD8.svg)](https://wails.io)
 
 Современное десктопное приложение, созданное с использованием Go и Vue.js на базе фреймворка Wails.
@@ -17,6 +18,7 @@ QMLauncher - это кроссплатформенное десктопное п
 - 🔄 Горячая перезагрузка во время разработки
 - 📦 Кроссплатформенная поддержка (Windows, macOS, Linux)
 - 🎨 Современный фронтенд на Vue.js с shadcn-vue компонентами
+- 🔷 Полная поддержка TypeScript для типобезопасности
 - ⚡ Нативная производительность с Go бэкендом
 - 🛠️ Легкая настройка и кастомизация
 - 🎯 Красивый UI с Tailwind CSS

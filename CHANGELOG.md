@@ -30,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Tailwind CSS for modern styling
 - Created base UI components (Button, Card, Input, Label)
 - Updated main application with new component showcase
+- Added full TypeScript support for Vue components
+- Configured TypeScript with proper Vue 3 integration
+- Added type checking and IntelliSense support
+- Updated build system to include TypeScript compilation
 
 ### Changed
 - Updated from default Wails template to QMLauncher branding
