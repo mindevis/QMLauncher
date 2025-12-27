@@ -108,6 +108,28 @@ Available CLI commands:
 
 The launcher uses `~/.qmlauncher` as the default working directory for storing instances, assets, libraries, and configuration files. You can override this with the `--dir` flag.
 
+### Instance Structure
+
+Each instance is stored in its own directory with a unique UUID for isolation:
+
+```
+~/.qmlauncher/instances/
+└── InstanceName/
+    └── uuid/
+        ├── instance.toml    # Instance configuration
+        ├── minecraft.jar    # Minecraft client
+        ├── forge.jar        # Mod loader (if applicable)
+        ├── mods/           # Mods directory
+        ├── saves/          # World saves
+        └── config/         # Configuration files
+```
+
+Shared resources remain in the root directories:
+- `libraries/` - Java libraries
+- `assets/` - Game assets and textures
+- `caches/` - Downloaded metadata and manifests
+- `java/` - Java runtime installations
+
 Examples:
 ```bash
 # Show help

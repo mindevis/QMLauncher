@@ -47,6 +47,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added automated release artifact uploads
 - Created Russian translation of API documentation (API_ru.md)
 - Changed default working directory from ~/.minecraft to ~/.qmlauncher
+- Implemented UUID-based instance isolation with unique directories
+- Updated instance structure: ~/.qmlauncher/instances/name/uuid/
+- Added UUID generation for each new instance
+- Modified instance management functions to work with new structure
 
 ### Changed
 - Updated from default Wails template to QMLauncher branding
