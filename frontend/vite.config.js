@@ -10,8 +10,4 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
     },
   },
-  esbuild: {
-    // Add support for .vue files with TypeScript
-    include: /\.(vue|svelte|ts|tsx|js|jsx)$/,
-  },
 })
