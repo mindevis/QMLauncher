@@ -9,16 +9,18 @@ A modern desktop application built with Go and Vue.js using the Wails framework.
 
 ## About
 
-QMLauncher is a cross-platform desktop application that serves as a launcher for various applications and tools. Built using the Wails framework, it combines the power of Go for the backend with Vue.js for the frontend to create a native desktop experience.
+QMLauncher is a cross-platform desktop application that serves as a launcher for various applications and tools. Built using the Wails framework, it combines the power of Go for the backend with Vue.js for the frontend to create a native desktop experience. The UI is built with shadcn-vue components and styled with Tailwind CSS for a modern, accessible, and beautiful user interface.
 
 ## Features
 
 - 🚀 Fast and responsive desktop application
 - 🔄 Hot reload during development
 - 📦 Cross-platform support (Windows, macOS, Linux)
-- 🎨 Modern Vue.js frontend
+- 🎨 Modern Vue.js frontend with shadcn-vue components
 - ⚡ Native performance with Go backend
 - 🛠️ Easy configuration and customization
+- 🎯 Beautiful UI with Tailwind CSS
+- 📱 Responsive design components
 
 ## Requirements
 

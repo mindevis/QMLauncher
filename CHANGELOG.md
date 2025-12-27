@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed build directory duplication issue (build/bin/build/...)
 - Added cross-compilation checks for unsupported platform combinations
 - Improved build output handling with post-build file moving
+- Integrated shadcn-vue UI component library
+- Added Tailwind CSS for modern styling
+- Created base UI components (Button, Card, Input, Label)
+- Updated main application with new component showcase
 
 ### Changed
 - Updated from default Wails template to QMLauncher branding
