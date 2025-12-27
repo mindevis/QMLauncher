@@ -1,5 +1,10 @@
 # QMLauncher
 
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/mindeivs/QMLauncher/releases/tag/v1.0.0)
+[![Go](https://img.shields.io/badge/Go-1.23+-00ADD8.svg)](https://golang.org)
+[![Vue.js](https://img.shields.io/badge/Vue.js-3.2+-4FC08D.svg)](https://vuejs.org)
+[![Wails](https://img.shields.io/badge/Wails-2.11+-00ADD8.svg)](https://wails.io)
+
 A modern desktop application built with Go and Vue.js using the Wails framework.
 
 ## About
@@ -192,6 +197,40 @@ https://wails.io/docs/reference/project-config
 3. Make your changes
 4. Test thoroughly
 5. Submit a pull request
+
+## Versioning
+
+This project follows [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://conventionalcommits.org/) specifications.
+
+### Release Types
+
+- **MAJOR** version (X.y.z) - Breaking changes
+- **MINOR** version (x.Y.z) - New features (backward compatible)
+- **PATCH** version (x.y.Z) - Bug fixes (backward compatible)
+
+### Commit Message Format
+
+```
+type(scope): description
+
+[optional body]
+
+[optional footer]
+```
+
+Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+
+Examples:
+- `feat: add user authentication`
+- `fix: resolve memory leak in file handler`
+- `docs: update API documentation`
+
+## Contributing
+
+1. Follow Conventional Commits for commit messages
+2. Run `make check` before submitting PR
+3. Update CHANGELOG.md for significant changes
+4. Test on multiple platforms when possible
 
 ## License
 

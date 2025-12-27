@@ -1,5 +1,10 @@
 # QMLauncher
 
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/mindeivs/QMLauncher/releases/tag/v1.0.0)
+[![Go](https://img.shields.io/badge/Go-1.23+-00ADD8.svg)](https://golang.org)
+[![Vue.js](https://img.shields.io/badge/Vue.js-3.2+-4FC08D.svg)](https://vuejs.org)
+[![Wails](https://img.shields.io/badge/Wails-2.11+-00ADD8.svg)](https://wails.io)
+
 Современное десктопное приложение, созданное с использованием Go и Vue.js на базе фреймворка Wails.
 
 ## О проекте
@@ -192,6 +197,40 @@ https://wails.io/docs/reference/project-config
 3. Внесите изменения
 4. Тщательно протестируйте
 5. Отправьте pull request
+
+## Версионирование
+
+Этот проект следует спецификациям [Semantic Versioning](https://semver.org/) и [Conventional Commits](https://conventionalcommits.org/).
+
+### Типы релизов
+
+- **MAJOR** версия (X.y.z) - Критические изменения
+- **MINOR** версия (x.Y.z) - Новые функции (обратно совместимые)
+- **PATCH** версия (x.y.Z) - Исправления ошибок (обратно совместимые)
+
+### Формат сообщений коммитов
+
+```
+type(scope): описание
+
+[необязательное тело]
+
+[необязательный футер]
+```
+
+Типы: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+
+Примеры:
+- `feat: добавить аутентификацию пользователя`
+- `fix: исправить утечку памяти в обработчике файлов`
+- `docs: обновить документацию API`
+
+## Участие в разработке
+
+1. Следуйте Conventional Commits для сообщений коммитов
+2. Запускайте `make check` перед отправкой PR
+3. Обновляйте CHANGELOG.md для значительных изменений
+4. Тестируйте на нескольких платформах по возможности
 
 ## Лицензия
 
