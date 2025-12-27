@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-var RootDir string // Base launcher directory. Defaults to "$HOME/.minecraft"
+var RootDir string // Base launcher directory. Defaults to "$HOME/.qmlauncher"
 
 var LibrariesDir string // Java libraries directory
 
@@ -43,5 +43,5 @@ func SetDirs(rootDir string) error {
 
 func init() {
 	home, _ := os.UserHomeDir()
-	SetDirs(filepath.Join(home, ".minecraft"))
+	SetDirs(filepath.Join(home, ".qmlauncher"))
 }

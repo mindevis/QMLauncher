@@ -106,6 +106,8 @@ Available CLI commands:
 - `completions` - Generate shell completions
 - `about` - Display launcher version and information
 
+The launcher uses `~/.qmlauncher` as the default working directory for storing instances, assets, libraries, and configuration files. You can override this with the `--dir` flag.
+
 Examples:
 ```bash
 # Show help

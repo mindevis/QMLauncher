@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integrated frontend build process in CI pipeline
 - Added automated release artifact uploads
 - Created Russian translation of API documentation (API_ru.md)
+- Changed default working directory from ~/.minecraft to ~/.qmlauncher
 
 ### Changed
 - Updated from default Wails template to QMLauncher branding
