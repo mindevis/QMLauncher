@@ -24,6 +24,15 @@ QMLauncher is a cross-platform desktop application that serves as a launcher for
 - 🎯 Beautiful UI with Tailwind CSS
 - 📱 Responsive design components
 
+## API Documentation
+
+For programmatic usage of the Minecraft launcher functionality:
+
+- [English API Documentation](docs/API.md)
+- [Russian API Documentation](docs/API_ru.md)
+
+The API allows you to create, manage, and launch Minecraft instances programmatically from your Go applications.
+
 ## Requirements
 
 - Go 1.19 or later
@@ -64,9 +73,11 @@ make install-tools
 make deps
 ```
 
-### Running in Development Mode
+### Running Modes
 
-To run the application in development mode with hot reload:
+#### GUI Mode (Default)
+
+To run the application in GUI mode with Wails desktop interface:
 
 ```bash
 wails dev
@@ -78,6 +89,37 @@ This will start:
 - The Go backend
 - Vite development server for the frontend
 - Hot reload for both backend and frontend changes
+
+#### CLI Mode
+
+To run the application in command-line mode for Minecraft launcher functionality:
+
+```bash
+./qmlauncher --nogui [command]
+```
+
+Available CLI commands:
+- `start` - Start the specified Minecraft instance
+- `instance` (or `inst`) - Manage Minecraft instances
+- `auth` - Manage account authentication
+- `search` - Search Minecraft versions
+- `completions` - Generate shell completions
+- `about` - Display launcher version and information
+
+Examples:
+```bash
+# Show help
+./qmlauncher --nogui --help
+
+# Display version info
+./qmlauncher --nogui about
+
+# Search Minecraft versions
+./qmlauncher --nogui search 1.20
+
+# List instances
+./qmlauncher --nogui instance list
+```
 
 ### Browser Development
 
@@ -99,6 +141,7 @@ This includes:
 - Go linting (`make lint`)
 - Frontend linting (`make frontend-lint`)
 - Frontend formatting (`make frontend-fmt`)
+- TypeScript type checking (`npm run type-check` in frontend/)
 
 #### Individual Commands
 
@@ -229,12 +272,20 @@ Examples:
 - `fix: resolve memory leak in file handler`
 - `docs: update API documentation`
 
+## CI/CD
+
+This project uses GitHub Actions for automated building and releasing:
+
+- **Build**: Runs on every push/PR (excluding docs), tests compilation on Windows/macOS/Linux
+- **Release**: Triggers on release creation, builds binaries for all platforms and uploads to GitHub Releases
+
 ## Contributing
 
 1. Follow Conventional Commits for commit messages
 2. Run `make check` before submitting PR
 3. Update CHANGELOG.md for significant changes
 4. Test on multiple platforms when possible
+5. Ensure CI passes before merging
 
 ## License
 

@@ -33,7 +33,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added full TypeScript support for Vue components
 - Configured TypeScript with proper Vue 3 integration
 - Added type checking and IntelliSense support
-- Updated build system to include TypeScript compilation
+- Updated build system to use Vite's built-in TypeScript support
+- Fixed PostCSS configuration for ES modules compatibility
+- Updated Vite to v4.5.14 and Vue plugin to v4.6.2
+- Resolved vue-tsc compilation issues by using Vite's TypeScript handling
+- Integrated QMLauncher CLI functionality for Minecraft launcher features
+- Added --nogui flag for command-line mode operation
+- Imported CLI commands: start, instance, auth, search, completions, about
+- Maintained backward compatibility with GUI mode as default
+- Added GitHub Actions CI/CD workflows for automated building and releasing
+- Configured cross-platform builds for Linux, macOS, and Windows
+- Integrated frontend build process in CI pipeline
+- Added automated release artifact uploads
+- Created Russian translation of API documentation (API_ru.md)
 
 ### Changed
 - Updated from default Wails template to QMLauncher branding
