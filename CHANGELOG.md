@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added automated release artifact uploads
 - Created Russian translation of API documentation (API_ru.md)
 - Added instance path column to `instance list` command output
+- Added `java list` command to display all installed Java versions
 - Changed default working directory from ~/.minecraft to ~/.qmlauncher
 - Implemented UUID-based instance isolation with unique directories
 - Updated instance structure: ~/.qmlauncher/instances/name/uuid/

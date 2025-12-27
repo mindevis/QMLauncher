@@ -40,6 +40,7 @@ type CLI struct {
 	Instance    cmd.InstanceCmd  `cmd:"" help:"${instance}" aliases:"inst"`
 	Auth        cmd.AuthCmd      `cmd:"" help:"${auth}"`
 	Search      cmd.SearchCmd    `cmd:"" help:"${search}"`
+	Java        cmd.JavaCmd      `cmd:"" help:"${java}"`
 	Completions komplete.Command `cmd:"" help:"${completions}"`
 	About       aboutCmd         `cmd:"" help:"${about}"`
 

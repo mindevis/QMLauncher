@@ -7,8 +7,10 @@ type translations map[string]string
 var en = translations{
 	"instance":    "Manage Minecraft instances",
 	"auth":        "Manage account authentication",
+	"java":        "Manage Java runtime installations",
 	"about":       "Display launcher version and about",
 	"list":        "List all instances",
+	"java_list":   "List all installed Java versions",
 	"completions": "Outputs shell command to install completions",
 
 	"login":               "Login in to an account",
@@ -51,6 +53,8 @@ var en = translations{
 	"search.table.date":    "Release Date",
 	"search.table.name":    "Name",
 	"instance.table.path":  "Path",
+	"java.table.name":      "Name",
+	"java.table.path":      "Path",
 	"search.arg.query":     "Search query",
 	"search.arg.kind":      "What to search for",
 	"search.arg.reverse":   "Reverse the listing",
@@ -106,8 +110,10 @@ var en = translations{
 var de = translations{
 	"instance":    "Minecraft-Instanze verwalten",
 	"auth":        "Konto-Authentifizierung verwalten",
+	"java":        "Java-Runtime-Installationen verwalten",
 	"about":       "Version und andere Informationen anzeigen",
 	"list":        "Alle Instanze auflisten",
+	"java_list":   "Alle installierten Java-Versionen auflisten",
 	"completions": "Befehl ausstoßen, der Tab-Vervollständigungen einrichtet",
 
 	"login":               "Anmelden",
@@ -150,6 +156,8 @@ var de = translations{
 	"search.table.date":    "Veröffentlicht am",
 	"search.table.name":    "Name",
 	"instance.table.path":  "Pfad",
+	"java.table.name":      "Name",
+	"java.table.path":      "Pfad",
 	"search.arg.query":     "Suchanfrage",
 	"search.arg.kind":      "Suchtyp",
 	"search.arg.reverse":   "Liste umgekehrt anzeigen",

@@ -104,6 +104,7 @@ make dev
 - `instance create <name> -v <version> -l <loader>` - Создание нового инстанса
 - `instance delete <name>` - Удаление инстанса
 - `instance rename <old> <new>` - Переименование инстанса
+- `java list` - Список всех установленных версий Java
 - `auth` - Управление аутентификацией аккаунта
 - `search` - Поиск версий Minecraft
 - `completions` - Генерация автодополнения для shell

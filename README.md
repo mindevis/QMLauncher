@@ -104,6 +104,7 @@ Available CLI commands:
 - `instance create <name> -v <version> -l <loader>` - Create a new instance
 - `instance delete <name>` - Delete an instance
 - `instance rename <old> <new>` - Rename an instance
+- `java list` - List all installed Java versions
 - `auth` - Manage account authentication
 - `search` - Search Minecraft versions
 - `completions` - Generate shell completions
