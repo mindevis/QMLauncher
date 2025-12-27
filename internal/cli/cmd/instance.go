@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"os"
 
+	"QMLauncher/internal/cli/output"
+	"QMLauncher/pkg/launcher"
+
 	"github.com/alecthomas/kong"
 	"github.com/fatih/color"
 	"github.com/jedib0t/go-pretty/v6/table"
-	"QMLauncher/internal/cli/output"
-	"QMLauncher/pkg/launcher"
 )
 
 // CreateCmd creates a new instance with specified parameters.
@@ -112,7 +113,7 @@ func (c *ListCmd) Run(ctx *kong.Context) error {
 		return fmt.Errorf("fetch all instances: %w", err)
 	}
 	for i, inst := range instances {
-		rows = append(rows, table.Row{i, inst.Name, inst.GameVersion, inst.Loader})
+		rows = append(rows, table.Row{i, inst.Name, inst.GameVersion, inst.Loader, inst.Dir()})
 	}
 
 	t := table.NewWriter()
@@ -123,6 +124,7 @@ func (c *ListCmd) Run(ctx *kong.Context) error {
 		output.Translate("search.table.name"),
 		output.Translate("search.table.version"),
 		output.Translate("search.table.type"),
+		output.Translate("instance.table.path"),
 	})
 	t.AppendRows(rows)
 	t.Render()

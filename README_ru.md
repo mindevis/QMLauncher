@@ -100,7 +100,10 @@ make dev
 
 Доступные CLI команды:
 - `start` - Запуск указанного инстанса Minecraft
-- `instance` (или `inst`) - Управление инстансами Minecraft
+- `instance list` - Список всех инстансов с их путями
+- `instance create <name> -v <version> -l <loader>` - Создание нового инстанса
+- `instance delete <name>` - Удаление инстанса
+- `instance rename <old> <new>` - Переименование инстанса
 - `auth` - Управление аутентификацией аккаунта
 - `search` - Поиск версий Minecraft
 - `completions` - Генерация автодополнения для shell

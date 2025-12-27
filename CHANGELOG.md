@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integrated frontend build process in CI pipeline
 - Added automated release artifact uploads
 - Created Russian translation of API documentation (API_ru.md)
+- Added instance path column to `instance list` command output
 - Changed default working directory from ~/.minecraft to ~/.qmlauncher
 - Implemented UUID-based instance isolation with unique directories
 - Updated instance structure: ~/.qmlauncher/instances/name/uuid/

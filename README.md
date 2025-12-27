@@ -100,7 +100,10 @@ To run the application in command-line mode for Minecraft launcher functionality
 
 Available CLI commands:
 - `start` - Start the specified Minecraft instance
-- `instance` (or `inst`) - Manage Minecraft instances
+- `instance list` - List all instances with their paths
+- `instance create <name> -v <version> -l <loader>` - Create a new instance
+- `instance delete <name>` - Delete an instance
+- `instance rename <old> <new>` - Rename an instance
 - `auth` - Manage account authentication
 - `search` - Search Minecraft versions
 - `completions` - Generate shell completions
