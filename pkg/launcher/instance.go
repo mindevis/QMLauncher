@@ -5,7 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strconv"
+	"strings"
 
 	env "QMLauncher/pkg"
 
@@ -40,6 +44,26 @@ func (inst Instance) Dir() string {
 	return filepath.Join(env.InstancesDir, inst.Name, inst.UUID)
 }
 
+// LibrariesDir returns the instance's libraries directory
+func (inst Instance) LibrariesDir() string {
+	return filepath.Join(inst.Dir(), "libraries")
+}
+
+// CachesDir returns the instance's caches directory
+func (inst Instance) CachesDir() string {
+	return filepath.Join(inst.Dir(), "caches")
+}
+
+// AssetsDir returns the instance's assets directory
+func (inst Instance) AssetsDir() string {
+	return filepath.Join(inst.Dir(), "assets")
+}
+
+// TmpDir returns the instance's temporary directory
+func (inst Instance) TmpDir() string {
+	return filepath.Join(inst.Dir(), "tmp")
+}
+
 // Rename renames instance to the specified new name
 func (inst *Instance) Rename(new string) error {
 	oldDir := inst.Dir()
@@ -58,7 +82,7 @@ type InstanceConfig struct {
 		Width  int `toml:"width" json:"width"`
 		Height int `toml:"height" json:"height"`
 	} `toml:"resolution" json:"resolution"                comment:"Game window resolution"`
-	Java      string `toml:"java" json:"java"             comment:"Path to a Java executable. If blank, a Mojang-provided JVM will be downloaded."`
+	Java      string `toml:"java" json:"java"             comment:"Path to a Java executable. If blank, a Mojang-provided JVM will be downloaded for best compatibility."`
 	JavaArgs  string `toml:"java_args" json:"java_args"   comment:"Extra arguments to pass to the JVM"`
 	CustomJar string `toml:"custom_jar" json:"custom_jar" comment:"Path to a custom JAR to use instead of the normal Minecraft client"`
 	MinMemory int    `toml:"min_memory" json:"min_memory" comment:"Minimum game memory, in MB"`
@@ -85,7 +109,9 @@ func CreateInstance(options InstanceOptions) (Instance, error) {
 		return Instance{}, fmt.Errorf("instance already exists")
 	}
 
-	version, err := fetchVersion(options.Loader, options.GameVersion, options.LoaderVersion)
+	// Create a temporary instance for fetching version metadata
+	tempInst := Instance{Name: options.Name, UUID: "temp"}
+	version, err := fetchVersion(options.Loader, options.GameVersion, options.LoaderVersion, tempInst.CachesDir(), tempInst.LibrariesDir(), tempInst.TmpDir())
 	if err != nil {
 		return Instance{}, err
 	}
@@ -235,4 +261,91 @@ func DoesInstanceExist(name string) bool {
 		}
 	}
 	return false
+}
+
+// FindSystemJava attempts to find a suitable Java installation on the system
+func FindSystemJava() string {
+	// Check JAVA_HOME environment variable
+	if javaHome := os.Getenv("JAVA_HOME"); javaHome != "" {
+		javaPath := filepath.Join(javaHome, "bin", "java")
+		if runtime.GOOS == "windows" {
+			javaPath += ".exe"
+		}
+		if fileExists(javaPath) {
+			return javaPath
+		}
+	}
+
+	// Check PATH for java executable
+	if javaPath, err := exec.LookPath("java"); err == nil {
+		// Verify it's actually executable
+		if info, err := os.Stat(javaPath); err == nil && !info.IsDir() {
+			if runtime.GOOS == "windows" || (info.Mode()&0111 != 0) {
+				return javaPath
+			}
+		}
+	}
+
+	// On Windows, check common installation paths
+	if runtime.GOOS == "windows" {
+		commonPaths := []string{
+			`C:\Program Files\Java\`,
+			`C:\Program Files (x86)\Java\`,
+		}
+
+		for _, basePath := range commonPaths {
+			if entries, err := os.ReadDir(basePath); err == nil {
+				// Find the latest Java version
+				var latestJava string
+				var latestVersion int
+
+				for _, entry := range entries {
+					if entry.IsDir() && strings.HasPrefix(entry.Name(), "jdk") {
+						versionStr := strings.TrimPrefix(entry.Name(), "jdk")
+						if version, err := strconv.Atoi(versionStr); err == nil {
+							if version > latestVersion {
+								latestVersion = version
+								latestJava = filepath.Join(basePath, entry.Name(), "bin", "java.exe")
+							}
+						}
+					}
+				}
+
+				if latestJava != "" && fileExists(latestJava) {
+					return latestJava
+				}
+			}
+		}
+	}
+
+	// On Linux/macOS, check common paths
+	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+		commonPaths := []string{
+			"/usr/lib/jvm/",
+			"/usr/java/",
+			"/opt/java/",
+			"/Library/Java/JavaVirtualMachines/",
+		}
+
+		for _, basePath := range commonPaths {
+			if entries, err := os.ReadDir(basePath); err == nil {
+				for _, entry := range entries {
+					if entry.IsDir() {
+						javaPath := filepath.Join(basePath, entry.Name(), "bin", "java")
+						if fileExists(javaPath) {
+							return javaPath
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return "" // No Java found, will use Mojang Java runtime
+}
+
+// fileExists checks if a file exists and is accessible
+func fileExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && !info.IsDir()
 }

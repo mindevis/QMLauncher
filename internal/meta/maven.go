@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"QMLauncher/internal/network"
-	env "QMLauncher/pkg"
 )
 
 const MavenRepoURL = "https://repo.maven.apache.org/maven2"
@@ -90,11 +89,11 @@ func NewLibrarySpecifier(s string) (LibrarySpecifier, error) {
 }
 
 // FetchMavenLibrary returns library metadata for the specified name and path in the Maven repository.
-func FetchMavenLibrary(specifier LibrarySpecifier) (Library, error) {
+func FetchMavenLibrary(specifier LibrarySpecifier, librariesDir string) (Library, error) {
 	url, _ := url.JoinPath(MavenRepoURL, specifier.Path())
 	path := specifier.Path()
 
-	sumPath := filepath.Join(env.LibrariesDir, filepath.Dir(path), filepath.Base(path)+".sha1")
+	sumPath := filepath.Join(librariesDir, filepath.Dir(path), filepath.Base(path)+".sha1")
 	var sum []byte
 	sum, err := os.ReadFile(sumPath)
 

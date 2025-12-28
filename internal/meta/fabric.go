@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"QMLauncher/internal/network"
-	env "QMLauncher/pkg"
 )
 
 // A FabricVersionList is a list of all Fabric loader versions.
@@ -34,9 +33,9 @@ var Quilt = fabricAPI{
 }
 
 // FetchVersions retrieves a list of all versions of Fabric.
-func (api fabricAPI) FetchVersions() (FabricVersionList, error) {
+func (api fabricAPI) FetchVersions(cachesDir string) (FabricVersionList, error) {
 	cache := network.Cache[FabricVersionList]{
-		Path:        filepath.Join(env.CachesDir, api.name, "versions.json"),
+		Path:        filepath.Join(cachesDir, api.name, "versions.json"),
 		URL:         fmt.Sprintf("%s/versions/loader", api.url),
 		AlwaysFetch: true,
 	}
@@ -51,16 +50,16 @@ func (api fabricAPI) FetchVersions() (FabricVersionList, error) {
 // FetchMeta retrieves version metadata for the specified game and loader version of Fabric.
 //
 // Besides normal version identifiers, loaderVersion can also be "latest".
-func (api fabricAPI) FetchMeta(gameVersion, loaderVersion string) (VersionMeta, error) {
+func (api fabricAPI) FetchMeta(gameVersion, loaderVersion string, cachesDir string) (VersionMeta, error) {
 	if loaderVersion == "latest" {
-		versions, err := api.FetchVersions()
+		versions, err := api.FetchVersions(cachesDir)
 		if err != nil {
 			return VersionMeta{}, fmt.Errorf("fetch versions: %w", err)
 		}
 		loaderVersion = versions[0].Version
 	}
 	cache := network.Cache[VersionMeta]{
-		Path: filepath.Join(env.CachesDir, api.name, loaderVersion+"-"+gameVersion+".json"),
+		Path: filepath.Join(cachesDir, api.name, loaderVersion+"-"+gameVersion+".json"),
 		URL:  fmt.Sprintf("%s/versions/loader/%s/%s/profile/json", api.url, gameVersion, loaderVersion),
 	}
 

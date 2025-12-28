@@ -37,6 +37,7 @@ type LaunchOptions struct {
 	Demo               bool
 	DisableMultiplayer bool
 	DisableChat        bool
+	NoJavaWindow       bool
 
 	skipAssets    bool
 	skipLibraries bool
@@ -96,7 +97,17 @@ func Launch(launchEnv LaunchEnvironment, runner Runner) error {
 	if err != nil {
 		return fmt.Errorf("Java executable does not exist") //lint:ignore ST1005 should be capitalized
 	}
-	if info.Mode()&0111 == 0 || info.IsDir() {
+	if info.IsDir() {
+		return fmt.Errorf("Java binary is not executable") //lint:ignore ST1005 should be capitalized
+	}
+
+	// On Windows, check for .exe extension
+	if runtime.GOOS == "windows" && !strings.HasSuffix(strings.ToLower(launchEnv.Java), ".exe") {
+		return fmt.Errorf("Java binary is not executable") //lint:ignore ST1005 should be capitalized
+	}
+
+	// On Unix systems, check execute permissions
+	if runtime.GOOS != "windows" && info.Mode()&0111 == 0 {
 		return fmt.Errorf("Java binary is not executable") //lint:ignore ST1005 should be capitalized
 	}
 
@@ -110,7 +121,7 @@ func Launch(launchEnv LaunchEnvironment, runner Runner) error {
 func Prepare(inst Instance, options LaunchOptions, watcher EventWatcher) (LaunchEnvironment, error) {
 	var downloads []network.DownloadEntry
 
-	version, err := fetchVersion(inst.Loader, inst.GameVersion, inst.LoaderVersion)
+	version, err := fetchVersion(inst.Loader, inst.GameVersion, inst.LoaderVersion, inst.CachesDir(), inst.LibrariesDir(), inst.TmpDir())
 	if err != nil {
 		return LaunchEnvironment{}, fmt.Errorf("retrieve metadata: %w", err)
 	}
@@ -120,6 +131,11 @@ func Prepare(inst Instance, options LaunchOptions, watcher EventWatcher) (Launch
 		Java:      options.Java,
 		MainClass: version.MainClass,
 	}
+
+	// On Windows, replace java.exe with javaw.exe if NoJavaWindow is requested
+	if runtime.GOOS == "windows" && options.NoJavaWindow && strings.HasSuffix(strings.ToLower(launchEnv.Java), "java.exe") {
+		launchEnv.Java = strings.TrimSuffix(launchEnv.Java, "java.exe") + "javaw.exe"
+	}
 	watcher(MetadataResolvedEvent{})
 
 	// Filter libraries, and add necessary artifact download entries
@@ -127,10 +143,10 @@ func Prepare(inst Instance, options LaunchOptions, watcher EventWatcher) (Launch
 		version.Libraries = append(version.Libraries, version.Client())
 	}
 
-	installedLibs, requiredLibs := filterLibraries(version.Libraries)
+	installedLibs, requiredLibs := filterLibraries(version.Libraries, inst.LibrariesDir())
 	if !options.skipLibraries {
 		for _, library := range requiredLibs {
-			downloads = append(downloads, library.Artifact.DownloadEntry())
+			downloads = append(downloads, library.Artifact.DownloadEntry(inst.LibrariesDir()))
 		}
 	}
 	watcher(LibrariesResolvedEvent{
@@ -138,19 +154,19 @@ func Prepare(inst Instance, options LaunchOptions, watcher EventWatcher) (Launch
 	})
 
 	// Download asset index and add all necessary asset download entries
-	assetIndex, err := meta.DownloadAssetIndex(version)
+	assetIndex, err := meta.DownloadAssetIndex(version, inst.AssetsDir())
 	if err != nil {
 		return LaunchEnvironment{}, fmt.Errorf("retrieve asset index: %w", err)
 	}
 	if !options.skipAssets {
-		downloads = append(downloads, assetIndex.DownloadEntries()...)
+		downloads = append(downloads, assetIndex.DownloadEntries(inst.AssetsDir())...)
 	}
 	watcher(AssetsResolvedEvent{Total: len(assetIndex.Objects)})
 
 	// If no Java path is present, fetch Mojang Java downloads
 	var symlinks map[string]string
 	if launchEnv.Java == "" {
-		manifest, err := meta.FetchJavaManifest(version.JavaVersion.Component)
+		manifest, err := meta.FetchJavaManifest(version.JavaVersion.Component, inst.CachesDir())
 		if err != nil {
 			return LaunchEnvironment{}, fmt.Errorf("fetch Java manifest: %w", err)
 		}
@@ -158,7 +174,15 @@ func Prepare(inst Instance, options LaunchOptions, watcher EventWatcher) (Launch
 		entries, symlinks = manifest.DownloadEntries(version.JavaVersion.Component)
 		downloads = append(downloads, entries...)
 
-		launchEnv.Java = filepath.Join(env.JavaDir, version.JavaVersion.Component, "bin", "java")
+		exeName := "java"
+		if runtime.GOOS == "windows" {
+			if options.NoJavaWindow {
+				exeName = "javaw.exe"
+			} else {
+				exeName = "java.exe"
+			}
+		}
+		launchEnv.Java = filepath.Join(env.JavaDir, version.JavaVersion.Component, "bin", exeName)
 	}
 
 	if err := download(downloads, symlinks, watcher); err != nil {
@@ -170,12 +194,12 @@ func Prepare(inst Instance, options LaunchOptions, watcher EventWatcher) (Launch
 	var processors []meta.ForgeProcessor
 	switch inst.Loader {
 	case LoaderForge:
-		processors, err = meta.Forge.FetchPostProcessors(version.ID, version.LoaderID)
+		processors, err = meta.Forge.FetchPostProcessors(version.ID, version.LoaderID, inst.CachesDir(), inst.LibrariesDir(), inst.TmpDir())
 		if err != nil {
 			return LaunchEnvironment{}, fmt.Errorf("fetch Forge post processors: %w", err)
 		}
 	case LoaderNeoForge:
-		processors, err = meta.Neoforge.FetchPostProcessors(version.ID, version.LoaderID)
+		processors, err = meta.Neoforge.FetchPostProcessors(version.ID, version.LoaderID, inst.CachesDir(), inst.LibrariesDir(), inst.TmpDir())
 		if err != nil {
 			return LaunchEnvironment{}, fmt.Errorf("fetch NeoForge post processors: %w", err)
 		}
@@ -189,14 +213,14 @@ func Prepare(inst Instance, options LaunchOptions, watcher EventWatcher) (Launch
 		}
 	}
 
-	launchEnv.JavaArgs, launchEnv.GameArgs = createArgs(launchEnv, version, options)
+	launchEnv.JavaArgs, launchEnv.GameArgs = createArgs(launchEnv, version, options, inst)
 
 	// Finalize classpath
 	for _, library := range append(installedLibs, requiredLibs...) {
 		if library.SkipOnClasspath {
 			continue
 		}
-		launchEnv.Classpath = append(launchEnv.Classpath, library.Artifact.RuntimePath())
+		launchEnv.Classpath = append(launchEnv.Classpath, library.Artifact.RuntimePath(inst.LibrariesDir()))
 	}
 	if options.CustomJar != "" {
 		launchEnv.Classpath = append(launchEnv.Classpath, options.CustomJar)
@@ -235,14 +259,14 @@ func download(entries []network.DownloadEntry, symlinks map[string]string, watch
 
 // createArgs takes data from a launch environment, version metadata, and environment options to
 // create a set of game and Java arguments to pass when starting the game.
-func createArgs(launchEnv LaunchEnvironment, version meta.VersionMeta, options LaunchOptions) (java, game []string) {
+func createArgs(launchEnv LaunchEnvironment, version meta.VersionMeta, options LaunchOptions, inst Instance) (java, game []string) {
 	// Game arguments
 	game = []string{
 		"--username", options.Session.Username,
 		"--accessToken", options.Session.AccessToken,
 		"--userType", "msa",
 		"--gameDir", launchEnv.GameDir,
-		"--assetsDir", env.AssetsDir,
+		"--assetsDir", inst.AssetsDir(),
 		"--assetIndex", version.AssetIndex.ID,
 		"--version", version.ID,
 		"--versionType", version.Type,
@@ -295,7 +319,7 @@ func createArgs(launchEnv LaunchEnvironment, version meta.VersionMeta, options L
 		// Replace any templates
 		if arg, ok := arg.(string); ok {
 			arg = strings.ReplaceAll(arg, "${version_name}", version.ID)
-			arg = strings.ReplaceAll(arg, "${library_directory}", env.LibrariesDir)
+			arg = strings.ReplaceAll(arg, "${library_directory}", inst.LibrariesDir())
 			arg = strings.ReplaceAll(arg, "${classpath_separator}", string(os.PathListSeparator))
 			java = append(java, arg)
 		}
@@ -317,11 +341,11 @@ func postProcess(launchEnv LaunchEnvironment, processors []meta.ForgeProcessor) 
 }
 
 // fetchVersion returns a VersionMeta containing both information for the base game, and specified mod loader.
-func fetchVersion(loader Loader, gameVersion string, loaderVersion string) (meta.VersionMeta, error) {
+func fetchVersion(loader Loader, gameVersion string, loaderVersion string, cachesDir string, librariesDir string, tmpDir string) (meta.VersionMeta, error) {
 	var loaderMeta meta.VersionMeta
 	var err error
 
-	version, err := meta.FetchVersionMeta(gameVersion)
+	version, err := meta.FetchVersionMeta(gameVersion, cachesDir)
 	if err != nil {
 		return meta.VersionMeta{}, fmt.Errorf("retrieve version metadata: %w", err)
 	}
@@ -332,7 +356,7 @@ func fetchVersion(loader Loader, gameVersion string, loaderVersion string) (meta
 		if loader == LoaderQuilt {
 			api = meta.Quilt
 		}
-		loaderMeta, err = api.FetchMeta(version.ID, loaderVersion)
+		loaderMeta, err = api.FetchMeta(version.ID, loaderVersion, cachesDir)
 		if err != nil {
 			return meta.VersionMeta{}, fmt.Errorf("retrieve Fabric/Quilt metadata: %w", err)
 		}
@@ -343,7 +367,7 @@ func fetchVersion(loader Loader, gameVersion string, loaderVersion string) (meta
 				return meta.VersionMeta{}, fmt.Errorf("retrieve NeoForge version: %w", err)
 			}
 		}
-		loaderMeta, _, err = meta.Neoforge.FetchMeta(loaderVersion)
+		loaderMeta, _, err = meta.Neoforge.FetchMeta(loaderVersion, cachesDir, librariesDir, tmpDir)
 		if err != nil {
 			return meta.VersionMeta{}, fmt.Errorf("retrieve NeoForge metadata: %w", err)
 		}
@@ -354,7 +378,7 @@ func fetchVersion(loader Loader, gameVersion string, loaderVersion string) (meta
 				return meta.VersionMeta{}, fmt.Errorf("retrieve Forge version: %w", err)
 			}
 		}
-		loaderMeta, _, err = meta.Forge.FetchMeta(loaderVersion)
+		loaderMeta, _, err = meta.Forge.FetchMeta(loaderVersion, cachesDir, librariesDir, tmpDir)
 		if err != nil {
 			return meta.VersionMeta{}, fmt.Errorf("retrieve Forge metadata: %w", err)
 		}

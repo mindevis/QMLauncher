@@ -7,10 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alecthomas/kong"
-	"github.com/jedib0t/go-pretty/v6/table"
 	"QMLauncher/internal/cli/output"
 	"QMLauncher/internal/meta"
+	"QMLauncher/pkg/launcher"
+
+	"github.com/alecthomas/kong"
+	"github.com/jedib0t/go-pretty/v6/table"
 )
 
 // SearchCmd enables search of game and mod loader versions.
@@ -21,6 +23,9 @@ type SearchCmd struct {
 }
 
 func (c *SearchCmd) Run(ctx *kong.Context) error {
+	// For global search, create a dummy instance to use instance-specific directories
+	dummyInst := launcher.Instance{Name: "global", UUID: "search"}
+
 	var rows []table.Row
 	var header table.Row
 
@@ -31,7 +36,7 @@ func (c *SearchCmd) Run(ctx *kong.Context) error {
 			output.Translate("search.table.type"),
 			output.Translate("search.table.date"),
 		}
-		manifest, err := meta.FetchVersionManifest()
+		manifest, err := meta.FetchVersionManifest(dummyInst.CachesDir())
 		if err != nil {
 			return fmt.Errorf("retrieve version manifest: %w", err)
 		}
@@ -51,7 +56,7 @@ func (c *SearchCmd) Run(ctx *kong.Context) error {
 			api = meta.Quilt
 		}
 
-		versions, err := api.FetchVersions()
+		versions, err := api.FetchVersions(dummyInst.CachesDir())
 		if err != nil {
 			return fmt.Errorf("retrieve versions: %w", err)
 		}

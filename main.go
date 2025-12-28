@@ -29,24 +29,24 @@ const (
 var assets embed.FS
 
 func main() {
-	// Check for --nogui flag before parsing other arguments
+	// Check for --no-gui flag before parsing other arguments
 	noGUI := false
 	args := os.Args[1:]
 
-	// Filter out --nogui flag and check if it exists
+	// Filter out --no-gui flag and check if it exists
 	filteredArgs := make([]string, 0, len(args))
 	for _, arg := range args {
-		if arg == "--nogui" {
+		if arg == "--no-gui" {
 			noGUI = true
 		} else {
 			filteredArgs = append(filteredArgs, arg)
 		}
 	}
 
-	// Replace os.Args to exclude --nogui for CLI parser
+	// Replace os.Args to exclude --no-gui for CLI parser
 	os.Args = append([]string{os.Args[0]}, filteredArgs...)
 
-	// If --nogui flag is provided, run CLI mode
+	// If --no-gui flag is provided, run CLI mode
 	if noGUI {
 		runCLI()
 		return

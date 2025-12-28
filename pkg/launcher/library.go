@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/Masterminds/semver/v3"
 	"QMLauncher/internal/meta"
+
+	"github.com/Masterminds/semver/v3"
 )
 
 // filterLibraries sorts game libraries into installed and required libraries.
 //
 // It also runs patchLibrary on each library.
-func filterLibraries(libraries []meta.Library) (installed []meta.Library, required []meta.Library) {
+func filterLibraries(libraries []meta.Library, librariesDir string) (installed []meta.Library, required []meta.Library) {
 	for _, library := range libraries {
 		all := []meta.Library{library}
 		all = append(all, library.Natives...)
@@ -25,8 +26,8 @@ func filterLibraries(libraries []meta.Library) (installed []meta.Library, requir
 				installed = append(installed, library)
 				continue
 			}
-			library = patchLibrary(library)
-			if library.Artifact.IsDownloaded() {
+			library = patchLibrary(library, librariesDir)
+			if library.Artifact.IsDownloaded(librariesDir) {
 				installed = append(installed, library)
 			} else {
 				required = append(required, library)
@@ -37,7 +38,7 @@ func filterLibraries(libraries []meta.Library) (installed []meta.Library, requir
 }
 
 // patchLibrary takes library and replaces it with any applicable fixed libraries.
-func patchLibrary(library meta.Library) meta.Library {
+func patchLibrary(library meta.Library, librariesDir string) meta.Library {
 	specifier := library.Specifier
 	if specifier.Group == "org.lwjgl" &&
 		specifier.Classifier == "natives-linux" &&
@@ -71,7 +72,7 @@ func patchLibrary(library meta.Library) meta.Library {
 		}
 
 		specifier.Classifier = "natives-linux-arm64"
-		library, err := meta.FetchMavenLibrary(specifier)
+		library, err := meta.FetchMavenLibrary(specifier, librariesDir)
 		if err == nil {
 			return library
 		}

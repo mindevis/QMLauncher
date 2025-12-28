@@ -122,7 +122,7 @@ define build_target
 		echo "   Please build on macOS or use CI/CD with macOS runners"; \
 		exit 1; \
 	fi
-	wails build -platform $(1)/$(2)
+	wails build -platform $(1)/$(2) $(if $(filter windows,$(1)),-windowsconsole,)
 	@if [ -f build/bin/$(APP_NAME)$(if $(filter windows,$(1)),.exe,) ]; then \
 		mv build/bin/$(APP_NAME)$(if $(filter windows,$(1)),.exe,) $(BUILD_DIR)/$(APP_NAME)-$(1)-$(2)$(if $(filter windows,$(1)),.exe,); \
 		echo "✓ Built: $(BUILD_DIR)/$(APP_NAME)-$(1)-$(2)$(if $(filter windows,$(1)),.exe,)"; \

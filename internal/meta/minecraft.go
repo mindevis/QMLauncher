@@ -198,11 +198,11 @@ type Artifact struct {
 	URL  string `json:"url"`
 }
 
-func (artifact Artifact) RuntimePath() string {
-	return filepath.Join(env.LibrariesDir, artifact.Path)
+func (artifact Artifact) RuntimePath(librariesDir string) string {
+	return filepath.Join(librariesDir, artifact.Path)
 }
-func (artifact Artifact) IsDownloaded() bool {
-	data, err := os.ReadFile(artifact.RuntimePath())
+func (artifact Artifact) IsDownloaded(librariesDir string) bool {
+	data, err := os.ReadFile(artifact.RuntimePath(librariesDir))
 	if err != nil {
 		return false
 	}
@@ -214,10 +214,10 @@ func (artifact Artifact) IsDownloaded() bool {
 	sum := sha1.Sum(data)
 	return artifact.Sha1 == hex.EncodeToString(sum[:])
 }
-func (artifact Artifact) DownloadEntry() network.DownloadEntry {
+func (artifact Artifact) DownloadEntry(librariesDir string) network.DownloadEntry {
 	return network.DownloadEntry{
 		URL:  artifact.URL,
-		Path: artifact.RuntimePath(),
+		Path: artifact.RuntimePath(librariesDir),
 		Sha1: artifact.Sha1,
 	}
 }
@@ -309,10 +309,10 @@ type AssetIndex struct {
 }
 
 // DownloadEntries returns a list of download entries to any undownloaded assets in the index.
-func (index AssetIndex) DownloadEntries() (entries []network.DownloadEntry) {
+func (index AssetIndex) DownloadEntries(assetsDir string) (entries []network.DownloadEntry) {
 	for _, object := range index.Objects {
 		url, _ := url.JoinPath(MinecraftResourcesURL, object.Hash[:2], object.Hash)
-		path := filepath.Join(env.AssetsDir, "objects", object.Hash[:2], object.Hash)
+		path := filepath.Join(assetsDir, "objects", object.Hash[:2], object.Hash)
 		data, err := os.ReadFile(path)
 		if err == nil {
 			sum := sha1.Sum(data)
@@ -330,9 +330,9 @@ func (index AssetIndex) DownloadEntries() (entries []network.DownloadEntry) {
 }
 
 // FetchVersionManifest retrieves the Mojang version manifest which lists all game versions.
-func FetchVersionManifest() (VersionManifest, error) {
+func FetchVersionManifest(cachesDir string) (VersionManifest, error) {
 	cache := network.Cache[VersionManifest]{
-		Path:        filepath.Join(env.CachesDir, "minecraft", "version_manifest.json"),
+		Path:        filepath.Join(cachesDir, "minecraft", "version_manifest.json"),
 		URL:         VersionManifestURL,
 		AlwaysFetch: true,
 	}
@@ -348,8 +348,8 @@ func FetchVersionManifest() (VersionManifest, error) {
 // FetchVersionMeta retrieves the version metadata for a specified version from the version manifest.
 //
 // Besides normal version identifiers, "release" and "snapshot" are also accepted IDs.
-func FetchVersionMeta(id string) (VersionMeta, error) {
-	manifest, err := FetchVersionManifest()
+func FetchVersionMeta(id string, cachesDir string) (VersionMeta, error) {
+	manifest, err := FetchVersionManifest(cachesDir)
 	if err != nil {
 		return VersionMeta{}, fmt.Errorf("retrieve version manifest: %w", err)
 	}
@@ -362,7 +362,7 @@ func FetchVersionMeta(id string) (VersionMeta, error) {
 	for _, v := range manifest.Versions {
 		if v.ID == id {
 			cache := network.Cache[VersionMeta]{
-				Path:       filepath.Join(env.CachesDir, "minecraft", v.ID+".json"),
+				Path:       filepath.Join(cachesDir, "minecraft", v.ID+".json"),
 				URL:        v.URL,
 				RemoteSha1: v.Sha1,
 			}
@@ -404,9 +404,9 @@ func MergeVersionMeta(v, w VersionMeta) VersionMeta {
 }
 
 // DownloadAssetIndex retrieves the asset index for the specified version.
-func DownloadAssetIndex(versionMeta VersionMeta) (AssetIndex, error) {
+func DownloadAssetIndex(versionMeta VersionMeta, assetsDir string) (AssetIndex, error) {
 	cache := network.Cache[AssetIndex]{
-		Path:       filepath.Join(env.AssetsDir, "indexes", versionMeta.AssetIndex.ID+".json"),
+		Path:       filepath.Join(assetsDir, "indexes", versionMeta.AssetIndex.ID+".json"),
 		URL:        versionMeta.AssetIndex.URL,
 		RemoteSha1: versionMeta.AssetIndex.Sha1,
 	}
@@ -419,9 +419,9 @@ func DownloadAssetIndex(versionMeta VersionMeta) (AssetIndex, error) {
 }
 
 // FetchJavaManifestList retrieves the list of Mojang-provided Java runtimes.
-func FetchJavaManifestList() (JavaManifestList, error) {
+func FetchJavaManifestList(cachesDir string) (JavaManifestList, error) {
 	cache := network.Cache[JavaManifestList]{
-		Path: filepath.Join(env.CachesDir, "minecraft", "java_all.json"),
+		Path: filepath.Join(cachesDir, "minecraft", "java_all.json"),
 		URL:  JavaRuntimesURL,
 	}
 	var list JavaManifestList
@@ -437,8 +437,8 @@ var ErrJavaNoVersion = errors.New("required version unavailable for this system"
 // FetchJavaManifest retrieves the manifest for the specified Mojang-provided Java runtime.
 //
 // It contains information, among other things, about what files to install for the runtime.
-func FetchJavaManifest(name string) (JavaManifest, error) {
-	list, err := FetchJavaManifestList()
+func FetchJavaManifest(name string, cachesDir string) (JavaManifest, error) {
+	list, err := FetchJavaManifestList(cachesDir)
 	if err != nil {
 		return JavaManifest{}, fmt.Errorf("retrieve java manifest list: %w", err)
 	}
@@ -470,7 +470,7 @@ func FetchJavaManifest(name string) (JavaManifest, error) {
 	ref := list[os][name][0].Manifest
 
 	cache := network.Cache[JavaManifest]{
-		Path: filepath.Join(env.CachesDir, "minecraft", name+".json"),
+		Path: filepath.Join(cachesDir, "minecraft", name+".json"),
 		URL:  ref.URL,
 	}
 

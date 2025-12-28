@@ -41,6 +41,19 @@ var en = translations{
 	"delete.arg.id":   "Instance to delete",
 	"delete.arg.yes":  "Assume yes to all questions",
 
+	"export":            "Export an instance to ZIP archive",
+	"export.arg.id":     "Instance to export",
+	"export.arg.output": "Output archive path",
+	"export.arg.update": "Update existing export file",
+
+	"import":           "Import an instance from ZIP archive",
+	"import.arg.path":  "Path to ZIP archive",
+	"import.arg.name":  "Name for imported instance",
+	"import.arg.force": "Overwrite existing instance",
+
+	"list_exports":          "List exported instance archives",
+	"list_exports_arg_path": "Directory to search for exports",
+
 	"rename":          "Rename an instance",
 	"rename.complete": "Renamed instance.",
 	"rename.arg.id":   "Instance to rename",
@@ -74,6 +87,7 @@ var en = translations{
 	"start.arg.jvmargs":        "Extra JVM arguments",
 	"start.arg.minmemory":      "Minimum memory",
 	"start.arg.maxmemory":      "Maximum memory",
+	"start.arg.nojavawindow":   "Use javaw.exe instead of java.exe on Windows (no console window)",
 	"start.arg.prepare":        "Install all necessary resources but do not start the game.",
 	"start.arg.opts":           "Game Options",
 	"start.arg.overrides":      "Configuration Overrides",
@@ -144,6 +158,19 @@ var de = translations{
 	"delete.arg.id":   "Instanz zum Löschen",
 	"delete.arg.yes":  "Zu allen Fragen automatisch zustimmen.",
 
+	"export":            "Instanze in ZIP-Archiv exportieren",
+	"export.arg.id":     "Instanz zum Exportieren",
+	"export.arg.output": "Ausgabepfad für Archiv",
+	"export.arg.update": "Existierende Exportdatei aktualisieren",
+
+	"import":           "Instanze aus ZIP-Archiv importieren",
+	"import.arg.path":  "Pfad zur ZIP-Datei",
+	"import.arg.name":  "Name für importierte Instanz",
+	"import.arg.force": "Existierende Instanz überschreiben",
+
+	"list_exports":          "Exportierte Instanz-Archive auflisten",
+	"list_exports_arg_path": "Verzeichnis zum Suchen von Exporten",
+
 	"rename":          "Instanze umbenennen",
 	"rename.complete": "Instanz umbennant.",
 	"rename.arg.id":   "Instanz zum Umbenennen",
@@ -176,6 +203,7 @@ var de = translations{
 	"start.arg.jvmargs":        "JVM Argumente",
 	"start.arg.minmemory":      "Minimale Arbeitsspeicherauslastung",
 	"start.arg.maxmemory":      "Maximale Arbeitsspeicherauslastung",
+	"start.arg.nojavawindow":   "javaw.exe anstatt java.exe auf Windows verwenden (kein Konsolenfenster)",
 	"start.arg.prepare":        "Alle gebrauchten Spielressourcen herunterladen, aber das Spiel nicht starten.",
 	"start.arg.opts":           "Spieleinstellungen",
 	"start.arg.overrides":      "Konfigurationüberschreibungen",

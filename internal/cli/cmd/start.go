@@ -5,12 +5,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/alecthomas/kong"
-	"github.com/fatih/color"
-	"github.com/schollz/progressbar/v3"
 	"QMLauncher/internal/cli/output"
 	"QMLauncher/pkg/auth"
 	"QMLauncher/pkg/launcher"
+
+	"github.com/alecthomas/kong"
+	"github.com/fatih/color"
+	"github.com/schollz/progressbar/v3"
 )
 
 func watcher(verbosity int) launcher.EventWatcher {
@@ -52,6 +53,8 @@ type StartCmd struct {
 	ID string `arg:"" help:"${start_arg_id}"`
 
 	Prepare bool `help:"${start_arg_prepare}"`
+
+	NoJavaWindow bool `help:"${start_arg_nojavawindow}"`
 
 	Options struct {
 		Username    string `help:"${start_arg_username}" short:"u"`
@@ -126,6 +129,7 @@ func (c *StartCmd) Run(ctx *kong.Context, verbosity int) error {
 			Demo:               c.Options.Demo,
 			DisableMultiplayer: c.Options.DisableMP,
 			DisableChat:        c.Options.DisableChat,
+			NoJavaWindow:       c.NoJavaWindow,
 		},
 		watcher(verbosity))
 

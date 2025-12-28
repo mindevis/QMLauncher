@@ -15,9 +15,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/iancoleman/orderedmap"
 	"QMLauncher/internal/network"
-	env "QMLauncher/pkg"
+
+	"github.com/iancoleman/orderedmap"
 )
 
 // A ForgeInstallProfile contains install libraries and processors used to initialize Forge.
@@ -154,9 +154,9 @@ var Neoforge = forge{
 }
 
 // FetchInstaller fetchs the Forge installer ZIP file and returns its contents.
-func (forge forge) FetchInstaller(version string) (map[string]*zip.File, error) {
+func (forge forge) FetchInstaller(version string, cachesDir string) (map[string]*zip.File, error) {
 	url := forge.url(version)
-	path := filepath.Join(env.CachesDir, "forge", path.Base(url))
+	path := filepath.Join(cachesDir, "forge", path.Base(url))
 
 	if _, err := os.Stat(path); err != nil {
 		err := network.DownloadFile(network.DownloadEntry{
@@ -191,8 +191,8 @@ func (forge forge) FetchInstaller(version string) (map[string]*zip.File, error) 
 }
 
 // FetchMeta retrieves the Forge version.json (version meta) and install_profile.json from the installer ZIP.
-func (forge forge) FetchMeta(version string) (VersionMeta, ForgeInstallProfile, error) {
-	files, err := forge.FetchInstaller(version)
+func (forge forge) FetchMeta(version string, cachesDir string, librariesDir string, tmpDir string) (VersionMeta, ForgeInstallProfile, error) {
+	files, err := forge.FetchInstaller(version, cachesDir)
 
 	if err != nil {
 		return VersionMeta{}, ForgeInstallProfile{}, fmt.Errorf("fetch installer: %w", err)
@@ -248,12 +248,12 @@ func (forge forge) FetchMeta(version string) (VersionMeta, ForgeInstallProfile, 
 }
 
 // FetchPostProcessors retrieves arguments to run Forge's post processors for the specified game version.
-func (forge forge) FetchPostProcessors(gameVersion, version string) ([]ForgeProcessor, error) {
-	files, err := forge.FetchInstaller(version)
+func (forge forge) FetchPostProcessors(gameVersion, version string, cachesDir string, librariesDir string, tmpDir string) ([]ForgeProcessor, error) {
+	files, err := forge.FetchInstaller(version, cachesDir)
 	if err != nil {
 		return nil, fmt.Errorf("fetch installer: %w", err)
 	}
-	_, profile, err := forge.FetchMeta(version)
+	_, profile, err := forge.FetchMeta(version, cachesDir, librariesDir, tmpDir)
 	if err != nil {
 		return nil, fmt.Errorf("retrieve metadata: %w", err)
 	}
@@ -262,7 +262,7 @@ func (forge forge) FetchPostProcessors(gameVersion, version string) ([]ForgeProc
 	if err != nil {
 		return nil, fmt.Errorf("invalid patched client specifier: %w", err)
 	}
-	if _, err := os.Stat(filepath.Join(env.LibrariesDir, client.Path())); err == nil {
+	if _, err := os.Stat(filepath.Join(librariesDir, client.Path())); err == nil {
 		return nil, nil
 	}
 
@@ -283,7 +283,7 @@ func (forge forge) FetchPostProcessors(gameVersion, version string) ([]ForgeProc
 
 	for k, v := range profile.Data {
 		if strings.HasPrefix(v.Client, "/") {
-			path := filepath.Join(env.TmpDir, v.Client)
+			path := filepath.Join(tmpDir, v.Client)
 
 			file, ok := files[v.Client[1:]]
 			if !ok {
@@ -315,11 +315,11 @@ func (forge forge) FetchPostProcessors(gameVersion, version string) ([]ForgeProc
 
 	variables["SIDE"] = "client"
 
-	versionMeta, err := FetchVersionMeta(gameVersion)
+	versionMeta, err := FetchVersionMeta(gameVersion, cachesDir)
 	if err != nil {
 		return nil, fmt.Errorf("retrieve version metadata: %w", err)
 	}
-	variables["MINECRAFT_JAR"] = versionMeta.Client().Artifact.RuntimePath()
+	variables["MINECRAFT_JAR"] = versionMeta.Client().Artifact.RuntimePath(librariesDir)
 
 	var post []ForgeProcessor
 
@@ -330,7 +330,7 @@ func (forge forge) FetchPostProcessors(gameVersion, version string) ([]ForgeProc
 			return nil, fmt.Errorf("post processor library not found")
 		}
 
-		r, err := zip.OpenReader(jar.Artifact.RuntimePath())
+		r, err := zip.OpenReader(jar.Artifact.RuntimePath(librariesDir))
 		if err != nil {
 			return nil, fmt.Errorf("read processor JAR: %w", err)
 		}
@@ -366,7 +366,7 @@ func (forge forge) FetchPostProcessors(gameVersion, version string) ([]ForgeProc
 			if !ok {
 				return nil, fmt.Errorf("post processor library not found")
 			}
-			paths = append(paths, library.Artifact.RuntimePath())
+			paths = append(paths, library.Artifact.RuntimePath(librariesDir))
 		}
 		var args []string
 		for _, arg := range processor.Args {
@@ -383,7 +383,7 @@ func (forge forge) FetchPostProcessors(gameVersion, version string) ([]ForgeProc
 				if err != nil {
 					return nil, fmt.Errorf("processor argument library specifier: %w", err)
 				}
-				arg = filepath.Join(env.LibrariesDir, specifier.Path())
+				arg = filepath.Join(librariesDir, specifier.Path())
 			} else if arg[0] == '\'' && arg[len(arg)-1] == '\'' {
 				arg = strings.Trim(arg, "'")
 			}
@@ -391,7 +391,7 @@ func (forge forge) FetchPostProcessors(gameVersion, version string) ([]ForgeProc
 		}
 
 		javaArgs := []string{
-			"-cp", strings.Join(append(paths, jar.Artifact.RuntimePath()), string(os.PathListSeparator)),
+			"-cp", strings.Join(append(paths, jar.Artifact.RuntimePath(librariesDir)), string(os.PathListSeparator)),
 			mainClass,
 		}
 		javaArgs = append(javaArgs, args...)
