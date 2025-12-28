@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Path normalization in imported instance files for cross-platform compatibility (Windows/Linux)
+- Automatic conversion of backslashes to forward slashes in text configuration files during import
+
 ## [1.0.0] - 2025-12-27
 
 ### Added

@@ -506,12 +506,15 @@ func importInstance(archivePath, name string, force bool) (launcher.Instance, er
 			continue
 		}
 
+		// Normalize file path: replace backslashes with forward slashes for cross-platform compatibility
+		normalizedName := strings.ReplaceAll(file.Name, "\\", "/")
+
 		// Create destination path
-		destPath := filepath.Join(instanceDir, file.Name)
+		destPath := filepath.Join(instanceDir, normalizedName)
 
 		// Create directory if needed
 		if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
-			return launcher.Instance{}, fmt.Errorf("create directory for %s: %w", file.Name, err)
+			return launcher.Instance{}, fmt.Errorf("create directory for %s: %w", normalizedName, err)
 		}
 
 		// Extract file
@@ -523,16 +526,91 @@ func importInstance(archivePath, name string, force bool) (launcher.Instance, er
 
 		destFile, err := os.Create(destPath)
 		if err != nil {
-			return launcher.Instance{}, fmt.Errorf("create destination file %s: %w", file.Name, err)
+			return launcher.Instance{}, fmt.Errorf("create destination file %s: %w", normalizedName, err)
 		}
 		defer destFile.Close()
 
 		if _, err := io.Copy(destFile, rc); err != nil {
-			return launcher.Instance{}, fmt.Errorf("extract file %s: %w", file.Name, err)
+			return launcher.Instance{}, fmt.Errorf("extract file %s: %w", normalizedName, err)
 		}
 	}
 
+	// Нормализуем пути в текстовых файлах для совместимости между Windows и Linux
+	if err := normalizePathsInTextFiles(instanceDir); err != nil {
+		return launcher.Instance{}, fmt.Errorf("normalize paths in extracted files: %w", err)
+	}
+
 	return inst, nil
+}
+
+// normalizePathsInTextFiles нормализует пути в текстовых файлах после импорта,
+// заменяя обратные слэши на прямые для совместимости между Windows и Linux
+func normalizePathsInTextFiles(instanceDir string) error {
+	// Файлы, которые могут содержать пути и требуют нормализации
+	filesToProcess := []string{
+		"options.txt",
+	}
+
+	// Также обрабатываем все файлы в директориях config и defaultconfigs
+	directoriesToProcess := []string{
+		"config",
+		"defaultconfigs",
+	}
+
+	normalizeFile := func(filePath string) error {
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			return err
+		}
+
+		originalContent := string(content)
+
+		// Заменяем обратные слэши на прямые слэши
+		// Это простой и безопасный подход для большинства случаев
+		normalizedContent := strings.ReplaceAll(originalContent, "\\", "/")
+
+		// Если содержимое изменилось, записываем обратно
+		if normalizedContent != originalContent {
+			return os.WriteFile(filePath, []byte(normalizedContent), 0644)
+		}
+
+		return nil
+	}
+
+	// Обрабатываем отдельные файлы
+	for _, file := range filesToProcess {
+		filePath := filepath.Join(instanceDir, file)
+		if _, err := os.Stat(filePath); err == nil {
+			if err := normalizeFile(filePath); err != nil {
+				return fmt.Errorf("normalize paths in %s: %w", file, err)
+			}
+		}
+	}
+
+	// Обрабатываем директории
+	for _, dir := range directoriesToProcess {
+		dirPath := filepath.Join(instanceDir, dir)
+		if _, err := os.Stat(dirPath); err == nil {
+			err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if !info.IsDir() && (strings.HasSuffix(strings.ToLower(path), ".txt") ||
+					strings.HasSuffix(strings.ToLower(path), ".cfg") ||
+					strings.HasSuffix(strings.ToLower(path), ".toml") ||
+					strings.HasSuffix(strings.ToLower(path), ".json") ||
+					strings.HasSuffix(strings.ToLower(path), ".properties")) {
+					return normalizeFile(path)
+				}
+				return nil
+			})
+			if err != nil {
+				return fmt.Errorf("normalize paths in directory %s: %w", dir, err)
+			}
+		}
+	}
+
+	return nil
 }
 
 // findExistingExport looks for existing export file for the given instance
