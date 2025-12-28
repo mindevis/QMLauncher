@@ -8,6 +8,7 @@
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
+  "frontend:dev:serverUrl": "auto",
   "author": {
     "name": "mindeivs",
     "email": "mindevis.by@gmail.com"

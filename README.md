@@ -6,18 +6,18 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-3178C6.svg)](https://www.typescriptlang.org)
 [![Wails](https://img.shields.io/badge/Wails-2.11+-00ADD8.svg)](https://wails.io)
 
-A modern desktop application built with Go and Vue.js using the Wails framework.
+A modern desktop application built with Go and React using the Wails framework.
 
 ## About
 
-QMLauncher is a cross-platform desktop application that serves as a launcher for various applications and tools. Built using the Wails framework, it combines the power of Go for the backend with Vue.js for the frontend to create a native desktop experience. The UI is built with shadcn-vue components and styled with Tailwind CSS for a modern, accessible, and beautiful user interface.
+QMLauncher is a cross-platform desktop application that serves as a launcher for various applications and tools. Built using the Wails framework, it combines the power of Go for the backend with React for the frontend to create a native desktop experience. The UI is built with shadcn/ui components and styled with Tailwind CSS for a modern, accessible, and beautiful user interface.
 
 ## Features
 
 - 🚀 Fast and responsive desktop application
 - 🔄 Hot reload during development
 - 📦 Cross-platform support (Windows, macOS, Linux)
-- 🎨 Modern Vue.js frontend with shadcn-vue components
+- 🎨 Modern React frontend with shadcn/ui components
 - 🔷 Full TypeScript support for type safety
 - ⚡ Native performance with Go backend
 - 🛠️ Easy configuration and customization
@@ -199,11 +199,14 @@ QMLauncher/
 ├── app.go               # Main application logic
 ├── wails.json          # Wails configuration
 ├── go.mod              # Go module file
-├── frontend/           # Vue.js frontend
+├── frontend/           # React frontend
 │   ├── src/
-│   │   ├── App.vue
-│   │   ├── main.js
-│   │   └── components/
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── contexts/
+│   │   └── types/
 │   ├── package.json
 │   └── vite.config.js
 └── build/              # Build output
