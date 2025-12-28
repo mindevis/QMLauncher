@@ -53,6 +53,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated instance structure: ~/.qmlauncher/instances/name/uuid/
 - Added UUID generation for each new instance
 - Modified instance management functions to work with new structure
+- Added instance export/import functionality
+- Added 'instance export' command to export instances to ZIP archives
+- Added 'instance import' command to import instances from ZIP archives
+- Added 'instance list-exports' command to list exported archives
+- Improved Java executable validation for cross-platform compatibility
+- Added NoJavaWindow option to launch options
 
 ### Changed
 - Updated from default Wails template to QMLauncher branding

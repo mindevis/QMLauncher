@@ -1,4 +1,4 @@
-# QMLauncher API (1.3.0)
+# QMLauncher API (1.0.0)
 
 In addition to the CLI, this launcher also provides an API which can be used to programmatically interact with it.
 This page will be structured similarly to the main README, however for the API not the CLI.
