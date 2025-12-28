@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated Vite to v4.5.14 and Vue plugin to v4.6.2
 - Resolved vue-tsc compilation issues by using Vite's TypeScript handling
 - Integrated QMLauncher CLI functionality for Minecraft launcher features
-- Added --nogui flag for command-line mode operation
+- Added --no-gui flag for command-line mode operation
 - Imported CLI commands: start, instance, auth, search, completions, about
 - Maintained backward compatibility with GUI mode as default
 - Added GitHub Actions CI/CD workflows for automated building and releasing
@@ -63,12 +63,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wails CLI v2.11.0 configured
 - Vite development server integrated
 
-### Changed
-- Modified files: test_file.txt 
-### Changed
-- Modified files: test_file.txt 
-### Changed
-- Modified files: scripts/update_changelog.sh 
 ## [0.1.0] - 2025-12-27
 
 ### Added

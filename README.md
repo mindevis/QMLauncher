@@ -95,7 +95,7 @@ This will start:
 To run the application in command-line mode for Minecraft launcher functionality:
 
 ```bash
-./qmlauncher --nogui [command]
+./qmlauncher --no-gui [command]
 ```
 
 Available CLI commands:
@@ -137,16 +137,16 @@ Shared resources remain in the root directories:
 Examples:
 ```bash
 # Show help
-./qmlauncher --nogui --help
+./qmlauncher --no-gui --help
 
 # Display version info
-./qmlauncher --nogui about
+./qmlauncher --no-gui about
 
 # Search Minecraft versions
-./qmlauncher --nogui search 1.20
+./qmlauncher --no-gui search 1.20
 
 # List instances
-./qmlauncher --nogui instance list
+./qmlauncher --no-gui instance list
 ```
 
 ### Browser Development

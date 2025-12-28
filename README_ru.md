@@ -95,7 +95,7 @@ make dev
 Для запуска приложения в режиме командной строки для функциональности лаунчера Minecraft:
 
 ```bash
-./qmlauncher --nogui [команда]
+./qmlauncher --no-gui [команда]
 ```
 
 Доступные CLI команды:
@@ -137,16 +137,16 @@ make dev
 Примеры:
 ```bash
 # Показать справку
-./qmlauncher --nogui --help
+./qmlauncher --no-gui --help
 
 # Отобразить информацию о версии
-./qmlauncher --nogui about
+./qmlauncher --no-gui about
 
 # Поиск версий Minecraft
-./qmlauncher --nogui search 1.20
+./qmlauncher --no-gui search 1.20
 
 # Список инстансов
-./qmlauncher --nogui instance list
+./qmlauncher --no-gui instance list
 ```
 
 ### Разработка в браузере
