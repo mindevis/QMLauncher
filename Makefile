@@ -93,7 +93,9 @@ frontend-fmt: ## Format frontend code
 # Combined targets
 deps: mod-tidy frontend-install ## Install all dependencies (Go and Node.js)
 
-check: fmt lint test frontend-lint ## Run all checks (format, lint, test)
+check: fmt lint vet test frontend-lint ## Run all checks (format, lint, vet, test)
+
+pre-commit: check ## Run all checks before commit (same as check)
 
 clean: ## Clean all build artifacts and caches
 	rm -rf $(BUILD_DIR)/$(APP_NAME)*

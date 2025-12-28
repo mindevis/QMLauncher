@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"net/url"
 
+	"QMLauncher/internal/cli/output"
+	"QMLauncher/pkg/auth"
+
 	"github.com/alecthomas/kong"
 	"github.com/fatih/color"
 	"github.com/pkg/browser"
-	"QMLauncher/internal/cli/output"
-	"QMLauncher/pkg/auth"
 )
 
 const (

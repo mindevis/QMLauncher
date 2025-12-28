@@ -70,6 +70,11 @@ func (inst *Instance) Rename(new string) error {
 	inst.Name = new
 	newDir := inst.Dir()
 
+	// Create the parent directory if it doesn't exist
+	if err := os.MkdirAll(filepath.Dir(newDir), 0755); err != nil {
+		return fmt.Errorf("create parent directory for renamed instance: %w", err)
+	}
+
 	if err := os.Rename(oldDir, newDir); err != nil {
 		return err
 	}

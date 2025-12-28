@@ -6,9 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/google/uuid"
 	env "QMLauncher/pkg"
 	"QMLauncher/pkg/auth"
+
+	"github.com/google/uuid"
 )
 
 func TestCreateInstance(t *testing.T) {
