@@ -3,11 +3,9 @@
 package main
 
 import (
-	"QMLauncher/internal/cli"
 	"context"
 	"embed"
 	"fmt"
-	"os"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -79,11 +77,4 @@ func runGUI() {
 	if err != nil {
 		println("Error:", err.Error())
 	}
-}
-
-func runCLI() {
-	// Parse and run the CLI from QMLauncher
-	exiter, code := cli.Run()
-	exiter(code)
-	os.Exit(code)
 }
