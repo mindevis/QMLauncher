@@ -384,8 +384,7 @@ func copyFile(src, dst string) error {
 // GetVersionInfo returns current version information
 func (u *Updater) GetVersionInfo() map[string]string {
 	return map[string]string{
-		"current": u.CurrentVer,
-		"os":      runtime.GOOS,
-		"arch":    runtime.GOARCH,
+		"current":  u.CurrentVer,
+		"platform": fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 	}
 }

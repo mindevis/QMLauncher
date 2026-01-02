@@ -18,6 +18,7 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/fatih/color"
 	"go.abhg.dev/komplete"
+	"golang.org/x/text/language"
 )
 
 const (
@@ -122,6 +123,9 @@ func Run() (func(int), int) {
 	lang, err := locale.Detect()
 	if err == nil {
 		output.SetLang(lang)
+	} else {
+		// Default to Russian if locale detection fails
+		output.SetLang(language.Russian)
 	}
 
 	parser := kong.Must(&CLI{},

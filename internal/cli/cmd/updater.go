@@ -31,6 +31,12 @@ type UpdateCmd struct {
 	Info     UpdateInfoCmd     `cmd:"" help:"${update_info}"`
 }
 
+// updateCurrentVersionKey is the translation key for "Current version"
+const updateCurrentVersionKey = "Текущая версия"
+
+// updatePlatformKey is the translation key for "Platform"
+const updatePlatformKey = "Платформа"
+
 func (c *UpdateCheckCmd) Run(ctx *kong.Context) error {
 	updater := createUpdater()
 
@@ -132,8 +138,8 @@ func (c *UpdateInfoCmd) Run(ctx *kong.Context) error {
 
 	info := updater.GetVersionInfo()
 
-	fmt.Printf("%s %s\n", color.New(color.FgCyan).Sprint("Current version:"), info["current"])
-	fmt.Printf("%s %s\n", color.New(color.FgCyan).Sprint("Platform:"), fmt.Sprintf("%s/%s", info["os"], info["arch"]))
+	fmt.Printf("%s: %s\n", output.Translate("update.current_version"), info["current"])
+	fmt.Printf("%s: %s\n", output.Translate("update.platform"), info["platform"])
 
 	// Check for updates in background
 	go func() {
