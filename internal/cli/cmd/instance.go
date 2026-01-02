@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"QMLauncher/internal/cli/output"
+	"QMLauncher/internal/meta"
 	"QMLauncher/pkg/launcher"
 
 	"github.com/alecthomas/kong"
@@ -141,13 +142,16 @@ func (c *ListCmd) Run(ctx *kong.Context) error {
 
 // InstanceCmd enables management of Minecraft instances.
 type InstanceCmd struct {
-	Create      CreateCmd      `cmd:"" help:"${create}"`
-	Delete      DeleteCmd      `cmd:"" help:"${delete}"`
-	Rename      RenameCmd      `cmd:"" help:"${rename}"`
-	List        ListCmd        `cmd:"" help:"${list}"`
-	Export      ExportCmd      `cmd:"" help:"${export}"`
-	Import      ImportCmd      `cmd:"" help:"${import}"`
-	ListExports ListExportsCmd `cmd:"" help:"${list_exports}"`
+	Create        CreateCmd        `cmd:"" help:"${create}"`
+	Delete        DeleteCmd        `cmd:"" help:"${delete}"`
+	Rename        RenameCmd        `cmd:"" help:"${rename}"`
+	List          ListCmd          `cmd:"" help:"${list}"`
+	Export        ExportCmd        `cmd:"" help:"${export}"`
+	Import        ImportCmd        `cmd:"" help:"${import}"`
+	ListExports   ListExportsCmd   `cmd:"" help:"${list_exports}"`
+	Mods          ModsCmd          `cmd:"" help:"${mods}"`
+	ResourcePacks ResourcePacksCmd `cmd:"" help:"${resourcepacks}"`
+	Shaders       ShadersCmd       `cmd:"" help:"${shaders}"`
 }
 
 // ExportManifest represents metadata for exported instance
@@ -204,6 +208,7 @@ type ImportCmd struct {
 	Path  string `arg:"" help:"${import_arg_path}"`
 	Name  string `help:"${import_arg_name}" short:"n"`
 	Force bool   `help:"${import_arg_force}" short:"f"`
+	Merge bool   `help:"${import_arg_merge}" short:"m"`
 }
 
 func (c *ImportCmd) Run(ctx *kong.Context) error {
@@ -214,22 +219,70 @@ func (c *ImportCmd) Run(ctx *kong.Context) error {
 		importName = strings.TrimSuffix(baseName, filepath.Ext(baseName))
 	}
 
-	if !c.Force && launcher.DoesInstanceExist(importName) {
-		return fmt.Errorf("instance '%s' already exists (use --force to overwrite)", importName)
-	}
-
-	inst, err := importInstance(c.Path, importName, c.Force)
+	inst, err := importInstance(c.Path, importName, c.Force, c.Merge)
 	if err != nil {
 		return fmt.Errorf("import instance: %w", err)
 	}
 
-	output.Success(fmt.Sprintf("Instance '%s' imported successfully", inst.Name))
+	action := "imported"
+	if c.Merge {
+		action = "updated"
+	} else if c.Force {
+		action = "overwritten"
+	}
+
+	output.Success(fmt.Sprintf("Instance '%s' %s successfully", inst.Name, action))
 	return nil
 }
 
 // ListExportsCmd lists all exported instance archives
 type ListExportsCmd struct {
 	Path string `help:"${list_exports_arg_path}" short:"p"`
+}
+
+// ModsCmd lists all mods in the specified instance
+type ModsCmd struct {
+	ID string `arg:"" help:"${mods.arg.id}"`
+}
+
+func (c *ModsCmd) Run(ctx *kong.Context) error {
+	inst, err := launcher.FetchInstance(c.ID)
+	if err != nil {
+		return err
+	}
+
+	modsDir := filepath.Join(inst.Dir(), "mods")
+	return listModsContents(modsDir, output.Translate("mods.empty"), inst.CachesDir(), inst)
+}
+
+// ResourcePacksCmd lists all resource packs in the specified instance
+type ResourcePacksCmd struct {
+	ID string `arg:"" help:"${resourcepacks.arg.id}"`
+}
+
+func (c *ResourcePacksCmd) Run(ctx *kong.Context) error {
+	inst, err := launcher.FetchInstance(c.ID)
+	if err != nil {
+		return err
+	}
+
+	resourcePacksDir := filepath.Join(inst.Dir(), "resourcepacks")
+	return listResourcePacksContents(resourcePacksDir, output.Translate("resourcepacks.empty"), inst.CachesDir(), inst)
+}
+
+// ShadersCmd lists all shader packs in the specified instance
+type ShadersCmd struct {
+	ID string `arg:"" help:"${shaders.arg.id}"`
+}
+
+func (c *ShadersCmd) Run(ctx *kong.Context) error {
+	inst, err := launcher.FetchInstance(c.ID)
+	if err != nil {
+		return err
+	}
+
+	shadersDir := filepath.Join(inst.Dir(), "shaderpacks")
+	return listDirectoryContents(shadersDir, output.Translate("shaders.empty"), "shaders")
 }
 
 func (c *ListExportsCmd) Run(ctx *kong.Context) error {
@@ -416,7 +469,7 @@ func addFileToZip(zipWriter *zip.Writer, baseDir, relPath string) error {
 }
 
 // importInstance extracts an instance from a ZIP archive
-func importInstance(archivePath, name string, force bool) (launcher.Instance, error) {
+func importInstance(archivePath, name string, force, merge bool) (launcher.Instance, error) {
 	// Open ZIP archive
 	zipReader, err := zip.OpenReader(archivePath)
 	if err != nil {
@@ -458,44 +511,61 @@ func importInstance(archivePath, name string, force bool) (launcher.Instance, er
 		instanceName = manifest.Name
 	}
 
-	// If force is false and instance exists, return error
-	if !force && launcher.DoesInstanceExist(instanceName) {
-		return launcher.Instance{}, fmt.Errorf("instance '%s' already exists", instanceName)
+	// Check for conflicting flags
+	if force && merge {
+		return launcher.Instance{}, fmt.Errorf("cannot use both --force and --merge flags")
 	}
 
-	// If force is true and instance exists, remove it first
-	if force && launcher.DoesInstanceExist(instanceName) {
-		if err := launcher.RemoveInstance(instanceName); err != nil {
-			return launcher.Instance{}, fmt.Errorf("remove existing instance: %w", err)
+	var inst launcher.Instance
+	instanceExists := launcher.DoesInstanceExist(instanceName)
+
+	if instanceExists {
+		if force {
+			// Force mode: remove existing instance and create new one
+			if err := launcher.RemoveInstance(instanceName); err != nil {
+				return launcher.Instance{}, fmt.Errorf("remove existing instance: %w", err)
+			}
+			// Create new instance (will be done below)
+		} else if merge {
+			// Merge mode: use existing instance
+			inst, err = launcher.FetchInstance(instanceName)
+			if err != nil {
+				return launcher.Instance{}, fmt.Errorf("fetch existing instance: %w", err)
+			}
+		} else {
+			// Neither force nor merge: error
+			return launcher.Instance{}, fmt.Errorf("instance '%s' already exists (use --force to overwrite or --merge to update)", instanceName)
 		}
 	}
 
-	// Create new instance
-	var loader launcher.Loader
-	switch manifest.Loader {
-	case "fabric":
-		loader = launcher.LoaderFabric
-	case "quilt":
-		loader = launcher.LoaderQuilt
-	case "vanilla":
-		loader = launcher.LoaderVanilla
-	case "neoforge":
-		loader = launcher.LoaderNeoForge
-	case "forge":
-		loader = launcher.LoaderForge
-	default:
-		return launcher.Instance{}, fmt.Errorf("unknown loader: %s", manifest.Loader)
-	}
+	// Create new instance if it doesn't exist or was force-removed
+	if !instanceExists || force {
+		var loader launcher.Loader
+		switch manifest.Loader {
+		case "fabric":
+			loader = launcher.LoaderFabric
+		case "quilt":
+			loader = launcher.LoaderQuilt
+		case "vanilla":
+			loader = launcher.LoaderVanilla
+		case "neoforge":
+			loader = launcher.LoaderNeoForge
+		case "forge":
+			loader = launcher.LoaderForge
+		default:
+			return launcher.Instance{}, fmt.Errorf("unknown loader: %s", manifest.Loader)
+		}
 
-	inst, err := launcher.CreateInstance(launcher.InstanceOptions{
-		Name:          instanceName,
-		GameVersion:   manifest.GameVersion,
-		Loader:        loader,
-		LoaderVersion: manifest.LoaderVersion,
-		Config:        defaultInstanceConfig,
-	})
-	if err != nil {
-		return launcher.Instance{}, fmt.Errorf("create instance: %w", err)
+		inst, err = launcher.CreateInstance(launcher.InstanceOptions{
+			Name:          instanceName,
+			GameVersion:   manifest.GameVersion,
+			Loader:        loader,
+			LoaderVersion: manifest.LoaderVersion,
+			Config:        defaultInstanceConfig,
+		})
+		if err != nil {
+			return launcher.Instance{}, fmt.Errorf("create instance: %w", err)
+		}
 	}
 
 	// Extract files from archive (skip manifest.json)
@@ -511,6 +581,14 @@ func importInstance(archivePath, name string, force bool) (launcher.Instance, er
 
 		// Create destination path
 		destPath := filepath.Join(instanceDir, normalizedName)
+
+		// In merge mode, skip files that already exist
+		if merge && instanceExists {
+			if _, err := os.Stat(destPath); err == nil {
+				// File already exists, skip it
+				continue
+			}
+		}
 
 		// Create directory if needed
 		if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
@@ -541,6 +619,233 @@ func importInstance(archivePath, name string, force bool) (launcher.Instance, er
 	}
 
 	return inst, nil
+}
+
+// listDirectoryContents lists all files in the specified directory with their sizes using a pretty table
+func listDirectoryContents(dirPath, emptyMessage, contentType string) error {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			output.Info(emptyMessage)
+			return nil
+		}
+		return fmt.Errorf("read directory %s: %w", dirPath, err)
+	}
+
+	// Filter out directories and collect files
+	var files []os.DirEntry
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			files = append(files, entry)
+		}
+	}
+
+	if len(files) == 0 {
+		output.Info(emptyMessage)
+		return nil
+	}
+
+	// Sort files by name
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].Name() < files[j].Name()
+	})
+
+	// Create table rows
+	var rows []table.Row
+	for _, file := range files {
+		info, err := file.Info()
+		if err != nil {
+			continue
+		}
+
+		// Format file size
+		size := formatFileSize(info.Size())
+		rows = append(rows, table.Row{file.Name(), size})
+	}
+
+	// Create and configure table
+	t := table.NewWriter()
+	t.SetStyle(table.StyleLight)
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{
+		output.Translate(contentType + ".table.name"),
+		output.Translate(contentType + ".table.size"),
+	})
+	t.AppendRows(rows)
+	t.Render()
+
+	return nil
+}
+
+// listModsContents lists all mods in the specified directory with links to CurseForge and Modrinth
+func listModsContents(dirPath, emptyMessage, cachesDir string, inst launcher.Instance) error {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			output.Info(emptyMessage)
+			return nil
+		}
+		return fmt.Errorf("read directory %s: %w", dirPath, err)
+	}
+
+	// Filter out directories and collect files
+	var files []os.DirEntry
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(strings.ToLower(entry.Name()), ".jar") {
+			files = append(files, entry)
+		}
+	}
+
+	if len(files) == 0 {
+		output.Info(emptyMessage)
+		return nil
+	}
+
+	// Sort files by name
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].Name() < files[j].Name()
+	})
+
+	// Create table rows with mod links
+	var rows []table.Row
+	for _, file := range files {
+		info, err := file.Info()
+		if err != nil {
+			continue
+		}
+
+		// Extract mod info from filename
+		modInfo := meta.ExtractModInfoFromFilename(file.Name())
+
+		// Get links from CurseForge and Modrinth with loader/version filtering
+		modInfo = meta.GetModLinks(modInfo, cachesDir, string(inst.Loader), inst.GameVersion)
+
+		// Format links (show full URLs for mods)
+		curseForgeLink := ""
+		if modInfo.CurseForgeURL != "" {
+			curseForgeLink = modInfo.CurseForgeURL
+		}
+
+		modrinthLink := ""
+		if modInfo.ModrinthURL != "" {
+			modrinthLink = modInfo.ModrinthURL
+		}
+
+		// Format file size
+		size := formatFileSize(info.Size())
+
+		rows = append(rows, table.Row{file.Name(), curseForgeLink, modrinthLink, size})
+	}
+
+	// Create and configure table
+	t := table.NewWriter()
+	t.SetStyle(table.StyleLight)
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{
+		output.Translate("mods.table.name"),
+		output.Translate("mods.table.curseforge"),
+		output.Translate("mods.table.modrinth"),
+		output.Translate("mods.table.size"),
+	})
+	t.AppendRows(rows)
+	t.Render()
+
+	return nil
+}
+
+// listResourcePacksContents lists all resource packs in the specified directory with links to CurseForge and Modrinth
+func listResourcePacksContents(dirPath, emptyMessage, cachesDir string, inst launcher.Instance) error {
+	entries, err := os.ReadDir(dirPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			output.Info(emptyMessage)
+			return nil
+		}
+		return fmt.Errorf("read directory %s: %w", dirPath, err)
+	}
+
+	// Filter out directories and collect resource pack files
+	var files []os.DirEntry
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			// Resource packs can be .zip, .jar, or have no extension
+			name := strings.ToLower(entry.Name())
+			if strings.HasSuffix(name, ".zip") || strings.HasSuffix(name, ".jar") ||
+				(!strings.Contains(name, ".") && !entry.IsDir()) {
+				files = append(files, entry)
+			}
+		}
+	}
+
+	if len(files) == 0 {
+		output.Info(emptyMessage)
+		return nil
+	}
+
+	// Sort files by name
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].Name() < files[j].Name()
+	})
+
+	// Create table rows with resource pack links
+	var rows []table.Row
+	for _, file := range files {
+		info, err := file.Info()
+		if err != nil {
+			continue
+		}
+
+		// Extract resource pack info from filename
+		rpInfo := meta.ExtractResourcePackInfo(file.Name())
+
+		// Get links from CurseForge and Modrinth
+		rpInfo = meta.GetResourcePackLinks(rpInfo, cachesDir, inst.GameVersion)
+
+		// Format links
+		curseForgeLink := ""
+		if rpInfo.CurseForgeURL != "" {
+			curseForgeLink = rpInfo.CurseForgeURL
+		}
+
+		modrinthLink := ""
+		if rpInfo.ModrinthURL != "" {
+			modrinthLink = rpInfo.ModrinthURL
+		}
+
+		// Format file size
+		size := formatFileSize(info.Size())
+
+		rows = append(rows, table.Row{rpInfo.Name, curseForgeLink, modrinthLink, size})
+	}
+
+	// Create and configure table
+	t := table.NewWriter()
+	t.SetStyle(table.StyleLight)
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{
+		output.Translate("resourcepacks.table.name"),
+		output.Translate("resourcepacks.table.curseforge"),
+		output.Translate("resourcepacks.table.modrinth"),
+		output.Translate("resourcepacks.table.size"),
+	})
+	t.AppendRows(rows)
+	t.Render()
+
+	return nil
+}
+
+// formatFileSize formats file size in human readable format
+func formatFileSize(size int64) string {
+	const unit = 1024
+	if size < unit {
+		return fmt.Sprintf("%d B", size)
+	}
+	div, exp := int64(unit), 0
+	for n := size / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(size)/float64(div), "KMGTPE"[exp])
 }
 
 // normalizePathsInTextFiles нормализует пути в текстовых файлах после импорта,

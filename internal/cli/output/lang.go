@@ -50,9 +50,34 @@ var en = translations{
 	"import.arg.path":  "Path to ZIP archive",
 	"import.arg.name":  "Name for imported instance",
 	"import.arg.force": "Overwrite existing instance",
+	"import.arg.merge": "Merge with existing instance (add missing files only)",
 
 	"list_exports":          "List exported instance archives",
 	"list_exports_arg_path": "Directory to search for exports",
+
+	"mods":        "List mods in an instance",
+	"mods.arg.id": "Instance to list mods for",
+	"mods.empty":  "No mods found in this instance",
+
+	"resourcepacks":        "List resource packs in an instance",
+	"resourcepacks.arg.id": "Instance to list resource packs for",
+	"resourcepacks.empty":  "No resource packs found in this instance",
+
+	"shaders":        "List shader packs in an instance",
+	"shaders.arg.id": "Instance to list shader packs for",
+	"shaders.empty":  "No shader packs found in this instance",
+
+	"mods.table.name":       "Name",
+	"mods.table.curseforge": "CurseForge",
+	"mods.table.modrinth":   "Modrinth",
+	"mods.table.size":       "Size",
+
+	"resourcepacks.table.name":       "Name",
+	"resourcepacks.table.curseforge": "CurseForge",
+	"resourcepacks.table.modrinth":   "Modrinth",
+	"resourcepacks.table.size":       "Size",
+	"shaders.table.name":             "Name",
+	"shaders.table.size":             "Size",
 
 	"rename":          "Rename an instance",
 	"rename.complete": "Renamed instance.",
@@ -167,9 +192,34 @@ var de = translations{
 	"import.arg.path":  "Pfad zur ZIP-Datei",
 	"import.arg.name":  "Name für importierte Instanz",
 	"import.arg.force": "Existierende Instanz überschreiben",
+	"import.arg.merge": "Mit bestehender Instanz zusammenführen (nur fehlende Dateien hinzufügen)",
 
 	"list_exports":          "Exportierte Instanz-Archive auflisten",
 	"list_exports_arg_path": "Verzeichnis zum Suchen von Exporten",
+
+	"mods":        "Mods einer Instanz auflisten",
+	"mods.arg.id": "Instanz für die Mods aufgelistet werden sollen",
+	"mods.empty":  "Keine Mods in dieser Instanz gefunden",
+
+	"resourcepacks":        "Ressourcenpakete einer Instanz auflisten",
+	"resourcepacks.arg.id": "Instanz für die Ressourcenpakete aufgelistet werden sollen",
+	"resourcepacks.empty":  "Keine Ressourcenpakete in dieser Instanz gefunden",
+
+	"shaders":        "Shaderpakete einer Instanz auflisten",
+	"shaders.arg.id": "Instanz für die Shaderpakete aufgelistet werden sollen",
+	"shaders.empty":  "Keine Shaderpakete in dieser Instanz gefunden",
+
+	"mods.table.name":       "Name",
+	"mods.table.curseforge": "CurseForge",
+	"mods.table.modrinth":   "Modrinth",
+	"mods.table.size":       "Größe",
+
+	"resourcepacks.table.name":       "Name",
+	"resourcepacks.table.curseforge": "CurseForge",
+	"resourcepacks.table.modrinth":   "Modrinth",
+	"resourcepacks.table.size":       "Größe",
+	"shaders.table.name":             "Name",
+	"shaders.table.size":             "Größe",
 
 	"rename":          "Instanze umbenennen",
 	"rename.complete": "Instanz umbennant.",

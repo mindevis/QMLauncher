@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **NEW**: Smart instance import with merge mode for adding missing files only
+- Enhanced instance import functionality with `--merge` flag
+- Improved import error messages with clear guidance for users
+- Cross-platform path normalization in imported instance files (Windows/Linux)
+- Automatic conversion of backslashes to forward slashes in text configuration files during import
+- Full TypeScript configuration with strict type checking
+- Custom hooks for Wails runtime and backend communication
+- React Context providers for theme and app state management
+- Comprehensive type definitions for Wails integration
+- Enhanced development workflow with TypeScript tooling
+
 ### Changed
 - **BREAKING**: Migrated frontend from Vue.js to React with full TypeScript support
 - Replaced shadcn-vue with shadcn/ui components
@@ -14,15 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced type safety with comprehensive TypeScript definitions
 - Added custom hooks for Wails backend integration
 - Implemented React Context for global state management
-
-### Added
-- Path normalization in imported instance files for cross-platform compatibility (Windows/Linux)
-- Automatic conversion of backslashes to forward slashes in text configuration files during import
-- Full TypeScript configuration with strict type checking
-- Custom hooks for Wails runtime and backend communication
-- React Context providers for theme and app state management
-- Comprehensive type definitions for Wails integration
-- Enhanced development workflow with TypeScript tooling
+- Improved instance import commands with better error handling and user guidance
 
 ## [1.0.0] - 2025-12-27
 
