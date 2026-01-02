@@ -143,7 +143,7 @@ export function useUpdates() {
         currentVersion: "1.0.0",
         changelog: "• Added smart instance import with merge mode\n• Enhanced cross-platform path normalization\n• Improved error messages and user guidance",
         downloadSize: "15.2 MB",
-        releaseUrl: "https://github.com/qdevis/QMLauncher/releases/tag/v1.1.0"
+        releaseUrl: "https://github.com/mindevis/QMLauncher/releases/tag/v1.1.0"
       }
 
       setUpdateInfo(mockUpdate)

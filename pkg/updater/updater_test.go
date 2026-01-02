@@ -21,7 +21,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestFindAssetForPlatform(t *testing.T) {
-	updater := New("mindeivs", "QMLauncher", "1.0.0", "/tmp/cache")
+	updater := New("mindeivs", "QMLauncher", "1.1.0", "/tmp/cache")
 
 	assets := []Asset{
 		{Name: "qmlauncher-linux-amd64.zip", BrowserDownloadURL: "https://example.com/linux-amd64.zip"},
@@ -40,8 +40,8 @@ func TestGetVersionInfo(t *testing.T) {
 
 	info := updater.GetVersionInfo()
 
-	if info["current"] != "1.0.0" {
-		t.Errorf("Expected current version '1.0.0', got '%s'", info["current"])
+	if info["current"] != "1.1.0" {
+		t.Errorf("Expected current version '1.1.0', got '%s'", info["current"])
 	}
 
 	if info["os"] == "" {
