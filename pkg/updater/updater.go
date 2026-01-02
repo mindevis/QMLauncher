@@ -126,7 +126,7 @@ func (u *Updater) findAssetForPlatform(assets []Asset) *Asset {
 		}
 
 		// Special handling for Windows
-		if os == "windows" && strings.Contains(name, "windows") && (strings.Contains(name, arch) || (arch == "amd64" && strings.Contains(name, "x64"))) {
+		if os == "windows" && strings.Contains(name, "windows") && strings.Contains(name, arch) {
 			return &asset
 		}
 
