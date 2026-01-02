@@ -1,0 +1,80 @@
+name: Auto Release
+
+on:
+  push:
+    branches: [ master, main ]
+    paths:
+      - 'CHANGELOG.md'
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.check.outputs.new_version }}
+      should_release: ${{ steps.check.outputs.should_release }}
+      changelog: ${{ steps.check.outputs.changelog }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Check for new version in CHANGELOG
+        id: check
+        run: |
+          # Get the latest commit message
+          LATEST_COMMIT=$(git log -1 --pretty=format:"%s")
+
+          # Check if this is a version bump commit
+          if [[ "$LATEST_COMMIT" == *"release:"* ]] || [[ "$LATEST_COMMIT" == *"feat:"* ]] || [[ "$LATEST_COMMIT" == *"fix:"* ]]; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+
+            # Extract version from CHANGELOG.md
+            VERSION_LINE=$(grep -E "^## \[.*\] -" CHANGELOG.md | head -1)
+            if [[ $VERSION_LINE =~ \[([0-9]+\.[0-9]+\.[0-9]+)\] ]]; then
+              VERSION="${BASH_REMATCH[1]}"
+              echo "new_version=$VERSION" >> $GITHUB_OUTPUT
+              echo "Found version: $VERSION"
+            else
+              echo "should_release=false" >> $GITHUB_OUTPUT
+              echo "No version found in CHANGELOG"
+            fi
+
+            # Extract changelog for this version
+            CHANGELOG_CONTENT=$(sed -n '/^## \['$VERSION'\]/,/^## \[/p' CHANGELOG.md | sed -n '1,/^## \[/p' | head -n -1 | tail -n +3)
+            CHANGELOG_CONTENT=$(echo "$CHANGELOG_CONTENT" | sed 's/"/\\"/g' | sed 's/\n/\\n/g')
+            echo "changelog<<EOF" >> $GITHUB_OUTPUT
+            echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
+            echo "No release commit detected"
+          fi
+
+  create-release:
+    needs: check-version
+    if: needs.check-version.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Create git tag
+        run: |
+          VERSION=${{ needs.check-version.outputs.new_version }}
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=${{ needs.check-version.outputs.new_version }}
+          CHANGELOG="${{ needs.check-version.outputs.changelog }}"
+
+          # Create release with changelog
+          gh release create "v$VERSION" \
+            --title "Release v$VERSION" \
+            --notes "$CHANGELOG" \
+            --draft=false \
+            --prerelease=false

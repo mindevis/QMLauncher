@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2026-01-02
 
 ### Added
 - **NEW**: Comprehensive auto-update system with GitHub Releases integration
@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic binary replacement and application restart after updates
 - Cross-platform update support for Windows, macOS, and Linux
 - Enhanced instance import functionality with `--merge` flag
+- Automatic release system triggered by CHANGELOG.md updates
 - Improved import error messages with clear guidance for users
 - Cross-platform path normalization in imported instance files (Windows/Linux)
 - Automatic conversion of backslashes to forward slashes in text configuration files during import

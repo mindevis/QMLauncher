@@ -15,8 +15,8 @@ func TestNew(t *testing.T) {
 		t.Errorf("Expected repo 'QMLauncher', got '%s'", updater.Repo)
 	}
 
-	if updater.CurrentVer != "1.0.0" {
-		t.Errorf("Expected version '1.0.0', got '%s'", updater.CurrentVer)
+	if updater.CurrentVer != "1.1.0" {
+		t.Errorf("Expected version '1.1.0', got '%s'", updater.CurrentVer)
 	}
 }
 

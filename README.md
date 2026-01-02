@@ -1,6 +1,6 @@
 # QMLauncher
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/mindeivs/QMLauncher/releases/tag/v1.0.0)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/qdevis/QMLauncher/releases/tag/v1.1.0)
 [![Go](https://img.shields.io/badge/Go-1.23+-00ADD8.svg)](https://golang.org)
 [![React](https://img.shields.io/badge/React-18.2+-61DAFB.svg)](https://reactjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-3178C6.svg)](https://www.typescriptlang.org)
