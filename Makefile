@@ -14,12 +14,12 @@ UNAME_M := $(shell uname -m)
 # Platform-specific settings
 ifeq ($(UNAME_S),Linux)
 	CURRENT_PLATFORM := linux
-	CURRENT_ARCH := $(UNAME_M)
+	CURRENT_ARCH := $(shell echo $(UNAME_M) | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
 	APP_SUFFIX :=
 endif
 ifeq ($(UNAME_S),Darwin)
 	CURRENT_PLATFORM := darwin
-	CURRENT_ARCH := $(UNAME_M)
+	CURRENT_ARCH := $(shell echo $(UNAME_M) | sed 's/x86_64/amd64/' | sed 's/arm64/arm64/')
 	APP_SUFFIX :=
 endif
 ifeq ($(OS),Windows_NT)
