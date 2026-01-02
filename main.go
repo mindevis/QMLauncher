@@ -3,12 +3,11 @@
 package main
 
 import (
+	"QMLauncher/internal/cli"
 	"context"
 	"embed"
 	"fmt"
 	"os"
-
-	"QMLauncher/internal/cli"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -54,30 +53,7 @@ func (a *App) Greet(name string) string {
 }
 
 func main() {
-	// Check for --no-gui flag before parsing other arguments
-	noGUI := false
-	args := os.Args[1:]
-
-	// Filter out --no-gui flag and check if it exists
-	filteredArgs := make([]string, 0, len(args))
-	for _, arg := range args {
-		if arg == "--no-gui" {
-			noGUI = true
-		} else {
-			filteredArgs = append(filteredArgs, arg)
-		}
-	}
-
-	// Replace os.Args to exclude --no-gui for CLI parser
-	os.Args = append([]string{os.Args[0]}, filteredArgs...)
-
-	// If --no-gui flag is provided, run CLI mode
-	if noGUI {
-		runCLI()
-		return
-	}
-
-	// Otherwise, run GUI mode
+	// Run GUI mode only
 	runGUI()
 }
 

@@ -90,12 +90,12 @@ This will start:
 - Vite development server for the frontend
 - Hot reload for both backend and frontend changes
 
-#### CLI Mode
+#### CLI Version
 
-To run the application in command-line mode for Minecraft launcher functionality:
+For server deployments and automation, use the CLI-only version:
 
 ```bash
-./qmlauncher --no-gui [command]
+./qmlauncher-cli-linux-amd64 [command]
 ```
 
 Available CLI commands:
