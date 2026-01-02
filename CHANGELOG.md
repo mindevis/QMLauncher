@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic binary replacement and application restart after updates
 - Cross-platform update support for Windows, macOS, and Linux
 - Enhanced instance import functionality with `--merge` flag
+
+### Changed
+- **BREAKING**: Removed German language support, set Russian as default language
+- Simplified localization system to support only English and Russian
+- Russian language is now the primary language with English as fallback
 - Improved import error messages with clear guidance for users
 - Cross-platform path normalization in imported instance files (Windows/Linux)
 - Automatic conversion of backslashes to forward slashes in text configuration files during import
