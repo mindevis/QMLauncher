@@ -6,248 +6,251 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-3178C6.svg)](https://www.typescriptlang.org)
 [![Wails](https://img.shields.io/badge/Wails-2.11+-00ADD8.svg)](https://wails.io)
 
-Современное десктопное приложение, созданное с использованием Go и React на базе фреймворка Wails.
+A modern desktop application built with Go and React using the Wails framework.
 
-## О проекте
+## About
 
-QMLauncher - это кроссплатформенное десктопное приложение, которое служит лаунчером для различных приложений и инструментов. Создано с использованием фреймворка Wails, который сочетает мощь Go для бэкенда с React для фронтенда, создавая нативный десктопный опыт. UI построен с использованием shadcn/ui компонентов и стилизован с Tailwind CSS для создания современного, доступного и красивого пользовательского интерфейса.
+QMLauncher is a cross-platform desktop application that serves as a launcher for various applications and tools. Built using the Wails framework, it combines the power of Go for the backend with React for the frontend to create a native desktop experience. The UI is built with shadcn/ui components and styled with Tailwind CSS for a modern, accessible, and beautiful user interface.
 
-## Особенности
+## Features
 
-- 🚀 Быстрое и отзывчивое десктопное приложение
-- 🔄 Горячая перезагрузка во время разработки
-- 📦 Кроссплатформенная поддержка (Windows, macOS, Linux)
-- 🎨 Современный фронтенд на React с shadcn/ui компонентами
-- 🔷 Полная поддержка TypeScript для типобезопасности
-- ⚡ Нативная производительность с Go бэкендом
-- 🛠️ Легкая настройка и кастомизация
-- 🎯 Красивый UI с Tailwind CSS
-- 📱 Адаптивные компоненты дизайна
+- 🚀 Fast and responsive desktop application
+- 🔄 Hot reload during development
+- 📦 Cross-platform support (Windows, macOS, Linux)
+- 🎨 Modern React frontend with shadcn/ui components
+- 🔷 Full TypeScript support for type safety
+- ⚡ Native performance with Go backend
+- 🛠️ Easy configuration and customization
+- 🎯 Beautiful UI with Tailwind CSS
+- 📱 Responsive design components
 
-## API документация
+## API Documentation
 
-Для программного использования функциональности лаунчера Minecraft:
+For programmatic usage of the Minecraft launcher functionality:
 
-- [Английская API документация](docs/API.md)
-- [Русская API документация](docs/API_ru.md)
+- [English API Documentation](docs/API.md)
+- [Russian API Documentation](docs/API_ru.md)
 
-API позволяет создавать, управлять и запускать инстансы Minecraft программно из ваших Go приложений.
+The API allows you to create, manage, and launch Minecraft instances programmatically from your Go applications.
 
-## Требования
+## Requirements
 
-- Go 1.19 или новее
-- Node.js 16 или новее
+- Go 1.19 or later
+- Node.js 16 or later
 - Wails CLI
 
-## Установка
+## Installation
 
-1. Клонируйте репозиторий:
+1. Clone the repository:
 ```bash
 git clone <repository-url>
 cd QMLauncher
 ```
 
-2. Установите зависимости Go:
+2. Install Go dependencies:
 ```bash
 go mod tidy
 ```
 
-3. Установите зависимости фронтенда:
+3. Install frontend dependencies:
 ```bash
 cd frontend
 npm install
 cd ..
 ```
 
-## Разработка
+## Development
 
-### Предварительные требования
+### Prerequisites
 
-Перед началом разработки установите необходимые инструменты:
+Before starting development, install the required tools:
 
 ```bash
-# Установка инструментов разработки
+# Install development tools
 make install-tools
 
-# Установка всех зависимостей
+# Install all dependencies
 make deps
 ```
 
-### Режимы работы
+### Running Modes
 
-#### GUI режим (по умолчанию)
+#### GUI Mode (Default)
 
-Для запуска приложения в GUI режиме с Wails десктоп интерфейсом:
+To run the application in GUI mode with Wails desktop interface:
 
 ```bash
 wails dev
-# или
+# or
 make dev
 ```
 
-Это запустит:
-- Go бэкенд
-- Vite сервер разработки для фронтенда
-- Горячую перезагрузку для изменений как бэкенда, так и фронтенда
+This will start:
+- The Go backend
+- Vite development server for the frontend
+- Hot reload for both backend and frontend changes
 
-#### CLI режим
+#### CLI Mode
 
-Для запуска приложения в режиме командной строки для функциональности лаунчера Minecraft:
+To run the application in command-line mode for Minecraft launcher functionality:
 
 ```bash
-./qmlauncher --no-gui [команда]
+./qmlauncher --no-gui [command]
 ```
 
-Доступные CLI команды:
-- `start` - Запуск указанного инстанса Minecraft
-- `instance list` - Список всех инстансов с их путями
-- `instance create <name> -v <version> -l <loader>` - Создание нового инстанса
-- `instance delete <name>` - Удаление инстанса
-- `instance rename <old> <new>` - Переименование инстанса
-- `java list` - Список всех установленных версий Java
-- `auth` - Управление аутентификацией аккаунта
-- `search` - Поиск версий Minecraft
-- `completions` - Генерация автодополнения для shell
-- `about` - Отображение версии лаунчера и информации
+Available CLI commands:
+- `start` - Start the specified Minecraft instance
+- `instance list` - List all instances with their paths
+- `instance create <name> -v <version> -l <loader>` - Create a new instance
+- `instance delete <name>` - Delete an instance
+- `instance rename <old> <new>` - Rename an instance
+- `java list` - List all installed Java versions
+- `auth` - Manage account authentication
+- `search` - Search Minecraft versions
+- `completions` - Generate shell completions
+- `about` - Display launcher version and information
 
-Лаунчер использует `~/.qmlauncher` как рабочую директорию по умолчанию для хранения инстансов, ассетов, библиотек и файлов конфигурации. Вы можете переопределить это с помощью флага `--dir`.
+The launcher uses `~/.qmlauncher` as the default working directory for storing instances, assets, libraries, and configuration files. You can override this with the `--dir` flag.
 
-### Структура инстансов
+### Instance Structure
 
-Каждый инстанс хранится в собственной директории с уникальным UUID для изоляции:
+Each instance is stored in its own directory with a unique UUID for isolation:
 
 ```
 ~/.qmlauncher/instances/
 └── InstanceName/
     └── uuid/
-        ├── instance.toml    # Конфигурация инстанса
-        ├── minecraft.jar    # Клиент Minecraft
-        ├── forge.jar        # Загрузчик модов (если применимо)
-        ├── mods/           # Директория модов
-        ├── saves/          # Сохранения миров
-        └── config/         # Файлы конфигурации
+        ├── instance.toml    # Instance configuration
+        ├── minecraft.jar    # Minecraft client
+        ├── forge.jar        # Mod loader (if applicable)
+        ├── mods/           # Mods directory
+        ├── saves/          # World saves
+        └── config/         # Configuration files
 ```
 
-Общие ресурсы остаются в корневых директориях:
-- `libraries/` - Java библиотеки
-- `assets/` - Игровые ассеты и текстуры
-- `caches/` - Скачанные метаданные и манифесты
-- `java/` - Установки Java runtime
+Shared resources remain in the root directories:
+- `libraries/` - Java libraries
+- `assets/` - Game assets and textures
+- `caches/` - Downloaded metadata and manifests
+- `java/` - Java runtime installations
 
-Примеры:
+Examples:
 ```bash
-# Показать справку
+# Show help
 ./qmlauncher --no-gui --help
 
-# Отобразить информацию о версии
+# Display version info
 ./qmlauncher --no-gui about
 
-# Поиск версий Minecraft
+# Search Minecraft versions
 ./qmlauncher --no-gui search 1.20
 
-# Список инстансов
+# List instances
 ./qmlauncher --no-gui instance list
 ```
 
-### Разработка в браузере
+### Browser Development
 
-Для разработки фронтенда с доступом к методам Go из браузера, подключитесь к:
-- http://localhost:34115 (сервер разработки)
+For frontend development with browser access to Go methods, connect to:
+- http://localhost:34115 (dev server)
 
-### Качество кода
+### Code Quality
 
-#### Линтинг и форматирование
+#### Linting and Formatting
 
-Запустите все проверки качества кода:
+Run all code quality checks:
 
 ```bash
 make check
 ```
 
-Включает в себя:
-- Форматирование Go кода (`make fmt`)
-- Линтинг Go (`make lint`)
-- Линтинг фронтенда (`make frontend-lint`)
-- Форматирование фронтенда (`make frontend-fmt`)
-- Проверка типов TypeScript (`npm run type-check` в frontend/)
+This includes:
+- Go code formatting (`make fmt`)
+- Go linting (`make lint`)
+- Frontend linting (`make frontend-lint`)
+- Frontend formatting (`make frontend-fmt`)
+- TypeScript type checking (`npm run type-check` in frontend/)
 
-#### Отдельные команды
+#### Individual Commands
 
 ```bash
-# Команды Go
-make lint          # Запуск golangci-lint
-make fmt           # Форматирование Go кода
-make vet           # Запуск go vet
-make test          # Запуск тестов
+# Go commands
+make lint          # Run golangci-lint
+make fmt           # Format Go code
+make vet           # Run go vet
+make test          # Run tests
 
-# Команды фронтенда
-make frontend-lint     # Запуск ESLint
-make frontend-fmt      # Форматирование с Prettier
-make frontend-install  # Установка зависимостей
+# Frontend commands
+make frontend-lint     # Run ESLint
+make frontend-fmt      # Format with Prettier
+make frontend-install  # Install dependencies
 
-# Комбинированные команды
-make deps          # Установка всех зависимостей
-make clean         # Очистка артефактов сборки
-make check         # Запуск всех проверок
+# Combined commands
+make deps          # Install all dependencies
+make clean         # Clean build artifacts
+make check         # Run all checks
 ```
 
-### Структура проекта
+### Project Structure
 
 ```
 QMLauncher/
-├── main.go              # Точка входа приложения
-├── app.go               # Основная логика приложения
-├── wails.json          # Конфигурация Wails
-├── go.mod              # Файл Go модуля
-├── frontend/           # Фронтенд на Vue.js
+├── main.go              # Application entry point
+├── app.go               # Main application logic
+├── wails.json          # Wails configuration
+├── go.mod              # Go module file
+├── frontend/           # React frontend
 │   ├── src/
-│   │   ├── App.vue
-│   │   ├── main.js
-│   │   └── components/
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── contexts/
+│   │   └── types/
 │   ├── package.json
 │   └── vite.config.js
-└── build/              # Вывод сборки
+└── build/              # Build output
 ```
 
-## Сборка
+## Building
 
-### Сборка для разработки
+### Development Build
 
 ```bash
 wails build
 ```
 
-### Продакшн сборка
+### Production Build
 
 ```bash
 wails build -production
 ```
 
-### Платформо-специфичные сборки
+### Platform-Specific Builds
 
-Используйте удобные команды Makefile для кроссплатформенной сборки:
+Use convenient Makefile commands for cross-platform builds:
 
 ```bash
-# Сборка для текущей платформы
+# Build for current platform
 make linux    # Linux
 make macos    # macOS
 make windows  # Windows
 
-# Сборка для конкретных архитектур
+# Build for specific architectures
 make linux-amd64 linux-arm64     # Linux AMD64 + ARM64
 make macos-amd64 macos-arm64     # macOS Intel + Apple Silicon
 make windows-amd64 windows-arm64 # Windows AMD64 + ARM64
 
-# Сборка для всех основных платформ (AMD64)
+# Build for all major platforms (AMD64)
 make release
 
-# Сборка для всех платформ и архитектур
+# Build for all platforms and architectures
 make release-all
 ```
 
-Собранные приложения будут размещены в `build/bin/` с описательными именами, включающими платформу и архитектуру.
+Built applications will be placed in `build/bin/` with descriptive names including platform and architecture.
 
-#### Ручные команды Wails (при необходимости)
+#### Manual Wails Commands (if needed)
 
 ```bash
 # Windows
@@ -260,69 +263,69 @@ wails build -platform darwin/amd64
 wails build -platform linux/amd64
 ```
 
-## Конфигурация
+## Configuration
 
-Проект можно настроить путем редактирования `wails.json`. Более подробную информацию о настройках проекта можно найти по адресу:
+The project can be configured by editing `wails.json`. More information about project settings can be found at:
 https://wails.io/docs/reference/project-config
 
-## Участие в разработке
+## Contributing
 
-1. Сделайте форк репозитория
-2. Создайте ветку для новой функциональности
-3. Внесите изменения
-4. Тщательно протестируйте
-5. Отправьте pull request
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-## Версионирование
+## Versioning
 
-Этот проект следует спецификациям [Semantic Versioning](https://semver.org/) и [Conventional Commits](https://conventionalcommits.org/).
+This project follows [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://conventionalcommits.org/) specifications.
 
-### Типы релизов
+### Release Types
 
-- **MAJOR** версия (X.y.z) - Критические изменения
-- **MINOR** версия (x.Y.z) - Новые функции (обратно совместимые)
-- **PATCH** версия (x.y.Z) - Исправления ошибок (обратно совместимые)
+- **MAJOR** version (X.y.z) - Breaking changes
+- **MINOR** version (x.Y.z) - New features (backward compatible)
+- **PATCH** version (x.y.Z) - Bug fixes (backward compatible)
 
-### Формат сообщений коммитов
+### Commit Message Format
 
 ```
-type(scope): описание
+type(scope): description
 
-[необязательное тело]
+[optional body]
 
-[необязательный футер]
+[optional footer]
 ```
 
-Типы: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
-Примеры:
-- `feat: добавить аутентификацию пользователя`
-- `fix: исправить утечку памяти в обработчике файлов`
-- `docs: обновить документацию API`
+Examples:
+- `feat: add user authentication`
+- `fix: resolve memory leak in file handler`
+- `docs: update API documentation`
 
 ## CI/CD
 
-Проект использует GitHub Actions для автоматизированной сборки и релизов:
+This project uses GitHub Actions for automated building and releasing:
 
-- **Build**: Запускается при каждом push/PR (исключая docs), тестирует компиляцию на Windows/macOS/Linux
-- **Release**: Срабатывает при создании релиза, собирает бинарные файлы для всех платформ и загружает в GitHub Releases
+- **Build**: Runs on every push/PR (excluding docs), tests compilation on Windows/macOS/Linux
+- **Release**: Triggers on release creation, builds binaries for all platforms and uploads to GitHub Releases
 
-## Участие в разработке
+## Contributing
 
-1. Следуйте Conventional Commits для сообщений коммитов
-2. Запускайте `make check` перед отправкой PR
-3. Обновляйте CHANGELOG.md для значительных изменений
-4. Тестируйте на нескольких платформах по возможности
-5. Убедитесь, что CI проходит перед слиянием
+1. Follow Conventional Commits for commit messages
+2. Run `make check` before submitting PR
+3. Update CHANGELOG.md for significant changes
+4. Test on multiple platforms when possible
+5. Ensure CI passes before merging
 
-## Лицензия
+## License
 
-Этот проект лицензирован под MIT License - подробности смотрите в файле LICENSE.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Поддержка
+## Support
 
-Если вы столкнулись с проблемами или у вас есть вопросы:
+If you encounter any issues or have questions:
 
-- Проверьте [документацию Wails](https://wails.io/docs)
-- Откройте issue на GitHub
-- Присоединяйтесь к [сообществу Wails в Discord](https://discord.gg/7FY4VQ4)
+- Check the [Wails documentation](https://wails.io/docs)
+- Open an issue on GitHub
+- Join the [Wails Discord community](https://discord.gg/7FY4VQ4)
