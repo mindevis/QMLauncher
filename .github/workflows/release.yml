@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    name: Build cross-platform binaries
+    name: Build cross-platform GUI and CLI binaries
     runs-on: ubuntu-latest
 
     steps:
@@ -35,24 +35,45 @@ jobs:
       - name: Create dist directory
         run: mkdir -p dist
 
-      - name: Build binaries for all platforms
+      - name: Build GUI binaries for all platforms
         run: |
-          # Linux
-          GOOS=linux GOARCH=amd64 go build -o dist/qmlauncher-linux-amd64 .
-          GOOS=linux GOARCH=arm64 go build -o dist/qmlauncher-linux-arm64 .
+          # Linux GUI
+          GOOS=linux GOARCH=amd64 go build -o dist/qmlauncher-gui-linux-amd64 .
+          GOOS=linux GOARCH=arm64 go build -o dist/qmlauncher-gui-linux-arm64 .
 
-          # Windows
-          GOOS=windows GOARCH=amd64 go build -o dist/qmlauncher-windows-amd64.exe .
-          GOOS=windows GOARCH=arm64 go build -o dist/qmlauncher-windows-arm64.exe .
+          # Windows GUI
+          GOOS=windows GOARCH=amd64 go build -o dist/qmlauncher-gui-windows-amd64.exe .
+          GOOS=windows GOARCH=arm64 go build -o dist/qmlauncher-gui-windows-arm64.exe .
 
-          # macOS (Intel)
-          GOOS=darwin GOARCH=amd64 go build -o dist/qmlauncher-darwin-amd64 .
+          # macOS GUI (Intel)
+          GOOS=darwin GOARCH=amd64 go build -o dist/qmlauncher-gui-darwin-amd64 .
 
-          # macOS (Apple Silicon)
-          GOOS=darwin GOARCH=arm64 go build -o dist/qmlauncher-darwin-arm64 .
+          # macOS GUI (Apple Silicon)
+          GOOS=darwin GOARCH=arm64 go build -o dist/qmlauncher-gui-darwin-arm64 .
+
+      - name: Build CLI binaries for all platforms
+        run: |
+          # Linux CLI
+          GOOS=linux GOARCH=amd64 go build -tags cli -o dist/qmlauncher-cli-linux-amd64 .
+          GOOS=linux GOARCH=arm64 go build -tags cli -o dist/qmlauncher-cli-linux-arm64 .
+
+          # Windows CLI
+          GOOS=windows GOARCH=amd64 go build -tags cli -o dist/qmlauncher-cli-windows-amd64.exe .
+          GOOS=windows GOARCH=arm64 go build -tags cli -o dist/qmlauncher-cli-windows-arm64.exe .
+
+          # macOS CLI (Intel)
+          GOOS=darwin GOARCH=amd64 go build -tags cli -o dist/qmlauncher-cli-darwin-amd64 .
+
+          # macOS CLI (Apple Silicon)
+          GOOS=darwin GOARCH=arm64 go build -tags cli -o dist/qmlauncher-cli-darwin-arm64 .
 
       - name: List built binaries
-        run: ls -la dist/
+        run: |
+          echo "=== GUI Versions ==="
+          ls -la dist/ | grep gui
+          echo ""
+          echo "=== CLI Versions ==="
+          ls -la dist/ | grep cli
 
       - name: Get tag name
         id: tag
