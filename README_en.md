@@ -112,6 +112,22 @@ Available CLI commands:
 
 The launcher uses `~/.qmlauncher` as the default working directory for storing instances, assets, libraries, and configuration files. You can override this with the `--dir` flag.
 
+## Download
+
+In [releases](https://github.com/mindevis/QMLauncher/releases) you can find two versions for each platform:
+
+### GUI versions (recommended for desktops)
+- `qmlauncher-gui-linux-amd64` - Full desktop application for Linux
+- `qmlauncher-gui-windows-amd64.exe` - Full desktop application for Windows
+- `qmlauncher-gui-darwin-amd64` - Full desktop application for macOS Intel
+- `qmlauncher-gui-darwin-arm64` - Full desktop application for macOS Apple Silicon
+
+### CLI versions (for servers and automation)
+- `qmlauncher-cli-linux-amd64` - Command-line only version for Linux
+- `qmlauncher-cli-windows-amd64.exe` - Command-line only version for Windows
+- `qmlauncher-cli-darwin-amd64` - Command-line only version for macOS Intel
+- `qmlauncher-cli-darwin-arm64` - Command-line only version for macOS Apple Silicon
+
 ### Instance Structure
 
 Each instance is stored in its own directory with a unique UUID for isolation:
