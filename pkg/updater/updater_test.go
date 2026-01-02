@@ -5,10 +5,10 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	updater := New("mindeivs", "QMLauncher", "1.0.0", "/tmp/cache")
+	updater := New("mindevis", "QMLauncher", "1.1.0", "/tmp/cache")
 
-	if updater.Owner != "mindeivs" {
-		t.Errorf("Expected owner 'mindeivs', got '%s'", updater.Owner)
+	if updater.Owner != "mindevis" {
+		t.Errorf("Expected owner 'mindevis', got '%s'", updater.Owner)
 	}
 
 	if updater.Repo != "QMLauncher" {
@@ -36,7 +36,7 @@ func TestFindAssetForPlatform(t *testing.T) {
 }
 
 func TestGetVersionInfo(t *testing.T) {
-	updater := New("mindeivs", "QMLauncher", "1.0.0", "/tmp/cache")
+	updater := New("mindevis", "QMLauncher", "1.1.0", "/tmp/cache")
 
 	info := updater.GetVersionInfo()
 
@@ -54,7 +54,7 @@ func TestGetVersionInfo(t *testing.T) {
 }
 
 func TestIsBinaryFile(t *testing.T) {
-	updater := New("mindeivs", "QMLauncher", "1.0.0", "/tmp/cache")
+	updater := New("mindeivs", "QMLauncher", "1.1.0", "/tmp/cache")
 
 	tests := []struct {
 		filename string

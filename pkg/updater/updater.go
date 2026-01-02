@@ -112,7 +112,7 @@ func (u *Updater) findAssetForPlatform(assets []Asset) *Asset {
 	// Normalize architecture names
 	switch arch {
 	case "amd64":
-		arch = "x64"
+		// Keep amd64 as is, also check for x64
 	case "386":
 		arch = "ia32"
 	}
@@ -121,12 +121,12 @@ func (u *Updater) findAssetForPlatform(assets []Asset) *Asset {
 		name := strings.ToLower(asset.Name)
 
 		// Check for platform-specific patterns
-		if strings.Contains(name, os) && strings.Contains(name, arch) {
+		if strings.Contains(name, os) && (strings.Contains(name, arch) || (arch == "amd64" && strings.Contains(name, "x64"))) {
 			return &asset
 		}
 
 		// Special handling for Windows
-		if os == "windows" && strings.Contains(name, "windows") && strings.Contains(name, arch) {
+		if os == "windows" && strings.Contains(name, "windows") && (strings.Contains(name, arch) || (arch == "amd64" && strings.Contains(name, "x64"))) {
 			return &asset
 		}
 
@@ -280,6 +280,11 @@ func (u *Updater) extractUpdate(zipPath, destDir string) error {
 func (u *Updater) isBinaryFile(filename string) bool {
 	name := strings.ToLower(filename)
 
+	// Skip archive files
+	if strings.HasSuffix(name, ".zip") || strings.HasSuffix(name, ".tar.gz") || strings.HasSuffix(name, ".tar.bz2") {
+		return false
+	}
+
 	// Check for common executable extensions
 	if runtime.GOOS == "windows" {
 		return strings.HasSuffix(name, ".exe")
@@ -290,10 +295,10 @@ func (u *Updater) isBinaryFile(filename string) bool {
 		return true
 	}
 
-	// Common executable names
+	// Common executable names (but not in archive names)
 	execNames := []string{"qmlauncher", "qm"}
 	for _, execName := range execNames {
-		if strings.Contains(name, execName) {
+		if strings.Contains(name, execName) && !strings.Contains(name, ".zip") && !strings.Contains(name, ".tar") {
 			return true
 		}
 	}
@@ -385,6 +390,8 @@ func copyFile(src, dst string) error {
 func (u *Updater) GetVersionInfo() map[string]string {
 	return map[string]string{
 		"current":  u.CurrentVer,
+		"os":       runtime.GOOS,
+		"arch":     runtime.GOARCH,
 		"platform": fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
 	}
 }
