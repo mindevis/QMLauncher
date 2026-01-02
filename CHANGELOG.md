@@ -8,7 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **NEW**: Comprehensive auto-update system with GitHub Releases integration
 - **NEW**: Smart instance import with merge mode for adding missing files only
+- UI update notifications with download progress and changelog display
+- CLI commands for update management: `qm update check`, `qm update download`, `qm update info`
+- Automatic binary replacement and application restart after updates
+- Cross-platform update support for Windows, macOS, and Linux
 - Enhanced instance import functionality with `--merge` flag
 - Improved import error messages with clear guidance for users
 - Cross-platform path normalization in imported instance files (Windows/Linux)

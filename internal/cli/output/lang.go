@@ -9,6 +9,7 @@ var en = translations{
 	"auth":        "Manage account authentication",
 	"java":        "Manage Java runtime installations",
 	"about":       "Display launcher version and about",
+	"update":      "Manage application updates",
 	"list":        "List all instances",
 	"java_list":   "List all installed Java versions",
 	"completions": "Outputs shell command to install completions",
@@ -51,6 +52,10 @@ var en = translations{
 	"import.arg.name":  "Name for imported instance",
 	"import.arg.force": "Overwrite existing instance",
 	"import.arg.merge": "Merge with existing instance (add missing files only)",
+
+	"update_check":    "Check for available updates",
+	"update_download": "Download and install available updates",
+	"update_info":     "Show current version information",
 
 	"list_exports":          "List exported instance archives",
 	"list_exports_arg_path": "Directory to search for exports",
@@ -193,6 +198,10 @@ var de = translations{
 	"import.arg.name":  "Name für importierte Instanz",
 	"import.arg.force": "Existierende Instanz überschreiben",
 	"import.arg.merge": "Mit bestehender Instanz zusammenführen (nur fehlende Dateien hinzufügen)",
+
+	"update_check":    "Auf verfügbare Updates prüfen",
+	"update_download": "Verfügbare Updates herunterladen und installieren",
+	"update_info":     "Aktuelle Versionsinformationen anzeigen",
 
 	"list_exports":          "Exportierte Instanz-Archive auflisten",
 	"list_exports_arg_path": "Verzeichnis zum Suchen von Exporten",

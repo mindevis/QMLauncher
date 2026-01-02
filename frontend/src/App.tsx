@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AppProvider, useApp } from '@/contexts/AppContext'
 import { useWindow } from '@/hooks/useWails'
+import { UpdateNotification, useUpdates } from '@/components/UpdateNotification'
 
 // TypeScript interface for tech stack item
 interface TechStackItem {
@@ -20,6 +21,7 @@ interface FeatureItem {
 function AppContent() {
   const { theme, setTheme } = useApp()
   const { setTitle } = useWindow()
+  const updateState = useUpdates()
 
   // Typed data structures
   const techStack: TechStackItem[] = [
@@ -189,6 +191,17 @@ function AppContent() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Update Notification */}
+        {updateState.isVisible && (
+          <UpdateNotification
+            updateInfo={updateState.updateInfo}
+            isDownloading={updateState.isDownloading}
+            downloadProgress={updateState.downloadProgress}
+            onClose={updateState.dismiss}
+            onUpdate={updateState.startUpdate}
+          />
+        )}
       </div>
     </div>
   )
