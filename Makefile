@@ -30,24 +30,45 @@ endif
 
 # Default target
 help: ## Show this help message
-	@echo "QMLauncher - Desktop application built with Wails, Go and Vue.js"
+	@echo "QMLauncher - Desktop application built with Wails, Go and React"
 	@echo ""
-	@echo "Available commands:"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo "Build targets:"
+	@echo "  GUI versions (full app with desktop interface):"
+	@awk 'BEGIN {FS = ":.*?## "} /^build.*:.*?## / && !/cli/ {printf "    %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""
+	@echo "  CLI versions (command-line only, no GUI):"
+	@awk 'BEGIN {FS = ":.*?## "} /^build.*cli.*:.*?## / || /^cli-.*:.*?## / {printf "    %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""
+	@echo "  Cross-platform builds:"
+	@awk 'BEGIN {FS = ":.*?## "} /^release.*:.*?## / {printf "    %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""
+	@echo "Development and maintenance:"
+	@awk 'BEGIN {FS = ":.*?## "} /^dev.*:.*?## / || /^frontend.*:.*?## / || /^lint\|fmt\|vet\|test\|check\|clean\|install-tools:.*?## / {printf "    %-15s %s\n", $$2}' $(MAKEFILE_LIST)
 
 # Build targets
-build: ## Build the application for production
-	wails build
+build: ## Build the full application with GUI for production
+	wails build -s -skipbindings
 
-build-dev: ## Build the application in development mode
+build-dev: ## Build the full application in development mode
 	wails build -dev
 
-build-debug: ## Build the application with debug information
+build-debug: ## Build the full application with debug information
 	wails build -debug
 
-build-clean: ## Clean build artifacts and rebuild
+build-clean: ## Clean build artifacts and rebuild full application
 	rm -rf $(BUILD_DIR)/$(APP_NAME)*
-	wails build
+	wails build -s -skipbindings
+
+# CLI-only build targets
+build-cli: ## Build CLI-only version without GUI
+	go build -tags cli -o $(BUILD_DIR)/$(APP_NAME)-cli-$(CURRENT_PLATFORM)-$(CURRENT_ARCH)$(APP_SUFFIX) .
+
+build-cli-dev: ## Build CLI-only version in development mode
+	go build -tags cli -race -o $(BUILD_DIR)/$(APP_NAME)-cli-dev-$(CURRENT_PLATFORM)-$(CURRENT_ARCH)$(APP_SUFFIX) .
+
+build-cli-clean: ## Clean and rebuild CLI-only version
+	rm -rf $(BUILD_DIR)/$(APP_NAME)-cli*
+	go build -tags cli -o $(BUILD_DIR)/$(APP_NAME)-cli-$(CURRENT_PLATFORM)-$(CURRENT_ARCH)$(APP_SUFFIX) .
 
 # Development targets
 dev: ## Run the application in development mode
@@ -134,6 +155,23 @@ define build_target
 	fi
 endef
 
+define build_cli_target
+	@echo "Building $(APP_NAME) CLI v$(VERSION) for $(1) $(2)..."
+	mkdir -p $(BUILD_DIR)
+	@if [ "$(1)" = "darwin" ] && [ "$(UNAME_S)" != "Darwin" ]; then \
+		echo "⚠️  Cross-compilation to macOS is not supported on $(UNAME_S)"; \
+		echo "   Please build on macOS or use CI/CD with macOS runners"; \
+		exit 1; \
+	fi
+	GOOS=$(1) GOARCH=$(2) go build -tags cli -o $(BUILD_DIR)/$(APP_NAME)-cli-$(1)-$(2)$(if $(filter windows,$(1)),.exe,) .
+	@if [ -f $(BUILD_DIR)/$(APP_NAME)-cli-$(1)-$(2)$(if $(filter windows,$(1)),.exe,) ]; then \
+		echo "✓ Built CLI: $(BUILD_DIR)/$(APP_NAME)-cli-$(1)-$(2)$(if $(filter windows,$(1)),.exe,)"; \
+	else \
+		echo "❌ CLI Build failed"; \
+		exit 1; \
+	fi
+endef
+
 linux: ## Build for Linux (current architecture)
 	$(call build_target,linux,$(CURRENT_ARCH))
 
@@ -166,15 +204,56 @@ release-linux: linux-amd64 ## Build for Linux (legacy)
 release-windows: windows-amd64 ## Build for Windows (legacy)
 release-darwin: macos-amd64 ## Build for macOS (legacy)
 
-release: linux-amd64 windows-amd64 ## Build for all major platforms (AMD64)
+# CLI build targets
+cli-linux: ## Build CLI version for Linux (current architecture)
+	$(call build_cli_target,linux,$(CURRENT_ARCH))
+
+cli-linux-amd64: ## Build CLI version for Linux AMD64
+	$(call build_cli_target,linux,amd64)
+
+cli-linux-arm64: ## Build CLI version for Linux ARM64
+	$(call build_cli_target,linux,arm64)
+
+cli-macos: ## Build CLI version for macOS (current architecture)
+	$(call build_cli_target,darwin,$(CURRENT_ARCH))
+
+cli-macos-amd64: ## Build CLI version for macOS AMD64 (Intel)
+	$(call build_cli_target,darwin,amd64)
+
+cli-macos-arm64: ## Build CLI version for macOS ARM64 (Apple Silicon)
+	$(call build_cli_target,darwin,arm64)
+
+cli-windows: ## Build CLI version for Windows (current architecture)
+	$(call build_cli_target,windows,amd64)
+
+cli-windows-amd64: ## Build CLI version for Windows AMD64
+	$(call build_cli_target,windows,amd64)
+
+cli-windows-arm64: ## Build CLI version for Windows ARM64
+	$(call build_cli_target,windows,arm64)
+
+# Combined build targets
+release: linux-amd64 windows-amd64 ## Build full GUI apps for all major platforms (AMD64)
 	@echo ""
 	@echo "🎉 Release builds completed!"
 	@echo "Built applications are in $(BUILD_DIR)/"
 	@ls -la $(BUILD_DIR)/ | grep $(APP_NAME)
 
-release-all: linux-amd64 linux-arm64 windows-amd64 windows-arm64 ## Build for all platforms and architectures (except macOS cross-compilation)
+release-cli: cli-linux-amd64 cli-windows-amd64 ## Build CLI apps for all major platforms (AMD64)
 	@echo ""
-	@echo "🎉 All platform builds completed!"
+	@echo "🎉 CLI Release builds completed!"
+	@echo "Built CLI applications are in $(BUILD_DIR)/"
+	@ls -la $(BUILD_DIR)/ | grep "cli"
+
+release-all: linux-amd64 linux-arm64 windows-amd64 windows-arm64 ## Build full GUI apps for all platforms and architectures (except macOS cross-compilation)
+	@echo ""
+	@echo "🎉 All GUI platform builds completed!"
 	@echo "Built applications are in $(BUILD_DIR)/"
 	@echo "Note: macOS builds require building on macOS or using CI/CD with macOS runners"
 	@ls -la $(BUILD_DIR)/ | grep $(APP_NAME)
+
+release-all-cli: cli-linux-amd64 cli-linux-arm64 cli-windows-amd64 cli-windows-arm64 ## Build CLI apps for all platforms and architectures
+	@echo ""
+	@echo "🎉 All CLI platform builds completed!"
+	@echo "Built CLI applications are in $(BUILD_DIR)/"
+	@ls -la $(BUILD_DIR)/ | grep "cli"
