@@ -91,6 +91,22 @@ make release-all-cli
 
 **CLI версия** меньше по размеру и не требует зависимостей GUI, подходит для серверов и автоматизации.
 
+## Скачивание
+
+В [релизах](https://github.com/mindevis/QMLauncher/releases) доступны две версии для каждой платформы:
+
+### GUI версии (рекомендуются для десктопов)
+- `qmlauncher-gui-linux-amd64` - Полное приложение для Linux
+- `qmlauncher-gui-windows-amd64.exe` - Полное приложение для Windows
+- `qmlauncher-gui-darwin-amd64` - Полное приложение для macOS Intel
+- `qmlauncher-gui-darwin-arm64` - Полное приложение для macOS Apple Silicon
+
+### CLI версии (для серверов и автоматизации)
+- `qmlauncher-cli-linux-amd64` - Консольная версия для Linux
+- `qmlauncher-cli-windows-amd64.exe` - Консольная версия для Windows
+- `qmlauncher-cli-darwin-amd64` - Консольная версия для macOS Intel
+- `qmlauncher-cli-darwin-arm64` - Консольная версия для macOS Apple Silicon
+
 ## Разработка
 
 ### Предварительные требования
