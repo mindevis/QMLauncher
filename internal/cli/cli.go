@@ -49,6 +49,7 @@ type CLI struct {
 	Verbosity string `help:"${arg_verbosity}" enum:"info,extra,debug" default:"info"`
 	Dir       string `help:"${arg_dir}" type:"path" placeholder:"PATH"`
 	NoColor   bool   `help:"${arg_nocolor}"`
+	Lang      string `help:"${arg_lang}" enum:"ru,en" default:"ru"`
 }
 
 func (c *CLI) AfterApply(ctx *kong.Context) error {
@@ -118,14 +119,42 @@ func tips(err error) {
 	}
 }
 
+// parseLangFlag checks command line arguments for --lang flag
+func parseLangFlag() string {
+	args := os.Args[1:] // Skip program name
+	for i, arg := range args {
+		if arg == "--lang" && i+1 < len(args) {
+			return args[i+1]
+		}
+		if strings.HasPrefix(arg, "--lang=") {
+			return strings.TrimPrefix(arg, "--lang=")
+		}
+	}
+	return ""
+}
+
 // Start creates the CLI parser and runs it. It returns an exit handler and code.
 func Run() (func(int), int) {
-	lang, err := locale.Detect()
-	if err == nil {
-		output.SetLang(lang)
+	// Check for --lang flag in command line arguments
+	langFlag := parseLangFlag()
+	if langFlag != "" {
+		switch langFlag {
+		case "en":
+			output.SetLang(language.English)
+		case "ru":
+			output.SetLang(language.Russian)
+		default:
+			output.SetLang(language.Russian) // Default to Russian
+		}
 	} else {
-		// Default to Russian if locale detection fails
-		output.SetLang(language.Russian)
+		// Auto-detect system language
+		lang, err := locale.Detect()
+		if err == nil {
+			output.SetLang(lang)
+		} else {
+			// Default to Russian if locale detection fails
+			output.SetLang(language.Russian)
+		}
 	}
 
 	parser := kong.Must(&CLI{},
