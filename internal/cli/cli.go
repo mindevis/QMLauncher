@@ -38,7 +38,7 @@ func (aboutCmd) Run(ctx *kong.Context) error {
 
 type CLI struct {
 	Start       cmd.StartCmd     `cmd:"" help:"${start}"`
-	Instance    cmd.InstanceCmd  `cmd:"" help:"${instance}" aliases:"inst"`
+	Instance    cmd.InstanceCmd  `cmd:"" help:"${instance}"`
 	Update      cmd.UpdateCmd    `cmd:"" help:"${update}"`
 	Auth        cmd.AuthCmd      `cmd:"" help:"${auth}"`
 	Search      cmd.SearchCmd    `cmd:"" help:"${search}"`
