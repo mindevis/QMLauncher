@@ -88,12 +88,14 @@ QMLauncher.exe
 ```
 
 #### Interactive mode features:
-- **Command history** - arrow keys ↑/↓ to navigate through previous commands
+- **Command history** - arrow keys ↑/↓ to navigate through previous commands (or use `!!`, `!n` commands)
 - **Management commands**:
   - `help`, `h`, `?` - show help
   - `exit`, `quit`, `q` - exit interactive mode
   - `history` - show command history
   - `clear` - clear command history
+  - `!!` - execute last command
+  - `!n` - execute command by number from history
 - **Command aliases** - `-i`, `-s`, `-is` work as usual
 - **Auto-completion** - convenient command input
 
@@ -103,6 +105,21 @@ QMLauncher> -is "My Server"   # Launch instance
 QMLauncher> ↑                # Previous command
 QMLauncher> history          # Show all commands
 QMLauncher> exit             # Exit
+```
+
+#### Memory Settings Persistence
+
+Memory settings (`--min-memory`, `--max-memory`) are saved in the instance configuration (`instance.toml`). When you first launch with memory parameters, they are saved and used in subsequent launches:
+
+```bash
+# First launch with memory settings - saves to instance config
+./QMLauncher-cli instance start "My Server" --min-memory=4096 --max-memory=8192
+
+# Subsequent launches will use saved settings
+./QMLauncher-cli instance start "My Server"
+
+# You can change settings anytime
+./QMLauncher-cli instance start "My Server" --max-memory=16384
 ```
 
 ### Command Line Options
