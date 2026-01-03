@@ -129,7 +129,19 @@ func (c *ListCmd) Run(ctx *kong.Context) error {
 		return fmt.Errorf("fetch all instances: %w", err)
 	}
 	for i, inst := range instances {
-		rows = append(rows, table.Row{i, inst.Name, inst.GameVersion, inst.Loader, inst.Dir()})
+		// Format QMServer Cloud status
+		qmStatus := "Нет"
+		if inst.Config.IsUsingQMServerCloud {
+			qmStatus = "Да"
+		}
+
+		// Format Premium status
+		premiumStatus := "Нет"
+		if inst.Config.IsPremium {
+			premiumStatus = "Да"
+		}
+
+		rows = append(rows, table.Row{i, inst.Name, inst.GameVersion, inst.Loader, inst.Dir(), qmStatus, premiumStatus})
 	}
 
 	t := table.NewWriter()
@@ -141,6 +153,8 @@ func (c *ListCmd) Run(ctx *kong.Context) error {
 		output.Translate("search.table.version"),
 		output.Translate("search.table.type"),
 		output.Translate("instance.table.path"),
+		"QMServer Cloud",
+		"Premium",
 	})
 	t.AppendRows(rows)
 	t.Render()

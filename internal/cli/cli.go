@@ -15,7 +15,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 	"unicode"
 
 	"github.com/Xuanwo/go-locale"
@@ -700,19 +699,32 @@ func showRecentConnections() {
 
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"#", "Аккаунт", "Сервер", "Инстанс", "Время"})
+	t.AppendHeader(table.Row{"#", "Аккаунт", "Сервер", "Инстанс", "QMServer Cloud", "Premium"})
 
 	for i, conn := range connections {
 		if i >= 10 { // Show only first 10
 			break
 		}
-		timeStr := time.Unix(conn.Time, 0).Format("2006-01-02 15:04")
+
+		// Format QMServer Cloud status
+		qmStatus := "Нет"
+		if conn.IsUsingQMServerCloud {
+			qmStatus = "Да"
+		}
+
+		// Format Premium status
+		premiumStatus := "Нет"
+		if conn.IsPremium {
+			premiumStatus = "Да"
+		}
+
 		t.AppendRow(table.Row{
 			strconv.Itoa(i + 1),
 			conn.Username,
 			conn.Server,
 			conn.Instance,
-			timeStr,
+			qmStatus,
+			premiumStatus,
 		})
 	}
 

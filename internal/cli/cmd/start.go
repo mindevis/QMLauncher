@@ -2,12 +2,16 @@ package cmd
 
 import (
 	env "QMLauncher/pkg"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"QMLauncher/internal/cli/output"
@@ -19,12 +23,24 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
+// QMServerCheckResponse represents the response from QMServer Cloud check/server endpoint
+type QMServerCheckResponse struct {
+	Exists    bool   `json:"exists"`
+	ServerID  uint   `json:"server_id,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Version   string `json:"version,omitempty"`
+	IsPremium bool   `json:"is_premium,omitempty"`
+	Error     string `json:"error,omitempty"`
+}
+
 // ServerConnection represents a server connection entry
 type ServerConnection struct {
-	Username string `json:"username"`
-	Server   string `json:"server"`
-	Instance string `json:"instance"`
-	Time     int64  `json:"time"`
+	Username             string `json:"username"`
+	Server               string `json:"server"`
+	Instance             string `json:"instance"`
+	Time                 int64  `json:"time"`
+	IsUsingQMServerCloud bool   `json:"is_using_qmserver_cloud,omitempty"`
+	IsPremium            bool   `json:"is_premium,omitempty"`
 }
 
 // getRecentConnectionsFile returns the path to the recent connections file
@@ -82,6 +98,11 @@ func saveRecentConnections(connections []ServerConnection) error {
 
 // addRecentConnection adds a new connection to the recent connections list
 func addRecentConnection(username, server, instance string) error {
+	return addRecentConnectionWithCloudInfo(username, server, instance, false, false)
+}
+
+// addRecentConnectionWithCloudInfo adds a new connection to the recent connections list with QMServer Cloud info
+func addRecentConnectionWithCloudInfo(username, server, instance string, isUsingQMServerCloud, isPremium bool) error {
 	connections, err := loadRecentConnections()
 	if err != nil {
 		return err
@@ -94,10 +115,12 @@ func addRecentConnection(username, server, instance string) error {
 
 	// Add new connection at the beginning
 	newConnection := ServerConnection{
-		Username: username,
-		Server:   server,
-		Instance: instance,
-		Time:     time.Now().Unix(),
+		Username:             username,
+		Server:               server,
+		Instance:             instance,
+		Time:                 time.Now().Unix(),
+		IsUsingQMServerCloud: isUsingQMServerCloud,
+		IsPremium:            isPremium,
 	}
 	connections = append([]ServerConnection{newConnection}, connections...)
 
@@ -118,6 +141,63 @@ func filterConnections(connections []ServerConnection, predicate func(ServerConn
 		}
 	}
 	return filtered
+}
+
+// checkQMServerCloud checks if a server exists in QMServer Cloud
+func checkQMServerCloud(serverAddr string) (*QMServerCheckResponse, error) {
+	// Parse server address (host:port)
+	parts := strings.Split(serverAddr, ":")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid server address format: %s", serverAddr)
+	}
+	host := parts[0]
+
+	var port int
+	if _, err := fmt.Sscanf(parts[1], "%d", &port); err != nil {
+		return nil, fmt.Errorf("invalid port in server address: %s", serverAddr)
+	}
+
+	// QMServer Cloud endpoint
+	qmServerURL := "http://178.172.201.248:8240/api/v1/check/server"
+
+	// Create request payload
+	requestBody := map[string]interface{}{
+		"host": host,
+		"port": port,
+	}
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	// Make HTTP request
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Post(qmServerURL, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to QMServer Cloud: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Read response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	// Parse response
+	var response QMServerCheckResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		if response.Error != "" {
+			return nil, fmt.Errorf("QMServer Cloud error: %s", response.Error)
+		}
+		return nil, fmt.Errorf("QMServer Cloud returned status %d", resp.StatusCode)
+	}
+
+	return &response, nil
 }
 
 // QuietRunner runs the game without showing its console output
@@ -257,13 +337,49 @@ func (c *StartCmd) Run(ctx *kong.Context, verbosity int) error {
 
 	// Save connection info if server is specified
 	if c.Options.Server != "" && session.Username != "" {
-		// Save to global recent connections
-		if err := addRecentConnection(session.Username, c.Options.Server, c.ID); err != nil {
+		// Check QMServer Cloud for this server
+		var cloudResponse *QMServerCheckResponse
+		var cloudErr error
+
+		cloudResponse, cloudErr = checkQMServerCloud(c.Options.Server)
+		if cloudErr != nil {
+			output.Warning("Не удалось проверить QMServer Cloud для сервера %s: %v", c.Options.Server, cloudErr)
+		}
+
+		// Update instance config with QMServer Cloud information
+		configChanged := false
+		if cloudResponse != nil && cloudResponse.Exists {
+			// Server exists in QMServer Cloud
+			if !config.IsUsingQMServerCloud {
+				config.IsUsingQMServerCloud = true
+				config.QMServerHost = "178.172.201.248"
+				config.QMServerPort = 8240
+				configChanged = true
+			}
+			if config.IsPremium != cloudResponse.IsPremium {
+				config.IsPremium = cloudResponse.IsPremium
+				configChanged = true
+			}
+		} else {
+			// Server not found in QMServer Cloud or check failed
+			if config.IsUsingQMServerCloud {
+				config.IsUsingQMServerCloud = false
+				config.QMServerHost = ""
+				config.QMServerPort = 0
+				config.IsPremium = false
+				configChanged = true
+			}
+		}
+
+		// Save to global recent connections with QMServer Cloud info
+		isUsingCloud := cloudResponse != nil && cloudResponse.Exists
+		isPremium := cloudResponse != nil && cloudResponse.IsPremium
+		if err := addRecentConnectionWithCloudInfo(session.Username, c.Options.Server, c.ID, isUsingCloud, isPremium); err != nil {
 			output.Warning("Не удалось сохранить информацию о подключении: %v", err)
 		}
 
 		// Save to instance config
-		if config.LastServer != c.Options.Server || config.LastUser != session.Username {
+		if config.LastServer != c.Options.Server || config.LastUser != session.Username || configChanged {
 			config.LastServer = c.Options.Server
 			config.LastUser = session.Username
 			inst.Config = config
@@ -317,6 +433,28 @@ func (c *StartCmd) Run(ctx *kong.Context, verbosity int) error {
 		output.Debug(output.Translate("start.launch.gameargs"), gameArgs)
 		output.Debug(output.Translate("start.launch.info"), launchEnv.MainClass, launchEnv.GameDir)
 	}
+
+	// Show launch progress bar
+	launchBar := progressbar.NewOptions(100,
+		progressbar.OptionSetDescription("Запуск Minecraft клиента..."),
+		progressbar.OptionSetWriter(os.Stdout),
+		progressbar.OptionShowCount(),
+		progressbar.OptionSetWidth(50),
+		progressbar.OptionThrottle(100*time.Millisecond),
+		progressbar.OptionShowIts(),
+		progressbar.OptionSetPredictTime(false),
+		progressbar.OptionOnCompletion(func() {
+			fmt.Print("\n")
+		}),
+	)
+
+	// Simulate launch progress
+	for i := 0; i <= 100; i += 10 {
+		launchBar.Set(i)
+		time.Sleep(50 * time.Millisecond)
+	}
+	launchBar.Finish()
+
 	output.Success(output.Translate("start.launch"), color.New(color.Bold).Sprint(session.Username))
 
 	// Choose runner based on verbosity level

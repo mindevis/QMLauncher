@@ -33,6 +33,7 @@ jobs:
           go test ./...
 
       - name: Build CLI application
+        shell: bash
         run: |
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
             go build -tags cli -o qmlauncher-cli .

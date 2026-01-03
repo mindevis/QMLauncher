@@ -94,6 +94,11 @@ type InstanceConfig struct {
 	MaxMemory  int    `toml:"max_memory" json:"max_memory"     comment:"Maximum game memory, in MB"`
 	LastServer string `toml:"last_server" json:"last_server"  comment:"Last connected server address"`
 	LastUser   string `toml:"last_user" json:"last_user"        comment:"Last used username"`
+	// QMServer Cloud configuration
+	QMServerHost         string `toml:"qmserver_host,omitempty" json:"qmserver_host,omitempty"         comment:"QMServer Cloud host address"`
+	QMServerPort         int    `toml:"qmserver_port,omitempty" json:"qmserver_port,omitempty"         comment:"QMServer Cloud port"`
+	IsUsingQMServerCloud bool   `toml:"is_using_qmserver_cloud,omitempty" json:"is_using_qmserver_cloud,omitempty" comment:"Whether this instance uses QMServer Cloud"`
+	IsPremium            bool   `toml:"is_premium,omitempty" json:"is_premium,omitempty"               comment:"Whether the connected server is premium"`
 }
 
 // InstanceOptions are options used to designate an instance's version and other parameters on creation.
