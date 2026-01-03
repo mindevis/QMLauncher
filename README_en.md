@@ -16,6 +16,7 @@ QMLauncher is a cross-platform command-line application for launching Minecraft.
 - 🔍 **Version Search** - search and install Minecraft versions and mod loaders
 - ☕ **Java Management** - automatic detection and management of Java installations
 - 📦 **Auto-updates** - built-in application update system
+- 🌐 **QMServer Cloud** - QMServer Cloud integration for server verification and premium status display
 - 🌍 **Localization** - support for Russian and English languages
 
 ## 🛠️ Installation

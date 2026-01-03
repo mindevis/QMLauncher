@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-01-04
+
+### Added
+- **NEW**: QMServer Cloud integration for server verification before launch
+- **NEW**: Premium server status display in instance and connection tables
+- **NEW**: Minecraft client launch progress bar for better user experience
+- Automatic QMServer Cloud information saving in instance config
+- API integration with QMServer Cloud at http://178.172.201.248:8240
+
+### Changed
+- Removed timestamp column from recent connections table for compactness
+- Updated instance table with QMServer Cloud and Premium status columns
+
+### Fixed
+- Fixed GitHub Actions workflow for cross-platform builds (added shell: bash)
+
 ## [1.3.0] - 2026-01-03
 
 ### Changed
