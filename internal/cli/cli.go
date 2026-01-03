@@ -303,6 +303,9 @@ func (h *CommandHistory) GetHistory() []string {
 
 // runInteractiveMode starts the interactive command shell
 func runInteractiveMode() (func(int), int) {
+	// Set default language for interactive mode
+	output.SetLang(language.Russian)
+
 	color.New(color.Bold).Println(output.Translate("cli.title"))
 	color.New(color.Underline).Println(output.Translate("cli.subtitle"))
 	fmt.Println()
