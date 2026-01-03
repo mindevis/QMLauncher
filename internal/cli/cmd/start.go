@@ -58,7 +58,7 @@ type StartCmd struct {
 
 	Options struct {
 		Username    string `help:"${start_arg_username}" short:"u"`
-		Server      string `help:"${start_arg_server}" short:"s" placeholder:"IP" xor:"quickplay"`
+		Server      string `help:"${start_arg_server}" placeholder:"IP" xor:"quickplay"`
 		World       string `help:"${start_arg_world}" short:"w" placeholder:"NAME" xor:"quickplay"`
 		Demo        bool   `help:"${start_arg_demo}"`
 		DisableMP   bool   `help:"${start_arg_disablemp}"`

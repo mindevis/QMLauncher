@@ -63,8 +63,8 @@ make build  # or make linux/macos/windows
 ./QMLauncher-cli instance start <instance>  # Full form
 
 # Examples with launch options
-./QMLauncher-cli -is 'My Instance' -u Player --server mc.example.com:25565 --min-memory=2048 --max-memory=4096
-./QMLauncher-cli --i --s 'My Instance' --username Player --server mc.example.com:25565
+./QMLauncher-cli -is 'qDev RPG' -u Devis --server 178.172.172.41:25565 --min-memory=4096 --max-memory=6192
+./QMLauncher-cli -i -s 'qDev RPG' -u Devis --server 178.172.172.41:25565 --min-memory=4096 --max-memory=6192
 
 # Version search
 ./QMLauncher-cli search versions   # Find Minecraft versions
