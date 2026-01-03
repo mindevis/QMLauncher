@@ -81,6 +81,26 @@ func (c *StartCmd) Run(ctx *kong.Context, verbosity int) error {
 	}
 
 	config := inst.Config
+
+	// Handle memory settings - only save to config if values differ from saved ones
+	configChanged := false
+	if c.Overrides.MinMemory != 0 && c.Overrides.MinMemory != config.MinMemory {
+		config.MinMemory = c.Overrides.MinMemory
+		configChanged = true
+	}
+	if c.Overrides.MaxMemory != 0 && c.Overrides.MaxMemory != config.MaxMemory {
+		config.MaxMemory = c.Overrides.MaxMemory
+		configChanged = true
+	}
+
+	// Save updated config to instance only if something changed
+	if configChanged {
+		inst.Config = config
+		if err := inst.WriteConfig(); err != nil {
+			output.Warning(output.Translate("start.instance.save_error"), err)
+		}
+	}
+
 	override := launcher.InstanceConfig{
 		WindowResolution: struct {
 			Width  int "toml:\"width\" json:\"width\""
@@ -89,11 +109,13 @@ func (c *StartCmd) Run(ctx *kong.Context, verbosity int) error {
 			Width:  c.Overrides.Width,
 			Height: c.Overrides.Height,
 		},
-		Java:      c.Overrides.JVM,
-		JavaArgs:  c.Overrides.JVMArgs,
-		MinMemory: c.Overrides.MinMemory,
-		MaxMemory: c.Overrides.MaxMemory,
+		Java:     c.Overrides.JVM,
+		JavaArgs: c.Overrides.JVMArgs,
+		// Memory settings are already handled above and saved to instance config
+		MinMemory: config.MinMemory,
+		MaxMemory: config.MaxMemory,
 	}
+
 	if override.WindowResolution.Width != 0 && override.WindowResolution.Height != 0 {
 		config.WindowResolution = override.WindowResolution
 	}
@@ -102,10 +124,6 @@ func (c *StartCmd) Run(ctx *kong.Context, verbosity int) error {
 	}
 	if override.JavaArgs != "" {
 		config.JavaArgs = override.JavaArgs
-	}
-	if override.MinMemory != 0 && override.MaxMemory != 0 {
-		config.MinMemory = override.MinMemory
-		config.MaxMemory = override.MaxMemory
 	}
 
 	session := auth.Session{
