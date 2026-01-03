@@ -131,10 +131,11 @@ var en = translations{
 	"start.launch.info":        "Starting main class %q. Game directory is %q.",
 	"start.launch":             "Launching game as %s",
 
-	"arg.verbosity": "Increase launcher output verbosity",
-	"arg.dir":       "Root directory for launcher files",
-	"arg.nocolor":   "Disable all color output. The NO_COLOR environment variable is also supported.",
-	"arg.lang":      "Language for output",
+	"arg.verbosity":   "Increase launcher output verbosity",
+	"arg.dir":         "Root directory for launcher files",
+	"arg.nocolor":     "Disable all color output. The NO_COLOR environment variable is also supported.",
+	"arg.interactive": "Start in interactive mode",
+	"arg.lang":        "Language for output",
 
 	"tip.internet":  "Check your internet connection.",
 	"tip.cache":     "Remote resources were not cached and were unable to be retrieved. Check your Internet connection.",
@@ -308,9 +309,10 @@ var ru = translations{
 	"start.launch.info":        "Запуск главного класса %q. Директория игры: %q.",
 	"start.launch":             "Запуск игры как %s...",
 
-	"arg.verbosity": "Изменить уровень подробности вывода",
-	"arg.dir":       "Корневая директория для файлов лаунчера",
-	"arg.nocolor":   "Отключить всю цветовую подсветку. Также поддерживается переменная окружения NO_COLOR.",
+	"arg.verbosity":   "Изменить уровень подробности вывода",
+	"arg.dir":         "Корневая директория для файлов лаунчера",
+	"arg.nocolor":     "Отключить всю цветовую подсветку. Также поддерживается переменная окружения NO_COLOR.",
+	"arg.interactive": "Запустить в интерактивном режиме",
 
 	"update.current_version": "Текущая версия",
 	"update.platform":        "Платформа",
