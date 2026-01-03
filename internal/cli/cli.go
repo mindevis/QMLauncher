@@ -231,9 +231,16 @@ func Run() (func(int), int) {
 		exitCode := 1
 		var parseErr *kong.ParseError
 		if errors.As(err, &parseErr) {
+			// Show usage only if there are actual commands (not just flags)
+			if hasCommands(os.Args[1:]) {
+				parseErr.Context.PrintUsage(false)
+				// For commands without subcommands, don't show error after usage
+				if strings.Contains(err.Error(), "expected one of") {
+					return parser.Exit, 0
+				}
+			}
 			exitCode = parseErr.ExitCode()
 		}
-		// Don't show usage for flag-only invocations, just the error
 		output.Error("%s", err)
 		return parser.Exit, exitCode
 	}
