@@ -370,6 +370,9 @@ var ru = translations{
 	"interactive.alias.i":          "Сокращение для команды 'instance'",
 	"interactive.alias.s":          "Сокращение для команды 'start' (после instance)",
 	"interactive.alias.is":         "Сокращение для 'instance start'",
+	"interactive.history.title":    "История команд:",
+	"interactive.history.empty":    "История команд пуста",
+	"interactive.history.cleared":  "История команд очищена",
 }
 
 var lang = ru

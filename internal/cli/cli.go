@@ -501,6 +501,14 @@ func showInteractiveHelp() {
 	fmt.Println("  clear          ", output.Translate("interactive.help.cmd.clear"))
 	fmt.Println("  <command>      ", output.Translate("interactive.help.cmd.command"))
 	fmt.Println()
+	fmt.Println(output.Translate("cli.commands"))
+	fmt.Println(output.Translate("cli.cmd.instance"))
+	fmt.Println(output.Translate("cli.cmd.update"))
+	fmt.Println(output.Translate("cli.cmd.auth"))
+	fmt.Println(output.Translate("cli.cmd.search"))
+	fmt.Println(output.Translate("cli.cmd.java"))
+	fmt.Println(output.Translate("cli.cmd.about"))
+	fmt.Println()
 	fmt.Println(output.Translate("interactive.help.aliases"))
 	fmt.Println("  -i             ", output.Translate("interactive.alias.i"))
 	fmt.Println("  -s             ", output.Translate("interactive.alias.s"))
@@ -547,8 +555,6 @@ func Run() (func(int), int) {
 		fmt.Println(output.Translate("cli.alias.i"))
 		fmt.Println(output.Translate("cli.alias.s"))
 		fmt.Println(output.Translate("cli.alias.is"))
-		// Debug: check if translations work
-		// fmt.Printf("DEBUG: cli.aliases = '%s'\n", output.Translate("cli.aliases"))
 		fmt.Println()
 		fmt.Println(output.Translate("cli.help"))
 		return func(int) {}, 0
