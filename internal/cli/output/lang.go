@@ -176,19 +176,11 @@ var en = translations{
 	"interactive.help.commands":     "Available commands:",
 	"interactive.help.cmd.help":     "Show this help",
 	"interactive.help.cmd.exit":     "Exit interactive mode",
-	"interactive.help.cmd.history":  "Show command history",
-	"interactive.help.cmd.clear":    "Clear command history",
-	"interactive.help.cmd.last":     "Execute last command",
-	"interactive.help.cmd.number":   "Execute command by number",
 	"interactive.help.cmd.command":  "Execute launcher command",
 	"interactive.help.aliases":      "Available aliases:",
 	"interactive.alias.i":           "Shortcut for 'instance' command",
 	"interactive.alias.s":           "Shortcut for 'start' command (after instance)",
 	"interactive.alias.is":          "Shortcut for 'instance start'",
-	"interactive.history.title":     "Command History:",
-	"interactive.history.empty":     "Command history is empty",
-	"interactive.history.cleared":   "Command history cleared",
-	"interactive.history.not_found": "Command not found in history: %d",
 }
 
 var ru = translations{
@@ -366,19 +358,11 @@ var ru = translations{
 	"interactive.help.commands":     "Доступные команды:",
 	"interactive.help.cmd.help":     "Показать эту справку",
 	"interactive.help.cmd.exit":     "Выйти из интерактивного режима",
-	"interactive.help.cmd.history":  "Показать историю команд",
-	"interactive.help.cmd.clear":    "Очистить историю команд",
-	"interactive.help.cmd.last":     "Выполнить последнюю команду",
-	"interactive.help.cmd.number":   "Выполнить команду по номеру",
 	"interactive.help.cmd.command":  "Выполнить команду лаунчера",
 	"interactive.help.aliases":      "Доступные алиасы:",
 	"interactive.alias.i":           "Сокращение для команды 'instance'",
 	"interactive.alias.s":           "Сокращение для команды 'start' (после instance)",
 	"interactive.alias.is":          "Сокращение для 'instance start'",
-	"interactive.history.title":     "История команд:",
-	"interactive.history.empty":     "История команд пуста",
-	"interactive.history.cleared":   "История команд очищена",
-	"interactive.history.not_found": "Команда не найдена в истории: %d",
 }
 
 var lang = ru

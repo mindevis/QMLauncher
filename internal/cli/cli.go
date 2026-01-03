@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 
 	"QMLauncher/internal/cli/cmd"
@@ -230,94 +229,6 @@ func hasInteractiveFlag() bool {
 	return false
 }
 
-// CommandHistory manages command history for interactive mode
-type CommandHistory struct {
-	commands []string
-	current  int
-	maxSize  int
-}
-
-// NewCommandHistory creates a new command history
-func NewCommandHistory(maxSize int) *CommandHistory {
-	return &CommandHistory{
-		commands: make([]string, 0, maxSize),
-		current:  -1,
-		maxSize:  maxSize,
-	}
-}
-
-// Add adds a command to history
-func (h *CommandHistory) Add(cmd string) {
-	if cmd == "" {
-		return
-	}
-
-	// Don't add duplicates of the last command
-	if len(h.commands) > 0 && h.commands[len(h.commands)-1] == cmd {
-		return
-	}
-
-	h.commands = append(h.commands, cmd)
-	if len(h.commands) > h.maxSize {
-		h.commands = h.commands[1:]
-	}
-	h.current = len(h.commands)
-}
-
-// Previous returns the previous command
-func (h *CommandHistory) Previous() string {
-	if len(h.commands) == 0 {
-		return ""
-	}
-	h.current--
-	if h.current < 0 {
-		h.current = 0
-	}
-	if h.current < len(h.commands) {
-		return h.commands[h.current]
-	}
-	return ""
-}
-
-// Next returns the next command
-func (h *CommandHistory) Next() string {
-	if len(h.commands) == 0 {
-		return ""
-	}
-	h.current++
-	if h.current >= len(h.commands) {
-		h.current = len(h.commands)
-		return ""
-	}
-	return h.commands[h.current]
-}
-
-// Reset resets the current position
-func (h *CommandHistory) Reset() {
-	h.current = len(h.commands)
-}
-
-// GetHistory returns all commands in history
-func (h *CommandHistory) GetHistory() []string {
-	return h.commands
-}
-
-// getLast returns the last command in history
-func (h *CommandHistory) getLast() string {
-	if len(h.commands) == 0 {
-		return ""
-	}
-	return h.commands[len(h.commands)-1]
-}
-
-// getByIndex returns command by index (0-based)
-func (h *CommandHistory) getByIndex(index int) string {
-	if index < 0 || index >= len(h.commands) {
-		return ""
-	}
-	return h.commands[index]
-}
-
 // runInteractiveMode starts the interactive command shell
 func runInteractiveMode() (func(int), int) {
 	// Set default language for interactive mode
@@ -330,13 +241,10 @@ func runInteractiveMode() (func(int), int) {
 	fmt.Println(output.Translate("interactive.help"))
 	fmt.Println()
 
-	history := NewCommandHistory(100)
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
-		fmt.Print(output.Translate("interactive.prompt"))
-
-		line, err := readLineWithHistory(reader, history)
+		line, err := readLine(reader)
 		if err != nil {
 			break
 		}
@@ -345,9 +253,6 @@ func runInteractiveMode() (func(int), int) {
 		if line == "" {
 			continue
 		}
-
-		// Add to history
-		history.Add(line)
 
 		// Handle interactive commands first (they take priority)
 		if line == "exit" || line == "quit" || line == "q" {
@@ -358,41 +263,6 @@ func runInteractiveMode() (func(int), int) {
 		if line == "help" || line == "h" || line == "?" {
 			showInteractiveHelp()
 			continue
-		}
-
-		if line == "history" {
-			showCommandHistory(history)
-			continue
-		}
-
-		if line == "clear" {
-			history = NewCommandHistory(100)
-			fmt.Println(output.Translate("interactive.history.cleared"))
-			continue
-		}
-
-		// Handle history shortcuts
-		if strings.HasPrefix(line, "!!") {
-			// Execute last command
-			cmd := history.getLast()
-			if cmd == "" {
-				fmt.Println(output.Translate("interactive.history.empty"))
-				continue
-			}
-			fmt.Printf("%s%s\n", output.Translate("interactive.prompt"), cmd)
-			line = cmd
-		} else if strings.HasPrefix(line, "!") && len(line) > 1 {
-			// Execute command by number !n
-			numStr := line[1:]
-			if num, err := strconv.Atoi(numStr); err == nil {
-				cmd := history.getByIndex(num - 1) // 1-based to 0-based
-				if cmd == "" {
-					fmt.Printf(output.Translate("interactive.history.not_found"), num)
-					continue
-				}
-				fmt.Printf("%s%s\n", output.Translate("interactive.prompt"), cmd)
-				line = cmd
-			}
 		}
 
 		// Parse and execute launcher command
@@ -424,8 +294,8 @@ func runInteractiveMode() (func(int), int) {
 	return func(int) {}, 0
 }
 
-// readLineWithHistory reads a line with history navigation support
-func readLineWithHistory(reader *bufio.Reader, history *CommandHistory) (string, error) {
+// readLine reads a line of input
+func readLine(reader *bufio.Reader) (string, error) {
 	var buffer []rune
 	cursor := 0
 
@@ -447,64 +317,12 @@ func readLineWithHistory(reader *bufio.Reader, history *CommandHistory) (string,
 				fmt.Print("\r\033[K" + output.Translate("interactive.prompt") + string(buffer))
 				fmt.Printf("\033[%dG", len(output.Translate("interactive.prompt"))+cursor+1)
 			}
-		case 27: // Escape sequence (arrow keys)
-			// Try to read the full escape sequence without displaying it
-			readerWithTimeout := bufio.NewReader(reader)
-
-			// Check if next char is '[' (start of arrow key sequence)
-			peekBytes, err := readerWithTimeout.Peek(1)
-			if err != nil || len(peekBytes) == 0 || peekBytes[0] != '[' {
-				continue
-			}
-
-			// Read the '['
-			reader.ReadRune()
-
-			// Check the direction character
-			dirBytes, err := readerWithTimeout.Peek(1)
-			if err != nil || len(dirBytes) == 0 {
-				continue
-			}
-
-			// Read the direction character
-			reader.ReadRune()
-
-			switch dirBytes[0] {
-			case 'A': // Up arrow
-				cmd := history.Previous()
-				if cmd != "" {
-					buffer = []rune(cmd)
-					cursor = len(buffer)
-					// Clear the line and reprint with the command from history
-					fmt.Print("\r\033[K" + output.Translate("interactive.prompt") + string(buffer))
-				}
-			case 'B': // Down arrow
-				cmd := history.Next()
-				buffer = []rune(cmd)
-				cursor = len(buffer)
-				// Clear the line and reprint
-				fmt.Print("\r\033[K" + output.Translate("interactive.prompt") + string(buffer))
-			}
 		default:
 			buffer = append(buffer[:cursor], append([]rune{char}, buffer[cursor:]...)...)
 			cursor++
 			fmt.Print("\r\033[K" + output.Translate("interactive.prompt") + string(buffer))
 			fmt.Printf("\033[%dG", len(output.Translate("interactive.prompt"))+cursor+1)
 		}
-	}
-}
-
-// showCommandHistory displays the command history
-func showCommandHistory(history *CommandHistory) {
-	commands := history.GetHistory()
-	if len(commands) == 0 {
-		fmt.Println(output.Translate("interactive.history.empty"))
-		return
-	}
-
-	fmt.Println(output.Translate("interactive.history.title"))
-	for i, cmd := range commands {
-		fmt.Printf(" %3d  %s\n", i+1, cmd)
 	}
 }
 
@@ -549,10 +367,6 @@ func showInteractiveHelp() {
 	fmt.Println(output.Translate("interactive.help.commands"))
 	fmt.Println("  help, h, ?     ", output.Translate("interactive.help.cmd.help"))
 	fmt.Println("  exit, quit, q  ", output.Translate("interactive.help.cmd.exit"))
-	fmt.Println("  history        ", output.Translate("interactive.help.cmd.history"))
-	fmt.Println("  clear          ", output.Translate("interactive.help.cmd.clear"))
-	fmt.Println("  !!             ", output.Translate("interactive.help.cmd.last"))
-	fmt.Println("  !n             ", output.Translate("interactive.help.cmd.number"))
 	fmt.Println("  <command>      ", output.Translate("interactive.help.cmd.command"))
 	fmt.Println()
 	fmt.Println(output.Translate("cli.commands"))

@@ -88,22 +88,16 @@ QMLauncher.exe
 ```
 
 #### Interactive mode features:
-- **Command history** - arrow keys ↑/↓ to navigate through previous commands (or use `!!`, `!n` commands)
 - **Management commands**:
   - `help`, `h`, `?` - show help
   - `exit`, `quit`, `q` - exit interactive mode
-  - `history` - show command history
-  - `clear` - clear command history
-  - `!!` - execute last command
-  - `!n` - execute command by number from history
 - **Command aliases** - `-i`, `-s`, `-is` work as usual
 - **Auto-completion** - convenient command input
 
 ```bash
 QMLauncher> -i list          # Show instances
 QMLauncher> -is "My Server"   # Launch instance
-QMLauncher> ↑                # Previous command
-QMLauncher> history          # Show all commands
+QMLauncher> help             # Show help
 QMLauncher> exit             # Exit
 ```
 
