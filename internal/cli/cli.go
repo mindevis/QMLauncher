@@ -1,19 +1,18 @@
 package cli
 
 import (
-	"bufio"
-	"errors"
-	"fmt"
-	"net"
-	"os"
-	"strings"
-
 	"QMLauncher/internal/cli/cmd"
 	"QMLauncher/internal/cli/output"
 	"QMLauncher/internal/meta"
 	"QMLauncher/internal/network"
 	env "QMLauncher/pkg"
 	"QMLauncher/pkg/auth"
+	"bufio"
+	"errors"
+	"fmt"
+	"net"
+	"os"
+	"strings"
 
 	"github.com/Xuanwo/go-locale"
 	"github.com/alecthomas/kong"
