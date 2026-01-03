@@ -87,6 +87,13 @@ func (c *DeleteCmd) Run(ctx *kong.Context) error {
 		if err := launcher.RemoveInstance(c.ID); err != nil {
 			return fmt.Errorf("remove instance: %w", err)
 		}
+
+		// Also remove the instance directory
+		if err := os.RemoveAll(filepath.Dir(inst.Dir())); err != nil {
+			output.Warning("Не удалось удалить папку инстанса: %v", err)
+			// Don't return error, instance was successfully removed from list
+		}
+
 		output.Success(output.Translate("delete.complete"), color.New(color.Bold).Sprint(inst.Name))
 	} else {
 		output.Info(output.Translate("delete.abort"))

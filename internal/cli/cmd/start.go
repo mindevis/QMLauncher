@@ -1,8 +1,13 @@
 package cmd
 
 import (
+	env "QMLauncher/pkg"
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"sort"
 	"time"
 
 	"QMLauncher/internal/cli/output"
@@ -13,6 +18,112 @@ import (
 	"github.com/fatih/color"
 	"github.com/schollz/progressbar/v3"
 )
+
+// ServerConnection represents a server connection entry
+type ServerConnection struct {
+	Username string `json:"username"`
+	Server   string `json:"server"`
+	Instance string `json:"instance"`
+	Time     int64  `json:"time"`
+}
+
+// getRecentConnectionsFile returns the path to the recent connections file
+func getRecentConnectionsFile() string {
+	return filepath.Join(env.RootDir, ".recent_connections.json")
+}
+
+// loadRecentConnections loads recent server connections from file
+func loadRecentConnections() ([]ServerConnection, error) {
+	filePath := getRecentConnectionsFile()
+	file, err := os.Open(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return []ServerConnection{}, nil
+		}
+		return nil, err
+	}
+	defer file.Close()
+
+	var connections []ServerConnection
+	if err := json.NewDecoder(file).Decode(&connections); err != nil {
+		return nil, err
+	}
+
+	// Sort by time (newest first)
+	sort.Slice(connections, func(i, j int) bool {
+		return connections[i].Time > connections[j].Time
+	})
+
+	return connections, nil
+}
+
+// LoadRecentConnectionsFromFile loads recent server connections from file
+func LoadRecentConnectionsFromFile() ([]ServerConnection, error) {
+	return loadRecentConnections()
+}
+
+// saveRecentConnections saves recent server connections to file
+func saveRecentConnections(connections []ServerConnection) error {
+	filePath := getRecentConnectionsFile()
+
+	// Ensure directory exists
+	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+		return err
+	}
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return json.NewEncoder(file).Encode(connections)
+}
+
+// addRecentConnection adds a new connection to the recent connections list
+func addRecentConnection(username, server, instance string) error {
+	connections, err := loadRecentConnections()
+	if err != nil {
+		return err
+	}
+
+	// Remove duplicates (same username + server + instance)
+	connections = filterConnections(connections, func(c ServerConnection) bool {
+		return !(c.Username == username && c.Server == server && c.Instance == instance)
+	})
+
+	// Add new connection at the beginning
+	newConnection := ServerConnection{
+		Username: username,
+		Server:   server,
+		Instance: instance,
+		Time:     time.Now().Unix(),
+	}
+	connections = append([]ServerConnection{newConnection}, connections...)
+
+	// Keep only last 20 connections
+	if len(connections) > 20 {
+		connections = connections[:20]
+	}
+
+	return saveRecentConnections(connections)
+}
+
+// filterConnections filters connections based on predicate
+func filterConnections(connections []ServerConnection, predicate func(ServerConnection) bool) []ServerConnection {
+	var filtered []ServerConnection
+	for _, c := range connections {
+		if predicate(c) {
+			filtered = append(filtered, c)
+		}
+	}
+	return filtered
+}
+
+// QuietRunner runs the game without showing its console output
+func QuietRunner(cmd *exec.Cmd) error {
+	return cmd.Run()
+}
 
 func watcher(verbosity int) launcher.EventWatcher {
 	var bar = progressbar.NewOptions(0,
@@ -126,6 +237,14 @@ func (c *StartCmd) Run(ctx *kong.Context, verbosity int) error {
 		config.JavaArgs = override.JavaArgs
 	}
 
+	// Use saved values as defaults if not specified
+	if c.Options.Username == "" && config.LastUser != "" {
+		c.Options.Username = config.LastUser
+	}
+	if c.Options.Server == "" && config.LastServer != "" {
+		c.Options.Server = config.LastServer
+	}
+
 	session := auth.Session{
 		Username: c.Options.Username,
 	}
@@ -133,6 +252,24 @@ func (c *StartCmd) Run(ctx *kong.Context, verbosity int) error {
 		session, err = auth.Authenticate()
 		if err != nil {
 			return fmt.Errorf("authenticate session: %w", err)
+		}
+	}
+
+	// Save connection info if server is specified
+	if c.Options.Server != "" && session.Username != "" {
+		// Save to global recent connections
+		if err := addRecentConnection(session.Username, c.Options.Server, c.ID); err != nil {
+			output.Warning("Не удалось сохранить информацию о подключении: %v", err)
+		}
+
+		// Save to instance config
+		if config.LastServer != c.Options.Server || config.LastUser != session.Username {
+			config.LastServer = c.Options.Server
+			config.LastUser = session.Username
+			inst.Config = config
+			if err := inst.WriteConfig(); err != nil {
+				output.Warning("Не удалось сохранить конфигурацию инстанса: %v", err)
+			}
 		}
 	}
 
@@ -182,5 +319,15 @@ func (c *StartCmd) Run(ctx *kong.Context, verbosity int) error {
 	}
 	output.Success(output.Translate("start.launch"), color.New(color.Bold).Sprint(session.Username))
 
-	return launcher.Launch(launchEnv, launcher.ConsoleRunner)
+	// Choose runner based on verbosity level
+	var runner launcher.Runner
+	if verbosity == 0 {
+		// Default verbosity - hide Minecraft logs
+		runner = QuietRunner
+	} else {
+		// Extra/debug verbosity - show Minecraft logs
+		runner = launcher.ConsoleRunner
+	}
+
+	return launcher.Launch(launchEnv, runner)
 }

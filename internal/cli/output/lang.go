@@ -130,7 +130,7 @@ var en = translations{
 	"start.launch.jvmargs":      "JVM arguments: %s",
 	"start.launch.gameargs":     "Game arguments: %s",
 	"start.launch.info":         "Starting main class %q. Game directory is %q.",
-	"start.launch":              "Launching game as %s",
+	"start.launch":              "Launching Minecraft client with account: %s",
 
 	"arg.verbosity":   "Increase launcher output verbosity",
 	"arg.dir":         "Root directory for launcher files",
@@ -308,7 +308,7 @@ var ru = translations{
 	"start.launch.jvmargs":     "Аргументы JVM: %s",
 	"start.launch.gameargs":    "Аргументы игры: %s",
 	"start.launch.info":        "Запуск главного класса %q. Директория игры: %q.",
-	"start.launch":             "Запуск игры как %s...",
+	"start.launch":             "Запуск клиента Minecraft с учетной записью: %s",
 
 	"arg.verbosity":   "Изменить уровень подробности вывода",
 	"arg.dir":         "Корневая директория для файлов лаунчера",

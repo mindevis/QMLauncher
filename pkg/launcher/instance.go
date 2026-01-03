@@ -87,11 +87,13 @@ type InstanceConfig struct {
 		Width  int `toml:"width" json:"width"`
 		Height int `toml:"height" json:"height"`
 	} `toml:"resolution" json:"resolution"                comment:"Game window resolution"`
-	Java      string `toml:"java" json:"java"             comment:"Path to a Java executable. If blank, a Mojang-provided JVM will be downloaded for best compatibility."`
-	JavaArgs  string `toml:"java_args" json:"java_args"   comment:"Extra arguments to pass to the JVM"`
-	CustomJar string `toml:"custom_jar" json:"custom_jar" comment:"Path to a custom JAR to use instead of the normal Minecraft client"`
-	MinMemory int    `toml:"min_memory" json:"min_memory" comment:"Minimum game memory, in MB"`
-	MaxMemory int    `toml:"max_memory" json:"max_memory" comment:"Maximum game memory, in MB"`
+	Java       string `toml:"java" json:"java"                 comment:"Path to a Java executable. If blank, a Mojang-provided JVM will be downloaded for best compatibility."`
+	JavaArgs   string `toml:"java_args" json:"java_args"       comment:"Extra arguments to pass to the JVM"`
+	CustomJar  string `toml:"custom_jar" json:"custom_jar"     comment:"Path to a custom JAR to use instead of the normal Minecraft client"`
+	MinMemory  int    `toml:"min_memory" json:"min_memory"     comment:"Minimum game memory, in MB"`
+	MaxMemory  int    `toml:"max_memory" json:"max_memory"     comment:"Maximum game memory, in MB"`
+	LastServer string `toml:"last_server" json:"last_server"  comment:"Last connected server address"`
+	LastUser   string `toml:"last_user" json:"last_user"        comment:"Last used username"`
 }
 
 // InstanceOptions are options used to designate an instance's version and other parameters on creation.

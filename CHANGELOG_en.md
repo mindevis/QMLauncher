@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.0] - 2026-01-03
+## [1.3.0] - 2026-01-03
 
 ### Changed
 - **BREAKING**: Project converted to CLI-only mode, GUI support (Wails) removed
@@ -17,6 +17,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Completely removed GUI mode and Wails integration
 - Removed frontend part (React/TypeScript)
 - Removed desktop-specific dependencies and configurations
+
+## [1.2.0] - 2026-01-03
+
+### Added
+- **NEW**: Full command history in interactive mode with arrow key navigation ↑/↓
+- **NEW**: Convenient command aliases: `i` (instance), `s` (start), `is` (instance start)
+- **NEW**: Minecraft log output control - quiet mode by default, detailed logs with `--verbosity=extra`
+- **NEW**: Recent server connections system with quick launch by number
+- **NEW**: Last server and username saved in instance config (.toml)
+- Quote support in command arguments for names with spaces
+- Improved launch and status messages
+
+### Changed
+- Launch message: "Launching Minecraft client with account: %s"
+- Interactive mode now shows recent connections table on startup
+- Optimized command output without duplication
+
+### Fixed
+- Eliminated command duplication in interactive mode
+- Fixed quote parsing in arguments
+- Improved command history navigation
 
 ## [1.1.0] - 2026-01-02
 
