@@ -163,7 +163,7 @@ var en = translations{
 	"cli.aliases":          "ALIASES:",
 	"cli.alias.i":          "  -i                   Shortcut for 'instance' command",
 	"cli.alias.s":          "  -s                   Shortcut for 'start' command (in instance context)",
-	"cli.alias.is":         "  -is, --is            Shortcut for 'instance start'",
+	"cli.alias.is":         "  -is                  Shortcut for 'instance start'",
 	"cli.help":             "Use 'QMLauncher [command] --help' for more information about a command.",
 }
 
@@ -330,7 +330,7 @@ var ru = translations{
 	"cli.aliases":          "АЛИАСЫ:",
 	"cli.alias.i":          "  -i                   Сокращение для команды 'instance'",
 	"cli.alias.s":          "  -s                   Сокращение для команды 'start' (в контексте instance)",
-	"cli.alias.is":         "  -is, --is            Сокращение для 'instance start'",
+	"cli.alias.is":         "  -is                  Сокращение для 'instance start'",
 	"cli.help":             "Используйте 'QMLauncher [команда] --help' для получения дополнительной информации о команде.",
 }
 

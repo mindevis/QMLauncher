@@ -169,9 +169,6 @@ func expandAliases(args []string) []string {
 			} else {
 				expanded = append(expanded, arg)
 			}
-		} else if arg == "--is" {
-			// --is means instance start
-			expanded = append(expanded, "instance", "start")
 		} else {
 			expanded = append(expanded, arg)
 		}
