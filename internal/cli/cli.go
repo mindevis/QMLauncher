@@ -448,40 +448,42 @@ func readLineWithHistory(reader *bufio.Reader, history *CommandHistory) (string,
 				fmt.Printf("\033[%dG", len(output.Translate("interactive.prompt"))+cursor+1)
 			}
 		case 27: // Escape sequence (arrow keys)
-			// Clear any escape sequence characters that might have been displayed
-			fmt.Print("\r\033[K" + output.Translate("interactive.prompt") + string(buffer))
+			// Try to read the full escape sequence without displaying it
+			readerWithTimeout := bufio.NewReader(reader)
 
-			// Read the next character to check if it's '['
-			nextChar, _, err := reader.ReadRune()
-			if err != nil {
+			// Check if next char is '[' (start of arrow key sequence)
+			peekBytes, err := readerWithTimeout.Peek(1)
+			if err != nil || len(peekBytes) == 0 || peekBytes[0] != '[' {
 				continue
 			}
 
-			if nextChar == '[' {
-				// Read the direction character
-				dirChar, _, err := reader.ReadRune()
-				if err != nil {
-					continue
-				}
+			// Read the '['
+			reader.ReadRune()
 
-				switch dirChar {
-				case 'A': // Up arrow
-					cmd := history.Previous()
-					if cmd != "" {
-						buffer = []rune(cmd)
-						cursor = len(buffer)
-						// Clear the line and reprint with the command from history
-						fmt.Print("\r\033[K" + output.Translate("interactive.prompt") + string(buffer))
-					}
-				case 'B': // Down arrow
-					cmd := history.Next()
+			// Check the direction character
+			dirBytes, err := readerWithTimeout.Peek(1)
+			if err != nil || len(dirBytes) == 0 {
+				continue
+			}
+
+			// Read the direction character
+			reader.ReadRune()
+
+			switch dirBytes[0] {
+			case 'A': // Up arrow
+				cmd := history.Previous()
+				if cmd != "" {
 					buffer = []rune(cmd)
 					cursor = len(buffer)
-					// Clear the line and reprint
+					// Clear the line and reprint with the command from history
 					fmt.Print("\r\033[K" + output.Translate("interactive.prompt") + string(buffer))
 				}
-			} else {
-				fmt.Printf("DEBUG: Not a bracket, ignoring\n")
+			case 'B': // Down arrow
+				cmd := history.Next()
+				buffer = []rune(cmd)
+				cursor = len(buffer)
+				// Clear the line and reprint
+				fmt.Print("\r\033[K" + output.Translate("interactive.prompt") + string(buffer))
 			}
 		default:
 			buffer = append(buffer[:cursor], append([]rune{char}, buffer[cursor:]...)...)
