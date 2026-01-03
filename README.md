@@ -48,7 +48,7 @@ make build  # или make linux/macos/windows
 ./QMLauncher-cli about
 
 # Управление инстансами (с алиасами)
-./QMLauncher-cli -i list           # Список инстансов (--i = instance)
+./QMLauncher-cli -i list           # Список инстансов (-i = instance)
 ./QMLauncher-cli instance list     # Альтернативный вариант
 ./QMLauncher-cli -i create         # Создать новый инстанс
 ./QMLauncher-cli -i delete         # Удалить инстанс
@@ -58,7 +58,7 @@ make build  # или make linux/macos/windows
 ./QMLauncher-cli auth logout       # Выйти из аккаунта
 
 # Запуск игры (быстрые алиасы)
-./QMLauncher-cli -is <instance>    # Запустить инстанс (--is = instance start)
+./QMLauncher-cli -is <instance>    # Запустить инстанс (-is = instance start)
 ./QMLauncher-cli -i -s <instance>  # Альтернативный вариант
 ./QMLauncher-cli instance start <instance>  # Полная форма
 

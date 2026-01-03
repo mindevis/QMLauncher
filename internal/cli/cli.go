@@ -144,14 +144,14 @@ func expandAliases(args []string) []string {
 	var expanded []string
 
 	for _, arg := range args {
-		// Handle combined aliases like -is, -i, -s
+		// Handle combined aliases like -is
 		if strings.HasPrefix(arg, "-") && !strings.HasPrefix(arg, "--") && len(arg) > 1 {
 			// Remove the leading dash
 			flags := arg[1:]
 
-			// Handle combined flags
+			// Handle combined flags -is
 			if strings.Contains(flags, "i") && strings.Contains(flags, "s") {
-				// -is or -si means instance start
+				// -is means instance start
 				expanded = append(expanded, "instance", "start")
 				// Add remaining flags without i and s
 				remaining := strings.ReplaceAll(flags, "i", "")
@@ -159,15 +159,10 @@ func expandAliases(args []string) []string {
 				if remaining != "" {
 					expanded = append(expanded, "-"+remaining)
 				}
-			} else if strings.Contains(flags, "i") {
+			} else if strings.Contains(flags, "i") && len(flags) == 1 {
 				// -i means instance
 				expanded = append(expanded, "instance")
-				// Add remaining flags without i
-				remaining := strings.ReplaceAll(flags, "i", "")
-				if remaining != "" {
-					expanded = append(expanded, "-"+remaining)
-				}
-			} else if strings.Contains(flags, "s") {
+			} else if strings.Contains(flags, "s") && len(flags) == 1 {
 				// -s means start (but only in context of instance)
 				// This will be handled when we see instance command
 				expanded = append(expanded, arg)
@@ -175,11 +170,8 @@ func expandAliases(args []string) []string {
 				expanded = append(expanded, arg)
 			}
 		} else if arg == "--is" {
-			// --is means --i --s
+			// --is means instance start
 			expanded = append(expanded, "instance", "start")
-		} else if arg == "--i" {
-			// --i means instance
-			expanded = append(expanded, "instance")
 		} else {
 			expanded = append(expanded, arg)
 		}
@@ -246,6 +238,8 @@ func Run() (func(int), int) {
 		fmt.Println(output.Translate("cli.alias.i"))
 		fmt.Println(output.Translate("cli.alias.s"))
 		fmt.Println(output.Translate("cli.alias.is"))
+		// Debug: check if translations work
+		// fmt.Printf("DEBUG: cli.aliases = '%s'\n", output.Translate("cli.aliases"))
 		fmt.Println()
 		fmt.Println(output.Translate("cli.help"))
 		return func(int) {}, 0
