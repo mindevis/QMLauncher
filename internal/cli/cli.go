@@ -1,10 +1,12 @@
 package cli
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"net"
 	"os"
+	"runtime"
 	"strings"
 
 	"QMLauncher/internal/cli/cmd"
@@ -201,12 +203,134 @@ func hasCommands(args []string) bool {
 	return false
 }
 
+// shouldUseInteractiveMode determines if we should enter interactive mode
+func shouldUseInteractiveMode() bool {
+	// Use interactive mode on Windows by default
+	// On Unix-like systems, show help by default unless explicitly requested
+	if runtime.GOOS == "windows" {
+		return true
+	}
+	return os.Getenv("QMLAUNCHER_INTERACTIVE") == "1"
+}
+
+// runInteractiveMode starts the interactive command shell
+func runInteractiveMode() (func(int), int) {
+	color.New(color.Bold).Println(output.Translate("cli.title"))
+	color.New(color.Underline).Println(output.Translate("cli.subtitle"))
+	fmt.Println()
+	fmt.Println(output.Translate("interactive.welcome"))
+	fmt.Println(output.Translate("interactive.help"))
+	fmt.Println()
+
+	scanner := bufio.NewScanner(os.Stdin)
+
+	for {
+		fmt.Print(output.Translate("interactive.prompt"))
+		if !scanner.Scan() {
+			break
+		}
+
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+
+		// Handle interactive commands first (they take priority)
+		if line == "exit" || line == "quit" || line == "q" {
+			fmt.Println(output.Translate("interactive.goodbye"))
+			break
+		}
+
+		if line == "help" || line == "h" || line == "?" {
+			showInteractiveHelp()
+			continue
+		}
+
+		// Parse and execute launcher command
+		args := strings.Fields(line)
+		if len(args) == 0 {
+			continue
+		}
+
+		// Prepend program name for Kong
+		fullArgs := append([]string{os.Args[0]}, expandAliases(args)...)
+
+		// Save original args and replace with command args
+		origArgs := os.Args
+		os.Args = fullArgs
+
+		// Execute command
+		_, code := executeCommand()
+
+		// Restore original args
+		os.Args = origArgs
+
+		if code != 0 {
+			fmt.Printf("%s %d\n", output.Translate("interactive.error"), code)
+		}
+
+		fmt.Println()
+	}
+
+	return func(int) {}, 0
+}
+
+// executeCommand parses and executes a single command
+func executeCommand() (func(int), int) {
+	parser := kong.Must(&CLI{},
+		kong.UsageOnError(),
+		kong.Name(name),
+		kong.Description(output.Translate("launcher.description")),
+		kong.ConfigureHelp(kong.HelpOptions{
+			NoExpandSubcommands: true,
+			Compact:             true,
+		}),
+		kong.ValueFormatter(valueFormatter),
+		groups(),
+		vars(),
+	)
+	komplete.Run(parser)
+
+	ctx, err := parser.Parse(os.Args[1:])
+	if err != nil {
+		var parseErr *kong.ParseError
+		if errors.As(err, &parseErr) {
+			parseErr.Context.PrintUsage(false)
+		}
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return parser.Exit, 1
+	}
+
+	if err := ctx.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return nil, 1
+	}
+
+	return nil, 0
+}
+
+// showInteractiveHelp displays help for interactive mode
+func showInteractiveHelp() {
+	fmt.Println(output.Translate("interactive.help.title"))
+	fmt.Println()
+	fmt.Println(output.Translate("interactive.help.commands"))
+	fmt.Println("  help, h, ?     ", output.Translate("interactive.help.cmd.help"))
+	fmt.Println("  exit, quit, q  ", output.Translate("interactive.help.cmd.exit"))
+	fmt.Println("  <command>      ", output.Translate("interactive.help.cmd.command"))
+	fmt.Println()
+	fmt.Println(output.Translate("interactive.help.aliases"))
+	fmt.Println("  -i             ", output.Translate("interactive.alias.i"))
+	fmt.Println("  -s             ", output.Translate("interactive.alias.s"))
+	fmt.Println("  -is            ", output.Translate("interactive.alias.is"))
+	fmt.Println()
+}
+
 // Start creates the CLI parser and runs it. It returns an exit handler and code.
 func Run() (func(int), int) {
 	// Expand aliases first
 	expandedArgs := expandAliases(os.Args[1:])
 
-	// Check if we only have flags (no commands) - if so, show help
+	// Check if we only have flags (no commands) - if so, show help or enter interactive mode
 	if !hasCommands(expandedArgs) {
 		// Set default language first
 		output.SetLang(language.Russian)
@@ -215,6 +339,11 @@ func Run() (func(int), int) {
 		langFlag := parseLangFlag()
 		if langFlag == "en" {
 			output.SetLang(language.English)
+		}
+
+		// Check if we should enter interactive mode
+		if shouldUseInteractiveMode() {
+			return runInteractiveMode()
 		}
 
 		color.New(color.Bold).Println(output.Translate("cli.title"))
