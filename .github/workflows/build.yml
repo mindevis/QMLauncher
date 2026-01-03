@@ -27,31 +27,25 @@ jobs:
         with:
           go-version: '1.24'
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install frontend dependencies
-        run: cd frontend && npm ci
-
       - name: Run Go checks
         run: |
           go vet ./...
           go test ./...
 
-      - name: Build frontend
-        run: cd frontend && npm run build
-
-      - name: Build application
-        run: go build -o qmlauncher .
+      - name: Build CLI application
+        run: |
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            go build -tags cli -o qmlauncher-cli .
+          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+            go build -tags cli -o qmlauncher-cli.exe .
+          else
+            go build -tags cli -o qmlauncher-cli .
+          fi
 
       - uses: actions/upload-artifact@v4
         if: ${{ github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
         with:
-          name: qmlauncher_${{ runner.os }}_${{ runner.arch }}
+          name: qmlauncher-cli_${{ runner.os }}_${{ runner.arch }}
           path: |
-            qmlauncher
-            qmlauncher.exe
+            qmlauncher-cli
+            qmlauncher-cli.exe
