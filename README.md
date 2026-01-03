@@ -1,376 +1,149 @@
 # QMLauncher
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/mindevis/QMLauncher/releases/tag/v1.1.0)
-[![Go](https://img.shields.io/badge/Go-1.23+-00ADD8.svg)](https://golang.org)
-[![React](https://img.shields.io/badge/React-18.2+-61DAFB.svg)](https://reactjs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-3178C6.svg)](https://www.typescriptlang.org)
-[![Wails](https://img.shields.io/badge/Wails-2.11+-00ADD8.svg)](https://wails.io)
+[![Go](https://img.shields.io/badge/Go-1.21+-00ADD8.svg)](https://golang.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Современное десктопное приложение, созданное с использованием Go и React на базе фреймворка Wails.
+Минималистичный лаунчер Minecraft для командной строки.
 
-## О проекте
+## 📋 Описание
 
-QMLauncher - это кроссплатформенное десктопное приложение, которое служит лаунчером для различных приложений и инструментов. Создано с использованием фреймворка Wails, который сочетает мощь Go для бэкенда с React для фронтенда, создавая нативный десктопный опыт. UI построен с использованием shadcn/ui компонентов и стилизован с Tailwind CSS для создания современного, доступного и красивого пользовательского интерфейса.
+QMLauncher - это кроссплатформенное приложение командной строки для запуска Minecraft. Предоставляет удобный интерфейс для управления инстансами Minecraft, аутентификации, поиска версий и управления Java runtime.
 
-## Особенности
+## ✨ Возможности
 
-- 🚀 Быстрое и отзывчивое десктопное приложение
-- 🔄 Горячая перезагрузка во время разработки
-- 📦 Кроссплатформенная поддержка (Windows, macOS, Linux)
-- 🎨 Современный фронтенд на React с shadcn/ui компонентами
-- 🔷 Полная поддержка TypeScript для типобезопасности
-- ⚡ Нативная производительность с Go бэкендом
-- 🛠️ Легкая настройка и кастомизация
-- 🎯 Красивый UI с Tailwind CSS
-- 📱 Адаптивные компоненты дизайна
+- 🚀 **Управление инстансами** - создание, настройка и запуск инстансов Minecraft
+- 🔐 **Аутентификация** - поддержка различных методов аутентификации Mojang/Microsoft
+- 🔍 **Поиск версий** - поиск и установка версий Minecraft и модлоадеров
+- ☕ **Управление Java** - автоматическое обнаружение и управление установками Java
+- 📦 **Автообновления** - встроенная система обновлений приложения
+- 🌍 **Локализация** - поддержка русского и английского языков
 
-## API документация
+## 🛠️ Установка
 
-Для программного использования функциональности лаунчера Minecraft:
+### Скачивание релиза
 
-- [Английская API документация](docs/API.md)
-- [Русская API документация](docs/API_ru.md)
+Скачайте подходящую версию для вашей платформы из [релизов](https://github.com/telecter/QMLauncher/releases):
 
-API позволяет создавать, управлять и запускать инстансы Minecraft программно из ваших Go приложений.
+- **Linux**: `QMLauncher-cli-linux-amd64`
+- **macOS**: `QMLauncher-cli-darwin-amd64` или `QMLauncher-cli-darwin-arm64`
+- **Windows**: `QMLauncher-cli-windows-amd64.exe`
 
-## Требования
+### Сборка из исходников
 
-- Go 1.19 или новее
-- Node.js 16 или новее
-- Wails CLI
-
-## Установка
-
-1. Клонируйте репозиторий:
 ```bash
-git clone <repository-url>
+git clone https://github.com/telecter/QMLauncher.git
 cd QMLauncher
+make build  # или make linux/macos/windows
 ```
 
-2. Установите зависимости Go:
-```bash
-go mod tidy
-```
+## 🚀 Использование
 
-3. Установите зависимости фронтенда:
-```bash
-cd frontend
-npm install
-cd ..
-```
+### Основные команды
 
-## Сборка
-
-Проект поддерживает две версии сборки:
-
-### Полная версия с GUI (рекомендуется для десктопов)
-
-```bash
-# Собрать для текущей платформы
-make build
-
-# Собрать для всех основных платформ
-make release
-
-# Собрать для всех платформ и архитектур
-make release-all
-```
-
-### CLI версия (только командная строка, без GUI)
-
-```bash
-# Собрать CLI версию для текущей платформы
-make build-cli
-
-# Собрать CLI для всех основных платформ
-make release-cli
-
-# Собрать CLI для всех платформ и архитектур
-make release-all-cli
-```
-
-**CLI версия** меньше по размеру и не требует зависимостей GUI, подходит для серверов и автоматизации.
-
-## Скачивание
-
-В [релизах](https://github.com/mindevis/QMLauncher/releases) доступны две версии для каждой платформы:
-
-### GUI версии (рекомендуются для десктопов)
-- `qmlauncher-gui-linux-amd64` - Полное приложение для Linux
-- `qmlauncher-gui-windows-amd64.exe` - Полное приложение для Windows
-- `qmlauncher-gui-darwin-amd64` - Полное приложение для macOS Intel
-- `qmlauncher-gui-darwin-arm64` - Полное приложение для macOS Apple Silicon
-
-### CLI версии (для серверов и автоматизации)
-- `qmlauncher-cli-linux-amd64` - Консольная версия для Linux
-- `qmlauncher-cli-windows-amd64.exe` - Консольная версия для Windows
-- `qmlauncher-cli-darwin-amd64` - Консольная версия для macOS Intel
-- `qmlauncher-cli-darwin-arm64` - Консольная версия для macOS Apple Silicon
-
-## Разработка
-
-### Предварительные требования
-
-Перед началом разработки установите необходимые инструменты:
-
-```bash
-# Установка инструментов разработки
-make install-tools
-
-# Установка всех зависимостей
-make deps
-```
-
-### Режимы работы
-
-#### GUI режим (по умолчанию)
-
-Для запуска приложения в GUI режиме с Wails десктоп интерфейсом:
-
-```bash
-wails dev
-# или
-make dev
-```
-
-Это запустит:
-- Go бэкенд
-- Vite сервер разработки для фронтенда
-- Горячую перезагрузку для изменений как бэкенда, так и фронтенда
-
-#### CLI режим
-
-Для запуска приложения в режиме командной строки для функциональности лаунчера Minecraft:
-
-```bash
-./qmlauncher --no-gui [команда]
-```
-
-Доступные CLI команды:
-- `start` - Запуск указанного инстанса Minecraft
-- `instance list` - Список всех инстансов с их путями
-- `instance create <name> -v <version> -l <loader>` - Создание нового инстанса
-- `instance delete <name>` - Удаление инстанса
-- `instance rename <old> <new>` - Переименование инстанса
-- `java list` - Список всех установленных версий Java
-- `auth` - Управление аутентификацией аккаунта
-- `search` - Поиск версий Minecraft
-- `completions` - Генерация автодополнения для shell
-- `about` - Отображение версии лаунчера и информации
-
-Лаунчер использует `~/.qmlauncher` как рабочую директорию по умолчанию для хранения инстансов, ассетов, библиотек и файлов конфигурации. Вы можете переопределить это с помощью флага `--dir`.
-
-### Структура инстансов
-
-Каждый инстанс хранится в собственной директории с уникальным UUID для изоляции:
-
-```
-~/.qmlauncher/instances/
-└── InstanceName/
-    └── uuid/
-        ├── instance.toml    # Конфигурация инстанса
-        ├── minecraft.jar    # Клиент Minecraft
-        ├── forge.jar        # Загрузчик модов (если применимо)
-        ├── mods/           # Директория модов
-        ├── saves/          # Сохранения миров
-        └── config/         # Файлы конфигурации
-```
-
-Общие ресурсы остаются в корневых директориях:
-- `libraries/` - Java библиотеки
-- `assets/` - Игровые ассеты и текстуры
-- `caches/` - Скачанные метаданные и манифесты
-- `java/` - Установки Java runtime
-
-Примеры:
 ```bash
 # Показать справку
-./qmlauncher --no-gui --help
+./QMLauncher-cli --help
 
-# Отобразить информацию о версии
-./qmlauncher --no-gui about
+# Показать информацию о версии
+./QMLauncher-cli about
 
-# Поиск версий Minecraft
-./qmlauncher --no-gui search 1.20
+# Управление инстансами
+./QMLauncher-cli instance list     # Список инстансов
+./QMLauncher-cli instance create   # Создать новый инстанс
+./QMLauncher-cli instance delete   # Удалить инстанс
 
-# Список инстансов
-./qmlauncher --no-gui instance list
+# Аутентификация
+./QMLauncher-cli auth login        # Войти в аккаунт
+./QMLauncher-cli auth logout       # Выйти из аккаунта
+
+# Запуск игры
+./QMLauncher-cli start <instance>  # Запустить инстанс
+
+# Поиск версий
+./QMLauncher-cli search versions   # Найти версии Minecraft
+./QMLauncher-cli search fabric     # Найти версии Fabric
+./QMLauncher-cli search forge      # Найти версии Forge
 ```
 
-### Разработка в браузере
-
-Для разработки фронтенда с доступом к методам Go из браузера, подключитесь к:
-- http://localhost:34115 (сервер разработки)
-
-### Качество кода
-
-#### Линтинг и форматирование
-
-Запустите все проверки качества кода:
+### Опции командной строки
 
 ```bash
-make check
+--verbosity string    Уровень подробности вывода [info, extra, debug] (default "info")
+--dir string          Корневая директория для файлов лаунчера
+--no-color           Отключить цветовую подсветку (также NO_COLOR=1)
 ```
 
-Включает в себя:
-- Форматирование Go кода (`make fmt`)
-- Линтинг Go (`make lint`)
-- Линтинг фронтенда (`make frontend-lint`)
-- Форматирование фронтенда (`make frontend-fmt`)
-- Проверка типов TypeScript (`npm run type-check` в frontend/)
+## 📁 Структура проекта
 
-#### Отдельные команды
+```
+.
+├── main.go                 # Точка входа CLI приложения
+├── internal/
+│   ├── cli/               # CLI логика и команды
+│   │   ├── cmd/          # Команды CLI
+│   │   └── output/       # Вывод и локализация
+│   ├── meta/             # Метаданные Minecraft
+│   └── network/          # Сетевая логика
+├── pkg/
+│   ├── auth/             # Аутентификация
+│   ├── launcher/         # Логика запуска
+│   ├── env.go            # Переменные окружения
+│   └── updater/          # Обновления
+├── go.mod
+├── go.sum
+└── Makefile              # Скрипты сборки
+```
 
+## 🏗️ Сборка и разработка
+
+### Сборка для текущей платформы
 ```bash
-# Команды Go
-make lint          # Запуск golangci-lint
-make fmt           # Форматирование Go кода
-make vet           # Запуск go vet
-make test          # Запуск тестов
-
-# Команды фронтенда
-make frontend-lint     # Запуск ESLint
-make frontend-fmt      # Форматирование с Prettier
-make frontend-install  # Установка зависимостей
-
-# Комбинированные команды
-make deps          # Установка всех зависимостей
-make clean         # Очистка артефактов сборки
-make check         # Запуск всех проверок
+make build
 ```
 
-### Структура проекта
-
-```
-QMLauncher/
-├── main.go              # Точка входа приложения
-├── app.go               # Основная логика приложения
-├── wails.json          # Конфигурация Wails
-├── go.mod              # Файл Go модуля
-├── frontend/           # Фронтенд на Vue.js
-│   ├── src/
-│   │   ├── App.vue
-│   │   ├── main.js
-│   │   └── components/
-│   ├── package.json
-│   └── vite.config.js
-└── build/              # Вывод сборки
-```
-
-## Сборка
-
-### Сборка для разработки
-
+### Кроссплатформенная сборка
 ```bash
-wails build
+make linux      # Linux AMD64
+make macos      # macOS AMD64
+make macos-arm64 # macOS ARM64
+make windows    # Windows AMD64
+make release    # Все платформы
 ```
 
-### Продакшн сборка
-
+### Разработка
 ```bash
-wails build -production
+make test       # Запуск тестов
+make lint       # Линтинг кода
+make fmt        # Форматирование
+make vet        # Статический анализ
+make check      # Все проверки
 ```
 
-### Платформо-специфичные сборки
+## 📚 Документация
 
-Используйте удобные команды Makefile для кроссплатформенной сборки:
+- [CHANGELOG.md](CHANGELOG.md) - История изменений
+- [CHANGELOG_en.md](CHANGELOG_en.md) - Changelog (English)
 
-```bash
-# Сборка для текущей платформы
-make linux    # Linux
-make macos    # macOS
-make windows  # Windows
+## 🤝 Вклад в проект
 
-# Сборка для конкретных архитектур
-make linux-amd64 linux-arm64     # Linux AMD64 + ARM64
-make macos-amd64 macos-arm64     # macOS Intel + Apple Silicon
-make windows-amd64 windows-arm64 # Windows AMD64 + ARM64
+1. Форкните репозиторий
+2. Создайте ветку для вашей фичи (`git checkout -b feature/AmazingFeature`)
+3. Зафиксируйте изменения (`git commit -m 'Add some AmazingFeature'`)
+4. Запушьте ветку (`git push origin feature/AmazingFeature`)
+5. Создайте Pull Request
 
-# Сборка для всех основных платформ (AMD64)
-make release
+## 📄 Лицензия
 
-# Сборка для всех платформ и архитектур
-make release-all
-```
+Этот проект распространяется под лицензией MIT. Смотрите файл [LICENSE](LICENSE) для подробностей.
 
-Собранные приложения будут размещены в `build/bin/` с описательными именами, включающими платформу и архитектуру.
+## 🙏 Благодарности
 
-#### Ручные команды Wails (при необходимости)
+- [alecthomas/kong](https://github.com/alecthomas/kong) - CLI фреймворк
+- [fatih/color](https://github.com/fatih/color) - Цветной вывод в терминале
+- [jedib0t/go-pretty](https://github.com/jedib0t/go-pretty) - Форматирование таблиц
+- [schollz/progressbar](https://github.com/schollz/progressbar) - Прогресс-бары
 
-```bash
-# Windows
-wails build -platform windows/amd64
+## 📞 Контакты
 
-# macOS
-wails build -platform darwin/amd64
-
-# Linux
-wails build -platform linux/amd64
-```
-
-## Конфигурация
-
-Проект можно настроить путем редактирования `wails.json`. Более подробную информацию о настройках проекта можно найти по адресу:
-https://wails.io/docs/reference/project-config
-
-## Участие в разработке
-
-1. Сделайте форк репозитория
-2. Создайте ветку для новой функциональности
-3. Внесите изменения
-4. Тщательно протестируйте
-5. Отправьте pull request
-
-## Версионирование
-
-Этот проект следует спецификациям [Semantic Versioning](https://semver.org/) и [Conventional Commits](https://conventionalcommits.org/).
-
-### Типы релизов
-
-- **MAJOR** версия (X.y.z) - Критические изменения
-- **MINOR** версия (x.Y.z) - Новые функции (обратно совместимые)
-- **PATCH** версия (x.y.Z) - Исправления ошибок (обратно совместимые)
-
-### Формат сообщений коммитов
-
-```
-type(scope): описание
-
-[необязательное тело]
-
-[необязательный футер]
-```
-
-Типы: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
-
-Примеры:
-- `feat: добавить аутентификацию пользователя`
-- `fix: исправить утечку памяти в обработчике файлов`
-- `docs: обновить документацию API`
-
-## CI/CD
-
-Проект использует GitHub Actions для автоматизированной сборки и релизов:
-
-- **Build**: Запускается при каждом push/PR (исключая docs), тестирует компиляцию на Windows/macOS/Linux
-- **Release**: Срабатывает при создании релиза, собирает бинарные файлы для всех платформ и загружает в GitHub Releases
-
-## Участие в разработке
-
-1. Следуйте Conventional Commits для сообщений коммитов
-2. Запускайте `make check` перед отправкой PR
-3. Обновляйте CHANGELOG.md для значительных изменений
-4. Тестируйте на нескольких платформах по возможности
-5. Убедитесь, что CI проходит перед слиянием
-
-## Лицензия
-
-Этот проект лицензирован под MIT License - подробности смотрите в файле LICENSE.
-
-## Поддержка
-
-Если вы столкнулись с проблемами или у вас есть вопросы:
-
-- Проверьте [документацию Wails](https://wails.io/docs)
-- Откройте issue на GitHub
-- Присоединяйтесь к [сообществу Wails в Discord](https://discord.gg/7FY4VQ4)
+- Автор: telecter
+- Репозиторий: [github.com/telecter/QMLauncher](https://github.com/telecter/QMLauncher)

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-03
+
+### Changed
+- **BREAKING**: Project converted to CLI-only mode, GUI support (Wails) removed
+- Simplified architecture - command line only without desktop interface
+- Optimized dependencies, removed Wails and frontend packages
+- Makefile updated for CLI builds only
+
+### Removed
+- Completely removed GUI mode and Wails integration
+- Removed frontend part (React/TypeScript)
+- Removed desktop-specific dependencies and configurations
+
 ## [1.1.0] - 2026-01-02
 
 ### Added
