@@ -142,6 +142,27 @@ func Run() (func(int), int) {
 	)
 	komplete.Run(parser)
 
+	// If no arguments provided, show help and exit
+	if len(os.Args) == 1 {
+		color.New(color.Bold).Println("QMLauncher CLI")
+		color.New(color.Underline).Println("Minecraft launcher with mod support")
+		fmt.Println()
+		fmt.Println("USAGE:")
+		fmt.Println("  QMLauncher [command]")
+		fmt.Println()
+		fmt.Println("AVAILABLE COMMANDS:")
+		fmt.Println("  start       Start Minecraft with specified options")
+		fmt.Println("  instance    Manage Minecraft instances")
+		fmt.Println("  update      Update the launcher")
+		fmt.Println("  auth        Manage authentication")
+		fmt.Println("  search      Search for Minecraft versions")
+		fmt.Println("  java        Manage Java installations")
+		fmt.Println("  about       Show version information")
+		fmt.Println()
+		fmt.Println("Use 'QMLauncher [command] --help' for more information about a command.")
+		return func(int) {}, 0
+	}
+
 	ctx, err := parser.Parse(os.Args[1:])
 	if err != nil {
 		exitCode := 1
