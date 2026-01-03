@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"runtime"
 	"strings"
 
 	"QMLauncher/internal/cli/cmd"
@@ -206,16 +205,17 @@ func hasCommands(args []string) bool {
 
 // shouldUseInteractiveMode determines if we should enter interactive mode
 func shouldUseInteractiveMode() bool {
-	// Check for explicit interactive flag first
+	// Check for explicit interactive flag first (overrides everything)
 	if hasInteractiveFlag() {
 		return true
 	}
 
-	// Use interactive mode on Windows by default
-	// On Unix-like systems, show help by default unless explicitly requested
-	if runtime.GOOS == "windows" {
+	// If no arguments provided at all, use interactive mode on all platforms
+	if len(os.Args) == 1 {
 		return true
 	}
+
+	// Check environment variable for explicit request
 	return os.Getenv("QMLAUNCHER_INTERACTIVE") == "1"
 }
 
