@@ -327,10 +327,6 @@ var ru = translations{
 	"cli.cmd.search":       "  search               Поиск версий Minecraft",
 	"cli.cmd.java":         "  java                 Управление установками Java",
 	"cli.cmd.about":        "  about                Показать информацию о версии",
-	"cli.aliases":          "АЛИАСЫ:",
-	"cli.alias.i":          "  -i, --i              Сокращение для команды 'instance'",
-	"cli.alias.s":          "  -s                   Сокращение для команды 'start' (в контексте instance)",
-	"cli.alias.is":         "  -is, --is            Сокращение для 'instance start'",
 	"cli.help":             "Используйте 'QMLauncher [команда] --help' для получения дополнительной информации о команде.",
 }
 
