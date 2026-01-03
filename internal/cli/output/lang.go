@@ -149,6 +149,19 @@ var en = translations{
 	"launcher.warning":     "Warning",
 	"launcher.debug":       "Debug",
 	"launcher.tip":         "Tip",
+	"cli.title":            "QMLauncher CLI",
+	"cli.subtitle":         "Minecraft launcher with mod support",
+	"cli.usage":            "USAGE:",
+	"cli.usage.cmd":        "  QMLauncher [command]",
+	"cli.commands":         "AVAILABLE COMMANDS:",
+	"cli.cmd.start":        "  start       Start Minecraft with specified options",
+	"cli.cmd.instance":     "  instance    Manage Minecraft instances",
+	"cli.cmd.update":       "  update      Update the launcher",
+	"cli.cmd.auth":         "  auth        Manage authentication",
+	"cli.cmd.search":       "  search      Search for Minecraft versions",
+	"cli.cmd.java":         "  java        Manage Java installations",
+	"cli.cmd.about":        "  about       Show version information",
+	"cli.help":             "Use 'QMLauncher [command] --help' for more information about a command.",
 }
 
 var ru = translations{
@@ -299,6 +312,19 @@ var ru = translations{
 	"launcher.debug":       "Отладка",
 	"launcher.tip":         "Совет",
 	"arg.lang":             "Язык вывода (ru, en)",
+	"cli.title":            "QMLauncher CLI",
+	"cli.subtitle":         "Лаунчер Minecraft с поддержкой модов",
+	"cli.usage":            "ИСПОЛЬЗОВАНИЕ:",
+	"cli.usage.cmd":        "  QMLauncher [команда]",
+	"cli.commands":         "ДОСТУПНЫЕ КОМАНДЫ:",
+	"cli.cmd.start":        "  start       Запустить Minecraft с указанными опциями",
+	"cli.cmd.instance":     "  instance    Управление инстансами Minecraft",
+	"cli.cmd.update":       "  update      Обновить лаунчер",
+	"cli.cmd.auth":         "  auth        Управление аутентификацией",
+	"cli.cmd.search":       "  search      Поиск версий Minecraft",
+	"cli.cmd.java":         "  java        Управление установками Java",
+	"cli.cmd.about":        "  about       Показать информацию о версии",
+	"cli.help":             "Используйте 'QMLauncher [команда] --help' для получения дополнительной информации о команде.",
 }
 
 var lang = ru
