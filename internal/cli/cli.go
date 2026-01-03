@@ -448,31 +448,33 @@ func readLineWithHistory(reader *bufio.Reader, history *CommandHistory) (string,
 				fmt.Printf("\033[%dG", len(output.Translate("interactive.prompt"))+cursor+1)
 			}
 		case 27: // Escape sequence (arrow keys)
-			seq, _, err := reader.ReadRune()
-			if err != nil {
-				continue
-			}
-			if seq != '[' {
-				continue
-			}
-			dir, _, err := reader.ReadRune()
+			// Read the next character to check if it's '['
+			nextChar, _, err := reader.ReadRune()
 			if err != nil {
 				continue
 			}
 
-			switch dir {
-			case 'A': // Up arrow
-				cmd := history.Previous()
-				if cmd != "" {
+			if nextChar == '[' {
+				// Read the direction character
+				dirChar, _, err := reader.ReadRune()
+				if err != nil {
+					continue
+				}
+
+				switch dirChar {
+				case 'A': // Up arrow
+					cmd := history.Previous()
+					if cmd != "" {
+						buffer = []rune(cmd)
+						cursor = len(buffer)
+						fmt.Print("\r\033[K" + output.Translate("interactive.prompt") + string(buffer))
+					}
+				case 'B': // Down arrow
+					cmd := history.Next()
 					buffer = []rune(cmd)
 					cursor = len(buffer)
 					fmt.Print("\r\033[K" + output.Translate("interactive.prompt") + string(buffer))
 				}
-			case 'B': // Down arrow
-				cmd := history.Next()
-				buffer = []rune(cmd)
-				cursor = len(buffer)
-				fmt.Print("\r\033[K" + output.Translate("interactive.prompt") + string(buffer))
 			}
 		default:
 			buffer = append(buffer[:cursor], append([]rune{char}, buffer[cursor:]...)...)
