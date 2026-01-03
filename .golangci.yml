@@ -37,10 +37,9 @@ linters-settings:
       Main:
         deny:
           - pkg: "github.com/pkg/errors"
-            desc: "Use standard library or github.com/wailsapp/wails/v2/pkg/errors"
+            desc: "Use standard library errors instead"
         allow:
           - $gostd
-          - github.com/wailsapp/wails
   mnd:
     ignored-numbers:
       - '0666'
