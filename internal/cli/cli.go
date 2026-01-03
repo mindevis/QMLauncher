@@ -37,7 +37,6 @@ func (aboutCmd) Run(ctx *kong.Context) error {
 }
 
 type CLI struct {
-	Start       cmd.StartCmd     `cmd:"" help:"${start}"`
 	Instance    cmd.InstanceCmd  `cmd:"" help:"${instance}"`
 	Update      cmd.UpdateCmd    `cmd:"" help:"${update}"`
 	Auth        cmd.AuthCmd      `cmd:"" help:"${auth}"`
@@ -184,7 +183,6 @@ func Run() (func(int), int) {
 		fmt.Println(output.Translate("cli.usage.cmd"))
 		fmt.Println()
 		fmt.Println(output.Translate("cli.commands"))
-		fmt.Println(output.Translate("cli.cmd.start"))
 		fmt.Println(output.Translate("cli.cmd.instance"))
 		fmt.Println(output.Translate("cli.cmd.update"))
 		fmt.Println(output.Translate("cli.cmd.auth"))

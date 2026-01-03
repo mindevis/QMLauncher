@@ -57,7 +57,7 @@ make build  # or make linux/macos/windows
 ./QMLauncher-cli auth logout       # Logout from account
 
 # Launch game
-./QMLauncher-cli start <instance>  # Launch instance
+./QMLauncher-cli instance start <instance>  # Launch instance
 
 # Version search
 ./QMLauncher-cli search versions   # Find Minecraft versions

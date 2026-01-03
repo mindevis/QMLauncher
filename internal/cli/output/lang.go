@@ -154,7 +154,6 @@ var en = translations{
 	"cli.usage":            "USAGE:",
 	"cli.usage.cmd":        "  QMLauncher [command]",
 	"cli.commands":         "AVAILABLE COMMANDS:",
-	"cli.cmd.start":        "  start       Start Minecraft with specified options",
 	"cli.cmd.instance":     "  instance    Manage Minecraft instances",
 	"cli.cmd.update":       "  update      Update the launcher",
 	"cli.cmd.auth":         "  auth        Manage authentication",

@@ -145,6 +145,7 @@ type InstanceCmd struct {
 	Create        CreateCmd        `cmd:"" help:"${create}"`
 	Delete        DeleteCmd        `cmd:"" help:"${delete}"`
 	Rename        RenameCmd        `cmd:"" help:"${rename}"`
+	Start         StartCmd         `cmd:"" help:"${start}"`
 	List          ListCmd          `cmd:"" help:"${list}"`
 	Export        ExportCmd        `cmd:"" help:"${export}"`
 	Import        ImportCmd        `cmd:"" help:"${import}"`

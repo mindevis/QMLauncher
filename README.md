@@ -57,7 +57,7 @@ make build  # или make linux/macos/windows
 ./QMLauncher-cli auth logout       # Выйти из аккаунта
 
 # Запуск игры
-./QMLauncher-cli start <instance>  # Запустить инстанс
+./QMLauncher-cli instance start <instance>  # Запустить инстанс
 
 # Поиск версий
 ./QMLauncher-cli search versions   # Найти версии Minecraft
