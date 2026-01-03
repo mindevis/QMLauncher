@@ -49,7 +49,7 @@ type CLI struct {
 	Verbosity string `help:"${arg_verbosity}" enum:"info,extra,debug" default:"info"`
 	Dir       string `help:"${arg_dir}" type:"path" placeholder:"PATH"`
 	NoColor   bool   `help:"${arg_nocolor}"`
-	Lang      string `help:"${arg_lang}" enum:"ru,en" default:"ru"`
+	Lang      string `help:"${arg_lang}" default:"ru"`
 }
 
 func (c *CLI) AfterApply(ctx *kong.Context) error {
@@ -74,6 +74,12 @@ func (c *CLI) AfterApply(ctx *kong.Context) error {
 	if c.NoColor {
 		color.NoColor = true
 	}
+
+	// Validate language
+	if c.Lang != "ru" && c.Lang != "en" {
+		return fmt.Errorf("invalid language '%s': must be 'ru' or 'en'", c.Lang)
+	}
+
 	return nil
 }
 

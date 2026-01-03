@@ -134,7 +134,7 @@ var en = translations{
 	"arg.verbosity": "Increase launcher output verbosity",
 	"arg.dir":       "Root directory for launcher files",
 	"arg.nocolor":   "Disable all color output. The NO_COLOR environment variable is also supported.",
-	"arg.lang":      "Language for output (ru, en)",
+	"arg.lang":      "Language for output",
 
 	"tip.internet":  "Check your internet connection.",
 	"tip.cache":     "Remote resources were not cached and were unable to be retrieved. Check your Internet connection.",
