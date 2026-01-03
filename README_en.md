@@ -72,12 +72,46 @@ make build  # or make linux/macos/windows
 ./QMLauncher-cli search forge      # Find Forge versions
 ```
 
+### Interactive Mode
+
+QMLauncher supports interactive mode for convenient operation:
+
+```bash
+# Windows: automatic interactive mode launch
+QMLauncher.exe
+
+# Linux/macOS: automatic interactive mode launch
+./QMLauncher-cli
+
+# Force interactive mode (even with arguments)
+./QMLauncher-cli --interactive
+```
+
+#### Interactive mode features:
+- **Command history** - arrow keys ↑/↓ to navigate through previous commands
+- **Management commands**:
+  - `help`, `h`, `?` - show help
+  - `exit`, `quit`, `q` - exit interactive mode
+  - `history` - show command history
+  - `clear` - clear command history
+- **Command aliases** - `-i`, `-s`, `-is` work as usual
+- **Auto-completion** - convenient command input
+
+```bash
+QMLauncher> -i list          # Show instances
+QMLauncher> -is "My Server"   # Launch instance
+QMLauncher> ↑                # Previous command
+QMLauncher> history          # Show all commands
+QMLauncher> exit             # Exit
+```
+
 ### Command Line Options
 
 ```bash
 --verbosity string    Output verbosity level [info, extra, debug] (default "info")
 --dir string          Root directory for launcher files
 --no-color           Disable color highlighting (also NO_COLOR=1)
+--interactive        Start in interactive mode
 ```
 
 ## 📁 Project Structure
