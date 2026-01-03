@@ -448,6 +448,9 @@ func readLineWithHistory(reader *bufio.Reader, history *CommandHistory) (string,
 				fmt.Printf("\033[%dG", len(output.Translate("interactive.prompt"))+cursor+1)
 			}
 		case 27: // Escape sequence (arrow keys)
+			// Clear any escape sequence characters that might have been displayed
+			fmt.Print("\r\033[K" + output.Translate("interactive.prompt") + string(buffer))
+
 			// Read the next character to check if it's '['
 			nextChar, _, err := reader.ReadRune()
 			if err != nil {
@@ -467,14 +470,18 @@ func readLineWithHistory(reader *bufio.Reader, history *CommandHistory) (string,
 					if cmd != "" {
 						buffer = []rune(cmd)
 						cursor = len(buffer)
+						// Clear the line and reprint with the command from history
 						fmt.Print("\r\033[K" + output.Translate("interactive.prompt") + string(buffer))
 					}
 				case 'B': // Down arrow
 					cmd := history.Next()
 					buffer = []rune(cmd)
 					cursor = len(buffer)
+					// Clear the line and reprint
 					fmt.Print("\r\033[K" + output.Translate("interactive.prompt") + string(buffer))
 				}
+			} else {
+				fmt.Printf("DEBUG: Not a bracket, ignoring\n")
 			}
 		default:
 			buffer = append(buffer[:cursor], append([]rune{char}, buffer[cursor:]...)...)
