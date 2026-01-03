@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 
 	"QMLauncher/internal/cli/cmd"
@@ -301,6 +302,22 @@ func (h *CommandHistory) GetHistory() []string {
 	return h.commands
 }
 
+// getLast returns the last command in history
+func (h *CommandHistory) getLast() string {
+	if len(h.commands) == 0 {
+		return ""
+	}
+	return h.commands[len(h.commands)-1]
+}
+
+// getByIndex returns command by index (0-based)
+func (h *CommandHistory) getByIndex(index int) string {
+	if index < 0 || index >= len(h.commands) {
+		return ""
+	}
+	return h.commands[index]
+}
+
 // runInteractiveMode starts the interactive command shell
 func runInteractiveMode() (func(int), int) {
 	// Set default language for interactive mode
@@ -352,6 +369,30 @@ func runInteractiveMode() (func(int), int) {
 			history = NewCommandHistory(100)
 			fmt.Println(output.Translate("interactive.history.cleared"))
 			continue
+		}
+
+		// Handle history shortcuts
+		if strings.HasPrefix(line, "!!") {
+			// Execute last command
+			cmd := history.getLast()
+			if cmd == "" {
+				fmt.Println(output.Translate("interactive.history.empty"))
+				continue
+			}
+			fmt.Printf("%s%s\n", output.Translate("interactive.prompt"), cmd)
+			line = cmd
+		} else if strings.HasPrefix(line, "!") && len(line) > 1 {
+			// Execute command by number !n
+			numStr := line[1:]
+			if num, err := strconv.Atoi(numStr); err == nil {
+				cmd := history.getByIndex(num - 1) // 1-based to 0-based
+				if cmd == "" {
+					fmt.Printf(output.Translate("interactive.history.not_found"), num)
+					continue
+				}
+				fmt.Printf("%s%s\n", output.Translate("interactive.prompt"), cmd)
+				line = cmd
+			}
 		}
 
 		// Parse and execute launcher command
@@ -499,6 +540,8 @@ func showInteractiveHelp() {
 	fmt.Println("  exit, quit, q  ", output.Translate("interactive.help.cmd.exit"))
 	fmt.Println("  history        ", output.Translate("interactive.help.cmd.history"))
 	fmt.Println("  clear          ", output.Translate("interactive.help.cmd.clear"))
+	fmt.Println("  !!             ", output.Translate("interactive.help.cmd.last"))
+	fmt.Println("  !n             ", output.Translate("interactive.help.cmd.number"))
 	fmt.Println("  <command>      ", output.Translate("interactive.help.cmd.command"))
 	fmt.Println()
 	fmt.Println(output.Translate("cli.commands"))
