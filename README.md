@@ -47,17 +47,24 @@ make build  # или make linux/macos/windows
 # Показать информацию о версии
 ./QMLauncher-cli about
 
-# Управление инстансами
-./QMLauncher-cli instance list     # Список инстансов
-./QMLauncher-cli instance create   # Создать новый инстанс
-./QMLauncher-cli instance delete   # Удалить инстанс
+# Управление инстансами (с алиасами)
+./QMLauncher-cli -i list           # Список инстансов (--i = instance)
+./QMLauncher-cli instance list     # Альтернативный вариант
+./QMLauncher-cli -i create         # Создать новый инстанс
+./QMLauncher-cli -i delete         # Удалить инстанс
 
 # Аутентификация
 ./QMLauncher-cli auth login        # Войти в аккаунт
 ./QMLauncher-cli auth logout       # Выйти из аккаунта
 
-# Запуск игры
-./QMLauncher-cli instance start <instance>  # Запустить инстанс
+# Запуск игры (быстрые алиасы)
+./QMLauncher-cli -is <instance>    # Запустить инстанс (--is = instance start)
+./QMLauncher-cli -i -s <instance>  # Альтернативный вариант
+./QMLauncher-cli instance start <instance>  # Полная форма
+
+# Примеры с опциями запуска
+./QMLauncher-cli -is 'My Instance' -u Player --server mc.example.com:25565 --min-memory=2048 --max-memory=4096
+./QMLauncher-cli --i --s 'My Instance' --username Player --server mc.example.com:25565
 
 # Поиск версий
 ./QMLauncher-cli search versions   # Найти версии Minecraft

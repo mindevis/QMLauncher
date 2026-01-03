@@ -126,7 +126,8 @@ func tips(err error) {
 
 // parseLangFlag checks command line arguments for --lang flag
 func parseLangFlag() string {
-	args := os.Args[1:] // Skip program name
+	// Use expanded args
+	args := expandAliases(os.Args[1:])
 	for i, arg := range args {
 		if arg == "--lang" && i+1 < len(args) {
 			return args[i+1]
@@ -136,6 +137,55 @@ func parseLangFlag() string {
 		}
 	}
 	return ""
+}
+
+// expandAliases expands short aliases into full commands
+func expandAliases(args []string) []string {
+	var expanded []string
+
+	for _, arg := range args {
+		// Handle combined aliases like -is, -i, -s
+		if strings.HasPrefix(arg, "-") && !strings.HasPrefix(arg, "--") && len(arg) > 1 {
+			// Remove the leading dash
+			flags := arg[1:]
+
+			// Handle combined flags
+			if strings.Contains(flags, "i") && strings.Contains(flags, "s") {
+				// -is or -si means instance start
+				expanded = append(expanded, "instance", "start")
+				// Add remaining flags without i and s
+				remaining := strings.ReplaceAll(flags, "i", "")
+				remaining = strings.ReplaceAll(remaining, "s", "")
+				if remaining != "" {
+					expanded = append(expanded, "-"+remaining)
+				}
+			} else if strings.Contains(flags, "i") {
+				// -i means instance
+				expanded = append(expanded, "instance")
+				// Add remaining flags without i
+				remaining := strings.ReplaceAll(flags, "i", "")
+				if remaining != "" {
+					expanded = append(expanded, "-"+remaining)
+				}
+			} else if strings.Contains(flags, "s") {
+				// -s means start (but only in context of instance)
+				// This will be handled when we see instance command
+				expanded = append(expanded, arg)
+			} else {
+				expanded = append(expanded, arg)
+			}
+		} else if arg == "--is" {
+			// --is means --i --s
+			expanded = append(expanded, "instance", "start")
+		} else if arg == "--i" {
+			// --i means instance
+			expanded = append(expanded, "instance")
+		} else {
+			expanded = append(expanded, arg)
+		}
+	}
+
+	return expanded
 }
 
 // hasCommands checks if there are any non-flag arguments (commands)
@@ -164,9 +214,11 @@ func hasCommands(args []string) bool {
 
 // Start creates the CLI parser and runs it. It returns an exit handler and code.
 func Run() (func(int), int) {
+	// Expand aliases first
+	expandedArgs := expandAliases(os.Args[1:])
+
 	// Check if we only have flags (no commands) - if so, show help
-	args := os.Args[1:]
-	if !hasCommands(args) {
+	if !hasCommands(expandedArgs) {
 		// Set default language first
 		output.SetLang(language.Russian)
 
@@ -230,13 +282,13 @@ func Run() (func(int), int) {
 	)
 	komplete.Run(parser)
 
-	ctx, err := parser.Parse(os.Args[1:])
+	ctx, err := parser.Parse(expandedArgs)
 	if err != nil {
 		exitCode := 1
 		var parseErr *kong.ParseError
 		if errors.As(err, &parseErr) {
 			// Show usage only if there are actual commands (not just flags)
-			if hasCommands(os.Args[1:]) {
+			if hasCommands(expandedArgs) {
 				parseErr.Context.PrintUsage(false)
 				// For commands without subcommands, don't show error after usage
 				if strings.Contains(err.Error(), "expected one of") {

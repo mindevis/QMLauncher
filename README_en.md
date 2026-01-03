@@ -47,17 +47,24 @@ make build  # or make linux/macos/windows
 # Show version information
 ./QMLauncher-cli about
 
-# Instance management
-./QMLauncher-cli instance list     # List instances
-./QMLauncher-cli instance create   # Create new instance
-./QMLauncher-cli instance delete   # Delete instance
+# Instance management (with aliases)
+./QMLauncher-cli -i list           # List instances (-i = instance)
+./QMLauncher-cli instance list     # Alternative form
+./QMLauncher-cli -i create         # Create new instance
+./QMLauncher-cli -i delete         # Delete instance
 
 # Authentication
 ./QMLauncher-cli auth login        # Login to account
 ./QMLauncher-cli auth logout       # Logout from account
 
-# Launch game
-./QMLauncher-cli instance start <instance>  # Launch instance
+# Launch game (quick aliases)
+./QMLauncher-cli -is <instance>    # Launch instance (-is = instance start)
+./QMLauncher-cli -i -s <instance>  # Alternative form
+./QMLauncher-cli instance start <instance>  # Full form
+
+# Examples with launch options
+./QMLauncher-cli -is 'My Instance' -u Player --server mc.example.com:25565 --min-memory=2048 --max-memory=4096
+./QMLauncher-cli --i --s 'My Instance' --username Player --server mc.example.com:25565
 
 # Version search
 ./QMLauncher-cli search versions   # Find Minecraft versions
