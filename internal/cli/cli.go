@@ -242,6 +242,11 @@ func Run() (func(int), int) {
 		fmt.Println(output.Translate("cli.cmd.java"))
 		fmt.Println(output.Translate("cli.cmd.about"))
 		fmt.Println()
+		fmt.Println(output.Translate("cli.aliases"))
+		fmt.Println(output.Translate("cli.alias.i"))
+		fmt.Println(output.Translate("cli.alias.s"))
+		fmt.Println(output.Translate("cli.alias.is"))
+		fmt.Println()
 		fmt.Println(output.Translate("cli.help"))
 		return func(int) {}, 0
 	}
