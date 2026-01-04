@@ -42,6 +42,8 @@ coverage/
 
 # Go specific
 # Binaries for programs and plugins
+qmlauncher
+qmlauncher-cli
 *.exe
 *.exe~
 *.dll
