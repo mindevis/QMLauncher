@@ -78,8 +78,10 @@ jobs:
           echo "Prepared assets:"
           ls -la dist/qmlauncher-cli*
 
-      - name: Check GitHub CLI authentication
+      - name: Setup GitHub CLI authentication
         run: |
+          echo "Setting up GitHub CLI authentication..."
+          echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
           gh auth status
           echo "Current repository: ${{ github.repository }}"
           echo "Tag name: ${{ github.ref_name }}"
