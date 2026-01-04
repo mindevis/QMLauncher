@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.4] - 2026-01-04
+
+### Fixed
+- Finally fixed "not a git repository" error in GitHub Actions
+- Added working-directory and --repo parameters for GitHub CLI commands
+- Ensured correct operation of gh release create and gh release upload
+- Resolved all repository context issues in release workflow
+
+### Changed
+- Optimized GitHub CLI parameters for stable operation
+- Improved error handling in release process
+
 ## [1.5.3] - 2026-01-04
 
 ### Fixed
