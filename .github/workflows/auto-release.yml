@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  workflows: write  # Allow updating workflow files
 
 jobs:
   check-version:
