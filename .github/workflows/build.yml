@@ -130,16 +130,17 @@ jobs:
           TAG_NAME="${{ github.ref_name }}"
           echo "Uploading assets for release: $TAG_NAME"
 
-          # Flatten all binaries to root dist directory
-          find dist/ -name "qmlauncher-cli*" -type f -exec cp {} dist/ \;
+          # Create assets directory and copy all binaries
+          mkdir -p assets
+          find dist/ -name "qmlauncher-cli*" -type f -exec cp {} assets/ \;
 
           echo "Prepared assets:"
-          ls -la dist/qmlauncher-cli*
+          ls -la assets/
 
-          # Upload assets
+          # Upload all assets from assets directory
           if gh release upload "$TAG_NAME" \
             --repo ${{ github.repository }} \
-            dist/qmlauncher-cli* --clobber; then
+            assets/* --clobber; then
             echo "✅ Assets uploaded successfully"
           else
             echo "❌ Failed to upload assets"
