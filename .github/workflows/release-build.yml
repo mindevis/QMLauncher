@@ -24,17 +24,41 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+
     runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: 'main'
           fetch-depth: 0
 
       - uses: actions/setup-go@v6
         with:
           go-version: '1.25'
 
+      - name: Install icon conversion dependencies
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            echo "Installing dependencies on Ubuntu..."
+            sudo apt-get update
+            sudo apt-get install -y imagemagick icnsutils
+          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+            echo "macOS has built-in tools (sips, iconutil)"
+            # ImageMagick already available on macOS runners
+          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+            echo "Installing ImageMagick on Windows..."
+            choco install imagemagick
+          fi
+
+      - name: Prepare icons
+        shell: bash
+        run: |
+          echo "Converting icons for ${{ matrix.os }}..."
+          cd assets
+          chmod +x convert-icons.sh
+          ./convert-icons.sh
+          cd ..
 
       - name: Run Go checks
         run: |
@@ -43,67 +67,7 @@ jobs:
 
       - name: Build CLI application
         shell: bash
-        run: |
-          echo "Building QMLauncher CLI for ${{ matrix.os }}..."
-
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            echo "Building for Linux AMD64..."
-            go build -tags cli -o QMLauncher-cli-linux-amd64 .
-            # Create desktop file for Linux
-            cat > QMLauncher.desktop << 'DELIMITER'
-            [Desktop Entry]
-            Version=1.0
-            Name=QMLauncher
-            Comment=Minecraft Launcher CLI
-            Exec=./QMLauncher-cli-linux-amd64
-            Icon=QMLauncher
-            Terminal=true
-            Type=Application
-            Categories=Game;
-            DELIMITER
-            chmod +x QMLauncher.desktop
-          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
-            echo "Building for Windows AMD64 with embedded icon..."
-            # Create resource file
-            cat > icon.rc << 'EOF'
-            1 ICON "assets/icon.ico"
-            EOF
-            # Convert to .syso using windres (available on Windows runners)
-            windres -i icon.rc -o icon.syso
-            # Build with embedded icon
-            go build -tags cli -o QMLauncher-cli-windows-amd64.exe .
-            # Clean up
-            rm -f icon.rc icon.syso
-          else # macOS
-            echo "Building for macOS AMD64..."
-            go build -tags cli -o QMLauncher-cli-macos-amd64 .
-            # Create basic app bundle for macOS
-            mkdir -p QMLauncher.app/Contents/MacOS
-            mkdir -p QMLauncher.app/Contents/Resources
-            cp QMLauncher-cli-macos-amd64 QMLauncher.app/Contents/MacOS/
-            cp assets/icon.icns QMLauncher.app/Contents/Resources/AppIcon.icns 2>/dev/null || echo "ICNS icon not available"
-            # Create Info.plist
-              cat > QMLauncher.app/Contents/Info.plist << 'EOF'
-              <?xml version="1.0" encoding="UTF-8"?>
-              <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-              <plist version="1.0">
-              <dict>
-                  <key>CFBundleExecutable</key>
-                  <string>QMLauncher-cli-macos-amd64</string>
-                  <key>CFBundleIconFile</key>
-                  <string>AppIcon</string>
-                  <key>CFBundleIdentifier</key>
-                  <string>com.qmlauncher.cli</string>
-                  <key>CFBundleName</key>
-                  <string>QMLauncher</string>
-                  <key>CFBundleVersion</key>
-                  <string>1.0.0</string>
-                  <key>LSUIElement</key>
-                  <true/>
-              </dict>
-              </plist>
-              EOF
-          fi
+        run: ./scripts/build-release.sh
 
       - uses: actions/upload-artifact@v4
         with:
@@ -121,6 +85,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -135,9 +100,8 @@ jobs:
         run: |
           # Flatten all binaries to root dist directory
           find dist/ -name "QMLauncher-cli-*" -type f -exec cp {} dist/ \;
-          echo "Prepared assets:"
-          ls -la dist/
-
+          find dist/ -name "QMLauncher.desktop" -type f -exec cp {} dist/ \; 2>/dev/null || true
+          find dist/ -name "QMLauncher.app" -type d -exec cp -r {} dist/ \; 2>/dev/null || true
 
       - name: Setup GitHub CLI authentication
         run: |
@@ -157,7 +121,7 @@ jobs:
             echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
             echo "🚀 Building for workflow_dispatch release: ${{ inputs.tag }}"
           else
-            # For workflow_dispatch without inputs, find the latest release
+            # For manual workflow_dispatch, find the latest release
             LATEST_TAG=$(gh release list --repo ${{ github.repository }} --limit 1 --json tagName --jq '.[0].tagName')
             if [[ -z "$LATEST_TAG" ]]; then
               echo "❌ No releases found"
@@ -173,34 +137,15 @@ jobs:
           TAG_NAME="${{ steps.get_tag.outputs.tag }}"
           echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
 
-          if [[ "${{ github.event_name }}" == "release" ]]; then
-            # Release already exists, just prepare notes
+          # Always check if release actually exists
+          if gh release view "$TAG_NAME" --repo ${{ github.repository }} >/dev/null 2>&1; then
             echo "✅ Release already exists: $TAG_NAME"
             echo "release_exists=true" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            # For workflow_dispatch with inputs, check if release exists
-            if gh release view "$TAG_NAME" --repo ${{ github.repository }} >/dev/null 2>&1; then
-              echo "✅ Release already exists: $TAG_NAME"
-              echo "release_exists=true" >> $GITHUB_OUTPUT
-            else
-              echo "📦 Release not found, will create it during upload: $TAG_NAME"
-              echo "release_exists=false" >> $GITHUB_OUTPUT
-            fi
           else
-            # For manual workflow_dispatch, create release notes
-            cat > release_notes.md << EOF
-          Release $TAG_NAME
-
-          ## Downloads
-          - Linux: qmlauncher-cli + icon.png
-          - macOS: qmlauncher-cli (with embedded icon)
-          - Windows: qmlauncher-cli.exe (with embedded icon)
-          EOF
-            echo "📝 Created release notes for: $TAG_NAME"
+            echo "📝 Release does not exist, will create: $TAG_NAME"
+            printf "Release %s\n\n## Downloads\n- Linux: qmlauncher-cli + QMLauncher.desktop + QMLauncher.png\n- macOS: qmlauncher-cli + QMLauncher.app (with embedded icon)\n- Windows: qmlauncher-cli.exe (with embedded icon)\n" "$TAG_NAME" > release_notes.md
             echo "release_exists=false" >> $GITHUB_OUTPUT
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Release Assets
         working-directory: .
@@ -210,28 +155,13 @@ jobs:
 
           echo "Uploading assets for release: $TAG_NAME"
 
-          # Create assets directory and copy all binaries and bundles
-          mkdir -p assets
-          find dist/ -name "QMLauncher-cli-*" -type f -exec cp {} assets/ \;
-          find dist/ -name "QMLauncher.desktop" -type f -exec cp {} assets/ \; 2>/dev/null || true
-          find dist/ -name "QMLauncher.app" -type d -exec cp -r {} assets/ \; 2>/dev/null || true
+          # Create release assets directory and copy only binaries (with embedded icons)
+          mkdir -p release-assets
+          find dist/ -name "QMLauncher-cli-*" -type f -exec cp {} release-assets/ \;
 
-          # Copy icons from assets folder
-          if [ -f "assets/icon.png" ]; then
-            cp assets/icon.png assets/QMLauncher.png
-            echo "✅ PNG icon copied as QMLauncher.png"
-          fi
-          if [ -f "assets/icon.ico" ]; then
-            cp assets/icon.ico assets/
-            echo "✅ ICO icon copied"
-          fi
-          if [ -f "assets/icon.icns" ]; then
-            cp assets/icon.icns assets/
-            echo "✅ ICNS icon copied"
-          fi
 
-          echo "Prepared assets:"
-          ls -la assets/
+          echo "Prepared release assets:"
+          ls -la release-assets/
 
           # If release doesn't exist, create it first
           if [[ "$RELEASE_EXISTS" == "false" ]]; then
@@ -247,14 +177,19 @@ jobs:
             fi
           fi
 
-          # Upload all assets to the release
-          if gh release upload "$TAG_NAME" \
-            --repo ${{ github.repository }} \
-            assets/* --clobber; then
-            echo "✅ Assets uploaded successfully to $TAG_NAME"
-          else
-            echo "❌ Failed to upload assets to $TAG_NAME"
-            exit 1
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          # Upload all assets to the release (excluding directories)
+          echo "📤 Uploading assets..."
+          for asset in release-assets/*; do
+            if [ -f "$asset" ]; then
+              echo "Uploading: $(basename "$asset")"
+              if ! gh release upload "$TAG_NAME" \
+                --repo ${{ github.repository }} \
+                "$asset" --clobber; then
+                echo "❌ Failed to upload: $(basename "$asset")"
+                exit 1
+              fi
+            fi
+          done
+
+          echo "✅ Assets uploaded successfully to $TAG_NAME"

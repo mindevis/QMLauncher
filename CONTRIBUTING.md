@@ -143,7 +143,7 @@ make check-icon
 make convert-icons
 
 # Установить зависимости для конвертации
-./assets/install-deps.sh
+# Dependencies are installed automatically in CI/CD
 ```
 
 ## 🐛 Отладка CI/CD
