@@ -1,4 +1,4 @@
-name: Auto Release
+name: Create Release Tag
 
 on:
   push:
@@ -6,18 +6,21 @@ on:
     paths:
       - 'CHANGELOG.md'
 
+permissions:
+  contents: write
+
 jobs:
   check-version:
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.check.outputs.new_version }}
       should_release: ${{ steps.check.outputs.should_release }}
-      changelog: ${{ steps.check.outputs.changelog }}
 
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 2
+          fetch-depth: 0  # Need full history for tag checking
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check for new version in CHANGELOG
         id: check
@@ -36,49 +39,31 @@ jobs:
               echo "New version detected: $VERSION"
               echo "should_release=true" >> $GITHUB_OUTPUT
               echo "new_version=$VERSION" >> $GITHUB_OUTPUT
-
-              # Extract changelog for this version
-              CHANGELOG_CONTENT=$(sed -n '/^## \['$VERSION'\]/,/^## \[/p' CHANGELOG.md | sed -n '1,/^## \[/p' | head -n -1 | tail -n +3)
-              CHANGELOG_CONTENT=$(echo "$CHANGELOG_CONTENT" | sed 's/"/\\"/g' | sed 's/\n/\\n/g')
-              echo "changelog<<EOF" >> $GITHUB_OUTPUT
-              echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
-              echo "EOF" >> $GITHUB_OUTPUT
             fi
           else
             echo "should_release=false" >> $GITHUB_OUTPUT
             echo "No version found in CHANGELOG"
           fi
 
-  create-release:
+  create-tag:
     needs: check-version
     if: needs.check-version.outputs.should_release == 'true'
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Verify tag exists
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push tag
         run: |
           VERSION=${{ needs.check-version.outputs.new_version }}
-          echo "Checking if tag v$VERSION exists..."
-          if git ls-remote --tags origin | grep -q "refs/tags/v$VERSION"; then
-            echo "✅ Tag v$VERSION exists, proceeding with release creation"
-          else
-            echo "❌ Tag v$VERSION does not exist. Please create it manually first."
-            echo "Run: git tag v$VERSION && git push origin v$VERSION"
-            exit 1
-          fi
-
-      - name: Create GitHub release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION=${{ needs.check-version.outputs.new_version }}
-          CHANGELOG="${{ needs.check-version.outputs.changelog }}"
-
-          # Create release with changelog
-          gh release create "v$VERSION" \
-            --title "Release v$VERSION" \
-            --notes "$CHANGELOG" \
-            --draft=false \
-            --prerelease=false
+          echo "Creating tag v$VERSION"
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+          echo "✅ Tag v$VERSION created and pushed"

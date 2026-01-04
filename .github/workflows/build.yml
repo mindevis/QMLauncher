@@ -1,4 +1,4 @@
-name: build
+name: build (DISABLED - now handled by auto-release.yml)
 
 on:
   push:
@@ -20,6 +20,7 @@ permissions:
 
 jobs:
   build:
+    if: false  # Disabled - release creation is now handled by auto-release.yml workflow
     strategy:
       fail-fast: false
       matrix:
