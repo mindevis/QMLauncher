@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-01-04
+
+### Fixed
+- Completely restored and optimized auto-release workflow
+- Fixed version detection logic in CHANGELOG.md
+- Resolved conflicts between auto-release and build workflows
+- Improved stability of automatic release creation process
+
 ## [1.1.0] - 2026-01-04
 
 ### Added
