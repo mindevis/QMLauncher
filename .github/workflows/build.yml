@@ -67,14 +67,25 @@ jobs:
           path: dist/
 
       - name: Display structure of downloaded files
-        run: ls -la dist/
+        run: |
+          echo "Downloaded artifacts structure:"
+          find dist/ -type f -name "qmlauncher-cli*" -exec ls -la {} \;
 
-      - name: Create Release and Upload Assets
+      - name: Prepare release assets
         run: |
           # Flatten all binaries to root dist directory
           find dist/ -name "qmlauncher-cli*" -type f -exec cp {} dist/ \;
+          echo "Prepared assets:"
+          ls -la dist/qmlauncher-cli*
 
-          # Create release with gh CLI
+      - name: Check GitHub CLI authentication
+        run: |
+          gh auth status
+          echo "Current repository: ${{ github.repository }}"
+          echo "Tag name: ${{ github.ref_name }}"
+
+      - name: Create Release and Upload Assets
+        run: |
           TAG_NAME="${{ github.ref_name }}"
           echo "Creating release for tag: $TAG_NAME"
 
@@ -91,13 +102,15 @@ jobs:
           - Windows: qmlauncher-cli.exe
           EOF
 
-          # Create release
+          echo "Creating release..."
           gh release create "$TAG_NAME" \
             --title "Release $TAG_NAME" \
             --notes-file release_notes.md \
             --draft=false \
-            --prerelease=false \
-            dist/qmlauncher-cli* 2>/dev/null || echo "Some files may not exist, continuing..."
+            --prerelease=false
+
+          echo "Release created, now uploading assets..."
+          gh release upload "$TAG_NAME" dist/qmlauncher-cli* --clobber
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
