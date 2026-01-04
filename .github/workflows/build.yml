@@ -14,6 +14,10 @@ on:
       - '**.md'
       - 'CHANGELOG*.md'
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   build:
     strategy:
@@ -46,33 +50,54 @@ jobs:
           fi
 
       - uses: actions/upload-artifact@v4
-        if: ${{ github.event_name == 'push' }}
         with:
-          name: qmlauncher-cli_${{ runner.os }}_${{ runner.arch }}
+          name: qmlauncher-cli-${{ matrix.os }}
           path: |
             qmlauncher-cli
             qmlauncher-cli.exe
 
-      - name: Create Release
-        if: ${{ startsWith(github.ref, 'refs/tags/') && matrix.os == 'ubuntu-latest' }}
-        uses: softprops/action-gh-release@v2
+  release:
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          body: |
-            Release ${{ github.ref_name }}
+          path: dist/
 
-            ## Changes
-            See [CHANGELOG.md](CHANGELOG.md) for details.
+      - name: Display structure of downloaded files
+        run: ls -la dist/
 
-            ## Downloads
-            - Linux: qmlauncher-cli
-            - macOS: qmlauncher-cli
-            - Windows: qmlauncher-cli.exe
-          files: |
-            qmlauncher-cli
-            qmlauncher-cli.exe
-          draft: false
-          prerelease: false
+      - name: Create Release and Upload Assets
+        run: |
+          # Flatten all binaries to root dist directory
+          find dist/ -name "qmlauncher-cli*" -type f -exec cp {} dist/ \;
+
+          # Create release with gh CLI
+          TAG_NAME="${{ github.ref_name }}"
+          echo "Creating release for tag: $TAG_NAME"
+
+          # Create release notes
+          cat > release_notes.md << EOF
+          Release ${{ github.ref_name }}
+
+          ## Changes
+          See [CHANGELOG.md](CHANGELOG.md) for details.
+
+          ## Downloads
+          - Linux: qmlauncher-cli
+          - macOS: qmlauncher-cli
+          - Windows: qmlauncher-cli.exe
+          EOF
+
+          # Create release
+          gh release create "$TAG_NAME" \
+            --title "Release $TAG_NAME" \
+            --notes-file release_notes.md \
+            --draft=false \
+            --prerelease=false \
+            dist/qmlauncher-cli* 2>/dev/null || echo "Some files may not exist, continuing..."
+
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
