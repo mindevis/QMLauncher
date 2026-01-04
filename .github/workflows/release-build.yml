@@ -35,73 +35,92 @@ jobs:
         with:
           go-version: '1.25'
 
-      - name: Install icon conversion dependencies
-        shell: bash
-        run: |
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            echo "Installing dependencies on Ubuntu..."
-            sudo apt-get update
-            sudo apt-get install -y imagemagick icnsutils
-          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
-            echo "macOS has built-in tools (sips, iconutil)"
-            # ImageMagick already available on macOS runners
-          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
-            echo "Installing ImageMagick on Windows..."
-            choco install imagemagick
-          fi
-
-      - name: Prepare icons
-        shell: bash
-        run: |
-          echo "Converting icons for ${{ matrix.os }}..."
-          cd assets
-          chmod +x convert-icons.sh
-          ./convert-icons.sh
-          cd ..
 
       - name: Run Go checks
         run: |
           go vet ./...
           go test ./...
 
-      - name: Build CLI application with icons
+      - name: Build CLI application
         shell: bash
         run: |
+          echo "Building QMLauncher CLI for ${{ matrix.os }}..."
+
           if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            echo "Building for Linux with PNG icon..."
-            go build -tags cli -o qmlauncher-cli .
-            # Copy PNG icon for Linux
-            cp assets/icon.png . 2>/dev/null || echo "PNG icon not available"
+            echo "Building for Linux AMD64..."
+            go build -tags cli -o QMLauncher-cli-linux-amd64 .
+            # Create desktop file for Linux
+            cat > QMLauncher.desktop << 'DELIMITER'
+            [Desktop Entry]
+            Version=1.0
+            Name=QMLauncher
+            Comment=Minecraft Launcher CLI
+            Exec=./QMLauncher-cli-linux-amd64
+            Icon=QMLauncher
+            Terminal=true
+            Type=Application
+            Categories=Game;
+            DELIMITER
+            chmod +x QMLauncher.desktop
           elif [ "${{ matrix.os }}" == "windows-latest" ]; then
-            echo "Building for Windows with ICO icon..."
-            if [ -f "assets/icon.ico" ]; then
-              go build -tags cli -ldflags "-H windowsgui" -o qmlauncher-cli.exe .
-            else
-              echo "ICO icon not found, building without icon..."
-              go build -tags cli -o qmlauncher-cli.exe .
-            fi
+            echo "Building for Windows AMD64 with embedded icon..."
+            # Create resource file
+            cat > icon.rc << 'EOF'
+            1 ICON "assets/icon.ico"
+            EOF
+            # Convert to .syso using windres (available on Windows runners)
+            windres -i icon.rc -o icon.syso
+            # Build with embedded icon
+            go build -tags cli -o QMLauncher-cli-windows-amd64.exe .
+            # Clean up
+            rm -f icon.rc icon.syso
           else # macOS
-            echo "Building for macOS with ICNS icon..."
-            if [ -f "assets/icon.icns" ]; then
-              go build -tags cli -o qmlauncher-cli .
-            else
-              echo "ICNS icon not found, building without icon..."
-              go build -tags cli -o qmlauncher-cli .
-            fi
+            echo "Building for macOS AMD64..."
+            go build -tags cli -o QMLauncher-cli-macos-amd64 .
+            # Create basic app bundle for macOS
+            mkdir -p QMLauncher.app/Contents/MacOS
+            mkdir -p QMLauncher.app/Contents/Resources
+            cp QMLauncher-cli-macos-amd64 QMLauncher.app/Contents/MacOS/
+            cp assets/icon.icns QMLauncher.app/Contents/Resources/AppIcon.icns 2>/dev/null || echo "ICNS icon not available"
+            # Create Info.plist
+              cat > QMLauncher.app/Contents/Info.plist << 'EOF'
+              <?xml version="1.0" encoding="UTF-8"?>
+              <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+              <plist version="1.0">
+              <dict>
+                  <key>CFBundleExecutable</key>
+                  <string>QMLauncher-cli-macos-amd64</string>
+                  <key>CFBundleIconFile</key>
+                  <string>AppIcon</string>
+                  <key>CFBundleIdentifier</key>
+                  <string>com.qmlauncher.cli</string>
+                  <key>CFBundleName</key>
+                  <string>QMLauncher</string>
+                  <key>CFBundleVersion</key>
+                  <string>1.0.0</string>
+                  <key>LSUIElement</key>
+                  <true/>
+              </dict>
+              </plist>
+              EOF
           fi
 
       - uses: actions/upload-artifact@v4
         with:
           name: qmlauncher-cli-${{ matrix.os }}
           path: |
-            qmlauncher-cli
-            qmlauncher-cli.exe
-            icon.png
+            QMLauncher-cli-*
+            QMLauncher.desktop
+            QMLauncher.app/
 
   release:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -110,14 +129,12 @@ jobs:
       - name: Display structure of downloaded files
         run: |
           echo "Downloaded artifacts structure:"
-          find dist/ -type f -name "qmlauncher-cli*" -exec ls -la {} \;
+          find dist/ -type f -name "QMLauncher-cli-*" -exec ls -la {} \;
 
       - name: Prepare release assets
         run: |
           # Flatten all binaries to root dist directory
-          find dist/ -name "qmlauncher-cli*" -type f -exec cp {} dist/ \;
-          # Copy Linux icon if available
-          find dist/ -name "icon.png" -type f -exec cp {} dist/ \; 2>/dev/null || true
+          find dist/ -name "QMLauncher-cli-*" -type f -exec cp {} dist/ \;
           echo "Prepared assets:"
           ls -la dist/
 
@@ -193,11 +210,25 @@ jobs:
 
           echo "Uploading assets for release: $TAG_NAME"
 
-          # Create assets directory and copy all binaries
+          # Create assets directory and copy all binaries and bundles
           mkdir -p assets
-          find dist/ -name "qmlauncher-cli*" -type f -exec cp {} assets/ \;
-          # Also copy icon for Linux
-          find dist/ -name "icon.png" -type f -exec cp {} assets/ \; 2>/dev/null || true
+          find dist/ -name "QMLauncher-cli-*" -type f -exec cp {} assets/ \;
+          find dist/ -name "QMLauncher.desktop" -type f -exec cp {} assets/ \; 2>/dev/null || true
+          find dist/ -name "QMLauncher.app" -type d -exec cp -r {} assets/ \; 2>/dev/null || true
+
+          # Copy icons from assets folder
+          if [ -f "assets/icon.png" ]; then
+            cp assets/icon.png assets/QMLauncher.png
+            echo "✅ PNG icon copied as QMLauncher.png"
+          fi
+          if [ -f "assets/icon.ico" ]; then
+            cp assets/icon.ico assets/
+            echo "✅ ICO icon copied"
+          fi
+          if [ -f "assets/icon.icns" ]; then
+            cp assets/icon.icns assets/
+            echo "✅ ICNS icon copied"
+          fi
 
           echo "Prepared assets:"
           ls -la assets/

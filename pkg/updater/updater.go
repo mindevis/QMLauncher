@@ -109,29 +109,52 @@ func (u *Updater) findAssetForPlatform(assets []Asset) *Asset {
 	os := runtime.GOOS
 	arch := runtime.GOARCH
 
+	// Normalize OS names for matching
+	osNormalized := os
+	switch os {
+	case "windows":
+		osNormalized = "windows"
+	case "darwin":
+		osNormalized = "darwin"
+	case "linux":
+		osNormalized = "linux"
+	}
+
 	// Normalize architecture names
+	archNormalized := arch
 	switch arch {
 	case "amd64":
-		// Keep amd64 as is, also check for x64
+		archNormalized = "amd64"
 	case "386":
-		arch = "ia32"
+		archNormalized = "386"
 	}
 
 	for _, asset := range assets {
 		name := strings.ToLower(asset.Name)
 
-		// Check for platform-specific patterns
-		if strings.Contains(name, os) && (strings.Contains(name, arch) || (arch == "amd64" && strings.Contains(name, "x64"))) {
-			return &asset
+		// For our release naming convention:
+		// - Linux: QMLauncher-cli-linux-amd64 (no extension)
+		// - macOS: QMLauncher-cli-macos-amd64 (no extension)
+		// - Windows: QMLauncher-cli-windows-amd64.exe
+
+		// Check platform by release naming convention
+		switch os {
+		case "windows":
+			if strings.Contains(name, "windows") && strings.Contains(name, "amd64") && strings.HasSuffix(name, ".exe") {
+				return &asset
+			}
+		case "darwin":
+			if strings.Contains(name, "macos") && strings.Contains(name, "amd64") && !strings.Contains(name, ".exe") {
+				return &asset
+			}
+		case "linux":
+			if strings.Contains(name, "linux") && strings.Contains(name, "amd64") && !strings.Contains(name, ".exe") {
+				return &asset
+			}
 		}
 
-		// Special handling for Windows
-		if os == "windows" && strings.Contains(name, "windows") && strings.Contains(name, arch) {
-			return &asset
-		}
-
-		// Special handling for macOS
-		if os == "darwin" && strings.Contains(name, "darwin") && strings.Contains(name, arch) {
+		// Fallback: check for platform and arch in filename
+		if strings.Contains(name, osNormalized) && strings.Contains(name, archNormalized) {
 			return &asset
 		}
 	}
