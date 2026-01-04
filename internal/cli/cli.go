@@ -479,14 +479,10 @@ func runInteractiveMode(verbosity int) (func(int), int) {
 		os.Args = fullArgs
 
 		// Execute command
-		_, code := executeCommand(CurrentVerbosity)
+		executeCommand(CurrentVerbosity)
 
 		// Restore original args
 		os.Args = origArgs
-
-		if code != 0 {
-			fmt.Printf("%s %d\n", output.Translate("interactive.error"), code)
-		}
 
 		fmt.Println()
 	}
