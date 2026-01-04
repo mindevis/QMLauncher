@@ -1,0 +1,110 @@
+name: Semantic Release
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+  packages: write
+
+jobs:
+  release:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install semantic-release
+        run: |
+          npm install -g semantic-release
+          npm install -g @semantic-release/git @semantic-release/changelog @semantic-release/github @semantic-release/exec
+          npm install -g conventional-changelog-conventionalcommits
+
+      - name: Run semantic-release
+        id: semantic
+        run: |
+          # Run semantic-release in dry-run mode first to check
+          echo "=== Semantic Release Dry Run Output ==="
+          set +e  # Don't exit on error for dry-run
+          DRY_RUN_OUTPUT=$(npx semantic-release --dry-run --no-ci 2>&1)
+          DRY_RUN_EXIT_CODE=$?
+          set -e  # Restore exit on error
+          echo "Dry-run exit code: $DRY_RUN_EXIT_CODE"
+          echo "$DRY_RUN_OUTPUT"
+          echo "=== End Dry Run Output ==="
+
+          # Check if semantic-release found any commits for release
+          if echo "$DRY_RUN_OUTPUT" | grep -q "next release version"; then
+            echo "New release will be created"
+            echo "new_release_published=true" >> $GITHUB_OUTPUT
+
+            # Extract next version
+            VERSION=$(echo "$DRY_RUN_OUTPUT" | grep "next release version" | sed 's/.*next release version is \([0-9.]*\).*/\1/')
+            if [ -n "$VERSION" ]; then
+              echo "new_release_version<<EOF" >> $GITHUB_OUTPUT
+              echo "$VERSION" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+              echo "Next version: $VERSION"
+            else
+              echo "Could not determine next version"
+              echo "new_release_published=false" >> $GITHUB_OUTPUT
+            fi
+          elif echo "$DRY_RUN_OUTPUT" | grep -q "There are no relevant changes"; then
+            echo "No relevant changes found for release"
+            echo "new_release_published=false" >> $GITHUB_OUTPUT
+          elif echo "$DRY_RUN_OUTPUT" | grep -q "No new release needed"; then
+            echo "No new release needed"
+            echo "new_release_published=false" >> $GITHUB_OUTPUT
+          else
+            echo "Semantic-release error or unexpected output"
+            echo "new_release_published=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  trigger-release-build:
+    needs: release
+    if: >
+      needs.release.outputs.new_release_published == 'true' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup GitHub CLI
+        run: |
+          echo "Setting up GitHub CLI..."
+          echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
+
+      - name: Trigger release build workflow
+        run: |
+          echo "🎯 Release detected: ${{ needs.release.outputs.new_release_version }}"
+          echo "🏗️  Triggering cross-platform build workflow..."
+
+          # Trigger the release-build workflow
+          if gh workflow run release-build.yml \
+            --repo ${{ github.repository }} \
+            --ref main \
+            -f version="${{ needs.release.outputs.new_release_version }}" \
+            -f tag="v${{ needs.release.outputs.new_release_version }}"; then
+            echo "✅ Release build workflow triggered successfully"
+          else
+            echo "❌ Failed to trigger release build workflow"
+            exit 1
+          fi

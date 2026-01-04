@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=QMLauncher
+Comment=Minecraft launcher with mod support
+Exec=/usr/local/bin/qmlauncher
+Icon=/usr/local/share/qmlauncher/icon.png
+Terminal=false
+Type=Application
+Categories=Game;
+Keywords=minecraft;launcher;mod;

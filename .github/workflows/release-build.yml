@@ -1,0 +1,229 @@
+name: Release Build
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version'
+        required: true
+        type: string
+      tag:
+        description: 'Release tag'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: 'main'
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+
+      - name: Install icon conversion dependencies
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            echo "Installing dependencies on Ubuntu..."
+            sudo apt-get update
+            sudo apt-get install -y imagemagick icnsutils
+          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
+            echo "macOS has built-in tools (sips, iconutil)"
+            # ImageMagick already available on macOS runners
+          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+            echo "Installing ImageMagick on Windows..."
+            choco install imagemagick
+          fi
+
+      - name: Prepare icons
+        shell: bash
+        run: |
+          echo "Converting icons for ${{ matrix.os }}..."
+          cd assets
+          chmod +x convert-icons.sh
+          ./convert-icons.sh
+          cd ..
+
+      - name: Run Go checks
+        run: |
+          go vet ./...
+          go test ./...
+
+      - name: Build CLI application with icons
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
+            echo "Building for Linux with PNG icon..."
+            go build -tags cli -o qmlauncher-cli .
+            # Copy PNG icon for Linux
+            cp assets/icon.png . 2>/dev/null || echo "PNG icon not available"
+          elif [ "${{ matrix.os }}" == "windows-latest" ]; then
+            echo "Building for Windows with ICO icon..."
+            if [ -f "assets/icon.ico" ]; then
+              go build -tags cli -ldflags "-H windowsgui" -o qmlauncher-cli.exe .
+            else
+              echo "ICO icon not found, building without icon..."
+              go build -tags cli -o qmlauncher-cli.exe .
+            fi
+          else # macOS
+            echo "Building for macOS with ICNS icon..."
+            if [ -f "assets/icon.icns" ]; then
+              go build -tags cli -o qmlauncher-cli .
+            else
+              echo "ICNS icon not found, building without icon..."
+              go build -tags cli -o qmlauncher-cli .
+            fi
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qmlauncher-cli-${{ matrix.os }}
+          path: |
+            qmlauncher-cli
+            qmlauncher-cli.exe
+            icon.png
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+
+      - name: Display structure of downloaded files
+        run: |
+          echo "Downloaded artifacts structure:"
+          find dist/ -type f -name "qmlauncher-cli*" -exec ls -la {} \;
+
+      - name: Prepare release assets
+        run: |
+          # Flatten all binaries to root dist directory
+          find dist/ -name "qmlauncher-cli*" -type f -exec cp {} dist/ \;
+          # Copy Linux icon if available
+          find dist/ -name "icon.png" -type f -exec cp {} dist/ \; 2>/dev/null || true
+          echo "Prepared assets:"
+          ls -la dist/
+
+
+      - name: Setup GitHub CLI authentication
+        run: |
+          echo "Setting up GitHub CLI authentication..."
+          echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
+          gh auth status
+          echo "Current repository: ${{ github.repository }}"
+
+      - name: Determine release tag
+        id: get_tag
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+            echo "📦 Building for published release: ${{ github.event.release.tag_name }}"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            # Use inputs from workflow_dispatch
+            echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+            echo "🚀 Building for workflow_dispatch release: ${{ inputs.tag }}"
+          else
+            # For workflow_dispatch without inputs, find the latest release
+            LATEST_TAG=$(gh release list --repo ${{ github.repository }} --limit 1 --json tagName --jq '.[0].tagName')
+            if [[ -z "$LATEST_TAG" ]]; then
+              echo "❌ No releases found"
+              exit 1
+            fi
+            echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+            echo "🔄 Building for latest release: $LATEST_TAG"
+          fi
+
+      - name: Setup release notes
+        id: setup_release
+        run: |
+          TAG_NAME="${{ steps.get_tag.outputs.tag }}"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            # Release already exists, just prepare notes
+            echo "✅ Release already exists: $TAG_NAME"
+            echo "release_exists=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            # For workflow_dispatch with inputs, check if release exists
+            if gh release view "$TAG_NAME" --repo ${{ github.repository }} >/dev/null 2>&1; then
+              echo "✅ Release already exists: $TAG_NAME"
+              echo "release_exists=true" >> $GITHUB_OUTPUT
+            else
+              echo "📦 Release not found, will create it during upload: $TAG_NAME"
+              echo "release_exists=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            # For manual workflow_dispatch, create release notes
+            cat > release_notes.md << EOF
+          Release $TAG_NAME
+
+          ## Downloads
+          - Linux: qmlauncher-cli + icon.png
+          - macOS: qmlauncher-cli (with embedded icon)
+          - Windows: qmlauncher-cli.exe (with embedded icon)
+          EOF
+            echo "📝 Created release notes for: $TAG_NAME"
+            echo "release_exists=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Assets
+        working-directory: .
+        run: |
+          TAG_NAME="${{ steps.setup_release.outputs.tag_name }}"
+          RELEASE_EXISTS="${{ steps.setup_release.outputs.release_exists }}"
+
+          echo "Uploading assets for release: $TAG_NAME"
+
+          # Create assets directory and copy all binaries
+          mkdir -p assets
+          find dist/ -name "qmlauncher-cli*" -type f -exec cp {} assets/ \;
+          # Also copy icon for Linux
+          find dist/ -name "icon.png" -type f -exec cp {} assets/ \; 2>/dev/null || true
+
+          echo "Prepared assets:"
+          ls -la assets/
+
+          # If release doesn't exist, create it first
+          if [[ "$RELEASE_EXISTS" == "false" ]]; then
+            echo "Creating release $TAG_NAME..."
+            if gh release create "$TAG_NAME" \
+              --repo ${{ github.repository }} \
+              --title "Release $TAG_NAME" \
+              --notes "Automated release $TAG_NAME created by CI/CD pipeline."; then
+              echo "✅ Release created: $TAG_NAME"
+            else
+              echo "❌ Failed to create release $TAG_NAME"
+              exit 1
+            fi
+          fi
+
+          # Upload all assets to the release
+          if gh release upload "$TAG_NAME" \
+            --repo ${{ github.repository }} \
+            assets/* --clobber; then
+            echo "✅ Assets uploaded successfully to $TAG_NAME"
+          else
+            echo "❌ Failed to upload assets to $TAG_NAME"
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,82 @@
+version: 2
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters-settings:
+  gocyclo:
+    min-complexity: 15
+  dupl:
+    threshold: 100
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  misspell:
+    locale: US
+  lll:
+    line-length: 120
+  goimports:
+    local-prefixes: github.com/mindeivs/QMLauncher
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport # https://github.com/go-critic/go-critic/issues/845
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - wrapperFunc
+  funlen:
+    lines: 100
+    statements: 50
+  depguard:
+    rules:
+      Main:
+        deny:
+          - pkg: "github.com/pkg/errors"
+            desc: "Use standard library errors instead"
+        allow:
+          - $gostd
+  mnd:
+    ignored-numbers:
+      - '0666'
+      - '0755'
+      - '42'
+    ignored-functions:
+      - strings.SplitN
+
+linters:
+  disable-all: true
+  enable:
+    - govet
+    - ineffassign
+    - unused
+    - staticcheck
+  disable:
+    - errcheck
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gomnd
+    - path: main\.go
+      linters:
+        - gomnd
+  exclude-use-default: false
+  exclude:
+    # Exclude some gosec messages
+    - "G404" # Use of weak random number generator
+    - "G304" # Potential file inclusion via variable
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  new: false
