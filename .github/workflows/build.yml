@@ -86,11 +86,9 @@ jobs:
           echo "Current repository: ${{ github.repository }}"
           echo "Tag name: ${{ github.ref_name }}"
 
-      - name: Create Release and Upload Assets
+      - name: Create Release
+        id: create_release
         run: |
-          TAG_NAME="${{ github.ref_name }}"
-          echo "Creating release for tag: $TAG_NAME"
-
           # Create release notes
           cat > release_notes.md << EOF
           Release ${{ github.ref_name }}
@@ -104,15 +102,43 @@ jobs:
           - Windows: qmlauncher-cli.exe
           EOF
 
-          echo "Creating release..."
-          gh release create "$TAG_NAME" \
+          TAG_NAME="${{ github.ref_name }}"
+          echo "Creating release for tag: $TAG_NAME"
+
+          # Create release and capture output
+          if gh release create "$TAG_NAME" \
             --title "Release $TAG_NAME" \
             --notes-file release_notes.md \
             --draft=false \
-            --prerelease=false
+            --prerelease=false; then
+            echo "release_created=true" >> $GITHUB_OUTPUT
+            echo "✅ Release created successfully"
+          else
+            echo "release_created=false" >> $GITHUB_OUTPUT
+            echo "❌ Failed to create release"
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          echo "Release created, now uploading assets..."
-          gh release upload "$TAG_NAME" dist/qmlauncher-cli* --clobber
+      - name: Upload Release Assets
+        if: steps.create_release.outputs.release_created == 'true'
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          echo "Uploading assets for release: $TAG_NAME"
 
+          # Flatten all binaries to root dist directory
+          find dist/ -name "qmlauncher-cli*" -type f -exec cp {} dist/ \;
+
+          echo "Prepared assets:"
+          ls -la dist/qmlauncher-cli*
+
+          # Upload assets
+          if gh release upload "$TAG_NAME" dist/qmlauncher-cli* --clobber; then
+            echo "✅ Assets uploaded successfully"
+          else
+            echo "❌ Failed to upload assets"
+            exit 1
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
