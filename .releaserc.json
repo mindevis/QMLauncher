@@ -19,6 +19,12 @@
       }
     ],
     [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "sed -i 's/Current = \".*\"/Current = \"${nextRelease.version}\"/' internal/version/version.go"
+      }
+    ],
+    [
       "@semantic-release/release-notes-generator",
       {
         "preset": "conventionalcommits",
@@ -55,8 +61,7 @@
       "@semantic-release/git",
       {
         "assets": [
-          "CHANGELOG.md",
-          "internal/cli/cli.go"
+          "CHANGELOG.md"
         ],
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }

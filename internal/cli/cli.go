@@ -5,6 +5,7 @@ import (
 	"QMLauncher/internal/cli/output"
 	"QMLauncher/internal/meta"
 	"QMLauncher/internal/network"
+	"QMLauncher/internal/version"
 	env "QMLauncher/pkg"
 	"QMLauncher/pkg/auth"
 	"bufio"
@@ -26,9 +27,10 @@ import (
 )
 
 const (
-	name    = "QMLauncher"
-	version = "1.1.0"
+	name = "QMLauncher"
 )
+
+// Version is imported from version package
 
 var CurrentVerbosity int
 var InteractiveDebugMode bool // Exported for use in other packages
@@ -119,7 +121,7 @@ func parseVerbosityFromArgs() {
 type aboutCmd struct{}
 
 func (aboutCmd) Run(ctx *kong.Context) error {
-	color.New(color.Bold).Println(name, version)
+	color.New(color.Bold).Println(name, version.Current)
 	color.New(color.Underline).Println(output.Translate("launcher.description"))
 	fmt.Println(output.Translate("launcher.copyright"))
 	fmt.Println(output.Translate("launcher.license"))

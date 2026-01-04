@@ -3,7 +3,7 @@
 
 # Build configuration
 APP_NAME := QMLauncher
-VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+VERSION := 1.0.0
 BUILD_DIR := build
 
 # Detect current platform

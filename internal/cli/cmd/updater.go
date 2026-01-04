@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"QMLauncher/internal/cli/output"
+	"QMLauncher/internal/version"
 	"QMLauncher/pkg/updater"
 
 	"github.com/alecthomas/kong"
@@ -172,8 +173,8 @@ func createUpdater() *updater.Updater {
 		cacheDir = filepath.Join(homeDir, ".qmlauncher", "cache")
 	}
 
-	// Get current version (in a real app, this would come from build info)
-	currentVer := "1.1.0" // TODO: Get from build info
+	// Get current version from version package
+	currentVer := version.Current
 
 	return updater.New("mindevis", "QMLauncher", currentVer, cacheDir)
 }
