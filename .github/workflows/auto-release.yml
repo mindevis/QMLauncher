@@ -22,33 +22,31 @@ jobs:
       - name: Check for new version in CHANGELOG
         id: check
         run: |
-          # Get the latest commit message
-          LATEST_COMMIT=$(git log -1 --pretty=format:"%s")
+          # Extract version from CHANGELOG.md
+          VERSION_LINE=$(grep -E "^## \[.*\] -" CHANGELOG.md | head -1)
+          if [[ $VERSION_LINE =~ \[([0-9]+\.[0-9]+\.[0-9]+)\] ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+            echo "Found version in CHANGELOG: $VERSION"
 
-          # Check if this is a version bump commit
-          if [[ "$LATEST_COMMIT" == *"release:"* ]] || [[ "$LATEST_COMMIT" == *"feat:"* ]] || [[ "$LATEST_COMMIT" == *"fix:"* ]]; then
-            echo "should_release=true" >> $GITHUB_OUTPUT
-
-            # Extract version from CHANGELOG.md
-            VERSION_LINE=$(grep -E "^## \[.*\] -" CHANGELOG.md | head -1)
-            if [[ $VERSION_LINE =~ \[([0-9]+\.[0-9]+\.[0-9]+)\] ]]; then
-              VERSION="${BASH_REMATCH[1]}"
-              echo "new_version=$VERSION" >> $GITHUB_OUTPUT
-              echo "Found version: $VERSION"
-            else
+            # Check if this version tag already exists
+            if git ls-remote --tags origin | grep -q "refs/tags/v$VERSION"; then
+              echo "Tag v$VERSION already exists, skipping release creation"
               echo "should_release=false" >> $GITHUB_OUTPUT
-              echo "No version found in CHANGELOG"
-            fi
+            else
+              echo "New version detected: $VERSION"
+              echo "should_release=true" >> $GITHUB_OUTPUT
+              echo "new_version=$VERSION" >> $GITHUB_OUTPUT
 
-            # Extract changelog for this version
-            CHANGELOG_CONTENT=$(sed -n '/^## \['$VERSION'\]/,/^## \[/p' CHANGELOG.md | sed -n '1,/^## \[/p' | head -n -1 | tail -n +3)
-            CHANGELOG_CONTENT=$(echo "$CHANGELOG_CONTENT" | sed 's/"/\\"/g' | sed 's/\n/\\n/g')
-            echo "changelog<<EOF" >> $GITHUB_OUTPUT
-            echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+              # Extract changelog for this version
+              CHANGELOG_CONTENT=$(sed -n '/^## \['$VERSION'\]/,/^## \[/p' CHANGELOG.md | sed -n '1,/^## \[/p' | head -n -1 | tail -n +3)
+              CHANGELOG_CONTENT=$(echo "$CHANGELOG_CONTENT" | sed 's/"/\\"/g' | sed 's/\n/\\n/g')
+              echo "changelog<<EOF" >> $GITHUB_OUTPUT
+              echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+            fi
           else
             echo "should_release=false" >> $GITHUB_OUTPUT
-            echo "No release commit detected"
+            echo "No version found in CHANGELOG"
           fi
 
   create-release:
@@ -59,11 +57,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Create git tag
+      - name: Verify tag exists
         run: |
           VERSION=${{ needs.check-version.outputs.new_version }}
-          git tag "v$VERSION"
-          git push origin "v$VERSION"
+          echo "Checking if tag v$VERSION exists..."
+          if git ls-remote --tags origin | grep -q "refs/tags/v$VERSION"; then
+            echo "✅ Tag v$VERSION exists, proceeding with release creation"
+          else
+            echo "❌ Tag v$VERSION does not exist. Please create it manually first."
+            echo "Run: git tag v$VERSION && git push origin v$VERSION"
+            exit 1
+          fi
 
       - name: Create GitHub release
         env:
