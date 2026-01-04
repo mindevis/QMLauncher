@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.5] - 2026-01-04
+
+### Fixed
+- Completely fixed "is a directory" asset upload error in GitHub Actions
+- Created separate assets directory for release binaries
+- Excluded conflicts between artifact directories and release files
+- Ensured successful upload of all platform binaries
+
+### Changed
+- Optimized asset upload structure in release workflow
+- Improved file copying logic before upload
+
 ## [1.5.4] - 2026-01-04
 
 ### Fixed
