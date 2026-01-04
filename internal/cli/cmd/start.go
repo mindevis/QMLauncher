@@ -3,6 +3,7 @@ package cmd
 import (
 	env "QMLauncher/pkg"
 	"bytes"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -31,6 +32,22 @@ type QMServerCheckResponse struct {
 	Version   string `json:"version,omitempty"`
 	IsPremium bool   `json:"is_premium,omitempty"`
 	Error     string `json:"error,omitempty"`
+}
+
+// FileInfo represents file information with MD5 hash
+type FileInfo struct {
+	Path     string `json:"path"`
+	MD5      string `json:"md5"`
+	Size     int64  `json:"size"`
+	Modified int64  `json:"modified"`
+}
+
+// DataManifest represents the data.json structure
+type DataManifest struct {
+	ServerID   uint       `json:"server_id"`
+	ServerUUID string     `json:"server_uuid"`
+	Files      []FileInfo `json:"files"`
+	Generated  int64      `json:"generated"`
 }
 
 // ServerConnection represents a server connection entry
@@ -200,6 +217,145 @@ func checkQMServerCloud(serverAddr string) (*QMServerCheckResponse, error) {
 	return &response, nil
 }
 
+// downloadDataManifest downloads data.json from QMServer Cloud for the given server
+func downloadDataManifest(serverID uint, qmServerHost string, qmServerPort int) (*DataManifest, error) {
+	url := fmt.Sprintf("http://%s:%d/api/v1/check/data/%d", qmServerHost, qmServerPort, serverID)
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to QMServer Cloud: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("QMServer Cloud returned status %d", resp.StatusCode)
+	}
+
+	var manifest DataManifest
+	if err := json.NewDecoder(resp.Body).Decode(&manifest); err != nil {
+		return nil, fmt.Errorf("failed to parse data manifest: %w", err)
+	}
+
+	return &manifest, nil
+}
+
+// downloadFile downloads a file from QMServer Cloud
+func downloadFile(serverID uint, filePath string, qmServerHost string, qmServerPort int, destPath string) error {
+	url := fmt.Sprintf("http://%s:%d/api/v1/download/%d/%s", qmServerHost, qmServerPort, serverID, filePath)
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		return fmt.Errorf("failed to download file: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to download file, status: %d", resp.StatusCode)
+	}
+
+	// Create destination directory
+	if err := os.MkdirAll(filepath.Dir(destPath), 0755); err != nil {
+		return fmt.Errorf("failed to create destination directory: %w", err)
+	}
+
+	// Create destination file
+	file, err := os.Create(destPath)
+	if err != nil {
+		return fmt.Errorf("failed to create destination file: %w", err)
+	}
+	defer file.Close()
+
+	// Copy content
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to save file: %w", err)
+	}
+
+	return nil
+}
+
+// calculateFileMD5 calculates MD5 hash of a file
+func calculateFileMD5(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	hash := md5.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+}
+
+// syncInstanceFiles synchronizes files between instance and QMServer Cloud data manifest
+func syncInstanceFiles(inst launcher.Instance, manifest *DataManifest, qmServerHost string, qmServerPort int) error {
+	instanceDir := inst.Dir()
+
+	// Create a map of files from manifest for quick lookup
+	manifestFiles := make(map[string]FileInfo)
+	for _, file := range manifest.Files {
+		manifestFiles[file.Path] = file
+	}
+
+	// Sync files from manifest
+	for filePath, fileInfo := range manifestFiles {
+		instanceFilePath := filepath.Join(instanceDir, filePath)
+
+		// Special handling for certain files and directories
+		shouldSkipDownload := false
+
+		// Don't overwrite options.txt if it exists
+		if filePath == "options.txt" {
+			if _, err := os.Stat(instanceFilePath); err == nil {
+				shouldSkipDownload = true
+			}
+		}
+
+		// Don't overwrite files in config directory if they exist
+		if strings.HasPrefix(filePath, "config/") {
+			if _, err := os.Stat(instanceFilePath); err == nil {
+				shouldSkipDownload = true
+			}
+		}
+
+		if shouldSkipDownload {
+			continue
+		}
+
+		// Check if file exists and has matching MD5
+		if _, err := os.Stat(instanceFilePath); err == nil {
+			// Calculate MD5 of existing file
+			existingMD5, err := calculateFileMD5(instanceFilePath)
+			if err != nil {
+				output.Warning("Не удалось рассчитать MD5 для существующего файла %s: %v", instanceFilePath, err)
+				continue
+			}
+
+			// If MD5 matches, skip download
+			if existingMD5 == fileInfo.MD5 {
+				continue
+			}
+		}
+
+		// Download file
+		output.Info("Синхронизация файла: %s", filePath)
+		if err := downloadFile(manifest.ServerID, filePath, qmServerHost, qmServerPort, instanceFilePath); err != nil {
+			output.Warning("Не удалось скачать файл %s: %v", filePath, err)
+			continue
+		}
+	}
+
+	// Note: We don't remove files that exist in instance but not in manifest
+	// This preserves user modifications and custom files
+
+	return nil
+}
+
 // QuietRunner runs the game without showing its console output
 func QuietRunner(cmd *exec.Cmd) error {
 	return cmd.Run()
@@ -272,6 +428,9 @@ func (c *StartCmd) Run(ctx *kong.Context, verbosity int) error {
 	}
 
 	config := inst.Config
+
+	// Initialize cloud response variable
+	var cloudResponse *QMServerCheckResponse
 
 	// Handle memory settings - only save to config if values differ from saved ones
 	configChanged := false
@@ -406,6 +565,21 @@ func (c *StartCmd) Run(ctx *kong.Context, verbosity int) error {
 
 	if err != nil {
 		return err
+	}
+
+	// Sync files with QMServer Cloud if enabled
+	if config.IsUsingQMServerCloud && cloudResponse != nil && cloudResponse.Exists {
+		output.Info("Синхронизация файлов с QMServer Cloud...")
+		manifest, err := downloadDataManifest(cloudResponse.ServerID, config.QMServerHost, config.QMServerPort)
+		if err != nil {
+			output.Warning("Не удалось скачать манифест данных: %v", err)
+		} else {
+			if err := syncInstanceFiles(inst, manifest, config.QMServerHost, config.QMServerPort); err != nil {
+				output.Warning("Ошибка синхронизации файлов: %v", err)
+			} else {
+				output.Success("Синхронизация файлов завершена")
+			}
+		}
 	}
 
 	if c.Prepare {
