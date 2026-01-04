@@ -169,7 +169,7 @@ func createUpdater() *updater.Updater {
 	}
 
 	// Get current version (in a real app, this would come from build info)
-	currentVer := "1.2.0" // TODO: Get from build info
+	currentVer := "1.1.0" // TODO: Get from build info
 
 	return updater.New("mindevis", "QMLauncher", currentVer, cacheDir)
 }
