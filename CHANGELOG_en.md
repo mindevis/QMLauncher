@@ -5,160 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.5.5] - 2026-01-04
-
-### Fixed
-- Completely fixed "is a directory" asset upload error in GitHub Actions
-- Created separate assets directory for release binaries
-- Excluded conflicts between artifact directories and release files
-- Ensured successful upload of all platform binaries
-
-### Changed
-- Optimized asset upload structure in release workflow
-- Improved file copying logic before upload
-
-## [1.5.4] - 2026-01-04
-
-### Fixed
-- Finally fixed "not a git repository" error in GitHub Actions
-- Added working-directory and --repo parameters for GitHub CLI commands
-- Ensured correct operation of gh release create and gh release upload
-- Resolved all repository context issues in release workflow
-
-### Changed
-- Optimized GitHub CLI parameters for stable operation
-- Improved error handling in release process
-
-## [1.5.3] - 2026-01-04
-
-### Fixed
-- Completely fixed GitHub Actions release creation process
-- Added GitHub CLI authentication before creating releases
-- Separated release creation and asset upload steps for reliability
-- Resolved "release not found" error when uploading assets
-
-### Changed
-- Improved GitHub Actions workflow structure with conditional steps
-- Added release creation status check before uploading files
-
-## [1.5.2] - 2026-01-04
+## [1.1.0] - 2026-01-04
 
 ### Added
-- **NEW**: Automatic data.json generation when files are detected in QMServer data directory
-- Interactive profile data management commands in QMServer
-
-### Changed
-- Improved GitHub Actions release creation process with separate stages
-- Added additional debug information in release workflow
-
-### Fixed
-- Fixed missing data directories issue in QMServer
-- Stabilized asset upload process for GitHub releases
-
-## [1.5.1] - 2026-01-04
-
-### Fixed
-- Stabilized automatic release creation process in GitHub Actions
-- Improved artifact handling across different platforms
-- Fixed binary file paths in release workflow
-
-## [1.5.0] - 2026-01-04
-
-### Added
-- **NEW**: Automatic release creation on GitHub when version tags are pushed
-- GitHub Actions integration for automated release publishing
-- Cross-platform release support (Linux, macOS, Windows)
-
-### Changed
-- Improved interactive mode - removed unnecessary command error messages
-- Optimized build and publishing process
-
-### Fixed
-- Fixed binary file tracking in Git (updated .gitignore)
-- Removed annoying "Command execution error" messages in interactive mode
-
-## [1.4.0] - 2026-01-04
-
-### Added
-- **NEW**: QMServer Cloud integration for server verification before launch
+- **NEW**: Full integration with QMServer Cloud for server verification before launch
 - **NEW**: Premium server status display in instance and connection tables
 - **NEW**: Minecraft client launch progress bar for better user experience
+- **NEW**: Automatic data.json generation when files are detected in QMServer data directory
+- **NEW**: Interactive profile data management commands in QMServer
 - Automatic QMServer Cloud information saving in instance config
 - API integration with QMServer Cloud at http://178.172.201.248:8240
+- Fully automated release system on GitHub
+- Stable CI/CD process with cross-platform builds
 
 ### Changed
 - Removed timestamp column from recent connections table for compactness
 - Updated instance table with QMServer Cloud and Premium status columns
+- Improved interactive mode - removed unnecessary command error messages
 
 ### Fixed
-- Fixed GitHub Actions workflow for cross-platform builds (added shell: bash)
-
-## [1.3.0] - 2026-01-03
-
-### Changed
-- **BREAKING**: Project converted to CLI-only mode, GUI support (Wails) removed
-- Simplified architecture - command line only without desktop interface
-- Optimized dependencies, removed Wails and frontend packages
-- Makefile updated for CLI builds only
-
-### Removed
-- Completely removed GUI mode and Wails integration
-- Removed frontend part (React/TypeScript)
-- Removed desktop-specific dependencies and configurations
-
-## [1.2.0] - 2026-01-03
-
-### Added
-- **NEW**: Full command history in interactive mode with arrow key navigation ↑/↓
-- **NEW**: Convenient command aliases: `i` (instance), `s` (start), `is` (instance start)
-- **NEW**: Minecraft log output control - quiet mode by default, detailed logs with `--verbosity=extra`
-- **NEW**: Recent server connections system with quick launch by number
-- **NEW**: Last server and username saved in instance config (.toml)
-- Quote support in command arguments for names with spaces
-- Improved launch and status messages
-
-### Changed
-- Launch message: "Launching Minecraft client with account: %s"
-- Interactive mode now shows recent connections table on startup
-- Optimized command output without duplication
-
-### Fixed
-- Eliminated command duplication in interactive mode
-- Fixed quote parsing in arguments
-- Improved command history navigation
-
-## [1.1.0] - 2026-01-02
-
-### Added
-- **NEW**: Comprehensive auto-update system with GitHub Releases integration
-- **NEW**: Smart instance import with merge mode for adding missing files only
-- UI update notifications with download progress and changelog display
-- CLI commands for update management: `qm update check`, `qm update download`, `qm update info`
-- Automatic binary replacement and application restart after updates
-- Cross-platform update support for Windows, macOS, and Linux
-- Enhanced instance import functionality with `--merge` flag
-- Automatic release system triggered by CHANGELOG.md updates
-- Improved import error messages with clear guidance for users
-- Cross-platform path normalization in imported instance files (Windows/Linux)
-- Automatic conversion of backslashes to forward slashes in text configuration files during import
-- Full TypeScript configuration with strict type checking
-- Custom hooks for Wails runtime and backend communication
-- React Context providers for theme and app state management
-- Comprehensive type definitions for Wails integration
-- Enhanced development workflow with TypeScript tooling
-
-### Changed
-- **BREAKING**: Removed German language support, set Russian as default language
-- Simplified localization system to support only English and Russian
-- Russian language is now the primary language with English as fallback
-- Russian is now the default language for CHANGELOG.md and README.md
-- **BREAKING**: Migrated frontend from Vue.js to React with full TypeScript support
-- Replaced shadcn-vue with shadcn/ui components
-- Updated build system to use Vite with React instead of Vue
-- Enhanced type safety with comprehensive TypeScript definitions
-- Added custom hooks for Wails backend integration
-- Implemented React Context for global state management
-- Improved instance import commands with better error handling and user guidance
+- Fixed binary file tracking in Git (updated .gitignore)
+- Completely fixed GitHub Actions release creation process
+- Added GitHub CLI authentication before creating releases
+- Separated release creation and asset upload steps for reliability
+- Resolved all asset upload issues in releases
 
 ## [1.0.0] - 2025-12-27
 
@@ -178,46 +48,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Convenient make targets for Linux, macOS, and Windows builds
 - Fixed build directory duplication issue (build/bin/build/...)
 - Added cross-compilation checks for unsupported platform combinations
-- Improved build output handling with post-build file moving
+- Improved build output file handling with post-build relocation
 - Integrated shadcn-vue UI component library
 - Added Tailwind CSS for modern styling
-- Created base UI components (Button, Card, Input, Label)
-- Updated main application with new component showcase
+- Created basic UI component set (Button, Card, Input, Label)
+- Updated main application with new component demonstrations
 - Added full TypeScript support for Vue components
 - Configured TypeScript with proper Vue 3 integration
 - Added type checking and IntelliSense support
 - Updated build system to use Vite's built-in TypeScript support
-- Fixed PostCSS configuration for ES modules compatibility
+- Fixed PostCSS configuration for ES module compatibility
 - Updated Vite to v4.5.14 and Vue plugin to v4.6.2
-- Resolved vue-tsc compilation issues by using Vite's TypeScript handling
+- Resolved vue-tsc compilation issues by using Vite's TypeScript processing
 - Integrated QMLauncher CLI functionality for Minecraft launcher features
 - Added --no-gui flag for command-line mode operation
 - Imported CLI commands: start, instance, auth, search, completions, about
-- Maintained backward compatibility with GUI mode as default
-- Added GitHub Actions CI/CD workflows for automated building and releasing
+- Maintained backward compatibility with default GUI mode
+- Added GitHub Actions CI/CD workflows for automated builds and releases
 - Configured cross-platform builds for Linux, macOS, and Windows
-- Integrated frontend build process in CI pipeline
+- Integrated frontend build process into CI pipeline
 - Added automated release artifact uploads
-- Created Russian translation of API documentation (API_ru.md)
+- Created Russian API documentation version (API_ru.md)
 - Added instance path column to `instance list` command output
 - Added `java list` command to display all installed Java versions
 - Changed default working directory from ~/.minecraft to ~/.qmlauncher
 - Implemented UUID-based instance isolation with unique directories
 - Updated instance structure: ~/.qmlauncher/instances/name/uuid/
 - Added UUID generation for each new instance
-- Modified instance management functions to work with new structure
+- Modified instance management functions for new structure
 - Added instance export/import functionality
-- Added 'instance export' command to export instances to ZIP archives
-- Added 'instance import' command to import instances from ZIP archives
-- Added 'instance list-exports' command to list exported archives
-- Improved Java executable validation for cross-platform compatibility
-- Added NoJavaWindow option to launch options
+- Added 'instance export' command for exporting instances to ZIP archives
+- Added 'instance import' command for importing instances from ZIP archives
+- Added 'instance list-exports' command for listing exported archives
+- Improved Java executability checking for cross-platform compatibility
+- Added NoJavaWindow option for launch parameters
 
 ### Changed
 - Updated from default Wails template to QMLauncher branding
 
 ### Technical Details
-- Go version: 1.23
+- Go Version: 1.23
 - Node.js dependencies installed
 - Wails CLI v2.11.0 configured
 - Vite development server integrated
@@ -229,4 +99,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic application framework
 - Development environment setup
 - Documentation files (README, CHANGELOG)
-- Build configuration for multiple platforms
+- Multi-platform build configuration
