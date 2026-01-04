@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.3] - 2026-01-04
+
+### Fixed
+- Completely fixed GitHub Actions release creation process
+- Added GitHub CLI authentication before creating releases
+- Separated release creation and asset upload steps for reliability
+- Resolved "release not found" error when uploading assets
+
+### Changed
+- Improved GitHub Actions workflow structure with conditional steps
+- Added release creation status check before uploading files
+
 ## [1.5.2] - 2026-01-04
 
 ### Added
