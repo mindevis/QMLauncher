@@ -77,6 +77,9 @@ make build  # или make linux/macos/windows
 
 Смотрите [CONTRIBUTING.md](CONTRIBUTING.md) для информации о разработке, conventional commits и процессе contribution.
 
+### 📖 Git Workflow
+Подробное руководство по работе с ветками: [docs/git-workflow.md](docs/git-workflow.md)
+
 ## 🚀 Использование
 
 ### Основные команды
