@@ -77,6 +77,9 @@ make build  # или make linux/macos/windows
 
 Смотрите [CONTRIBUTING.md](CONTRIBUTING.md) для информации о разработке, conventional commits и процессе contribution.
 
+### 📖 Git Workflow
+Подробное руководство по работе с ветками: [docs/git-workflow.md](docs/git-workflow.md)
+
 ## 🚀 Использование
 
 ### Основные команды
@@ -223,7 +226,7 @@ make check      # Все проверки
 2. Создайте ветку для вашей фичи (`git checkout -b feature/AmazingFeature`)
 3. Зафиксируйте изменения (`git commit -m 'Add some AmazingFeature'`)
 4. Запушьте ветку (`git push origin feature/AmazingFeature`)
-5. Создайте Pull Request
+5. Создайте Pull Request **ТОЛЬКО** в ветку `dev`
 
 ## 📄 Лицензия
 

@@ -2,20 +2,26 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, dev ]
   pull_request:
-    branches: [ main ]
+    branches: [ dev ]
 
 permissions:
   contents: read
 
 jobs:
-  validate-commits:
+  # Полный CI для ветки main: тесты + линтинг + валидация коммитов + проверка coverage
+  full-ci:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
 
       - name: Setup Node.js for commitlint
         uses: actions/setup-node@v4
@@ -26,14 +32,57 @@ jobs:
         run: |
           npm install -g @commitlint/cli @commitlint/config-conventional
 
+      - name: Check branch protection
+        if: github.event_name == 'push'
+        run: |
+          echo "🔒 Checking if push to main comes from dev merge..."
+          # Get the commit message
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          if echo "$COMMIT_MSG" | grep -q "^Merge"; then
+            echo "✅ Push to main is a merge commit - allowed"
+          else
+            echo "❌ Direct push to main is not allowed. Only merges from dev are permitted."
+            exit 1
+          fi
+
       - name: Run commitlint
-        shell: bash
         run: |
           echo "Validating commit messages..."
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
           else
-            # For pushes, always validate the last commit to handle force pushes and amended commits
             echo "Validating last commit..."
             npx commitlint --last --verbose
           fi
+
+      - name: Run tests
+        run: go test ./... -v -race -coverprofile=coverage.out
+
+      - name: Run linting
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout=5m
+
+      - name: Check test coverage
+        run: |
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print substr($3, 1, length($3)-1)}')
+          echo "Test coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Test coverage is below 80%: $COVERAGE%"
+            exit 1
+          fi
+
+  # Только тесты для ветки dev
+  dev-tests:
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.25'
+
+      - name: Run tests
+        run: go test ./... -v -race
