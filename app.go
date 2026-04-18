@@ -2163,6 +2163,20 @@ type CloudGameAccountInfo struct {
 	MojangUUID string `json:"mojangUuid"` // For mc-heads avatar when skin_url empty
 }
 
+// shouldShowCloudGameAccountRow filters game_accounts rows that duplicate QMWeb profile or Ely.by
+// identity names. If the row is a real Mojang-linked profile (mojang_uuid set), always show it —
+// otherwise a user whose profile username equals their Minecraft nick would see no game account.
+func shouldShowCloudGameAccountRow(ga CloudGameAccountInfo, exclude map[string]bool) bool {
+	u := strings.TrimSpace(strings.ToLower(ga.Username))
+	if u == "" {
+		return false
+	}
+	if strings.TrimSpace(ga.MojangUUID) != "" {
+		return true
+	}
+	return !exclude[u]
+}
+
 // GetAccounts returns list of all accounts (Microsoft and local)
 func (a *App) GetAccounts() []AccountInfo {
 	accounts := make([]AccountInfo, 0)
@@ -2199,8 +2213,8 @@ func (a *App) GetAccounts() []AccountInfo {
 	}
 
 	// Add QMServer Cloud accounts
-	// Display only real game account usernames (Minecraft nicks). Exclude QMWeb profile and Ely.by
-	// — even if they appear in game_accounts, they are auth/identity, not Minecraft accounts.
+	// Prefer displaying a real Minecraft nick on the Cloud row when it differs from email.
+	// Exclude profile/Ely.by-only duplicate names unless the row is Mojang-linked (see shouldShowCloudGameAccountRow).
 	cloudStore, _ := auth.ReadCloudStore()
 	var gameAccountUsername, gameAccountSkinURL, gameAccountSkinUuid string
 	if defCloud := auth.GetDefaultCloudAccount(); defCloud != nil && defCloud.Token != "" {
@@ -2214,17 +2228,17 @@ func (a *App) GetAccounts() []AccountInfo {
 		}
 		if gas, _ := a.GetCloudGameAccounts(); len(gas) > 0 {
 			for _, ga := range gas {
-				u := strings.TrimSpace(strings.ToLower(ga.Username))
-				if u != "" && !exclude[u] {
-					gameAccountUsername = ga.Username
-					gameAccountSkinURL = ga.SkinURL
-					gameAccountSkinUuid = ga.MojangUUID
-					// Fallback: if no skin_url but user has Ely.by linked, use Ely.by skin
-					if gameAccountSkinURL == "" && elyLinked && elyUserRaw != "" {
-						gameAccountSkinURL = "https://skinsystem.ely.by/skins/" + elyUserRaw + ".png"
-					}
-					break
+				if !shouldShowCloudGameAccountRow(ga, exclude) {
+					continue
 				}
+				gameAccountUsername = ga.Username
+				gameAccountSkinURL = ga.SkinURL
+				gameAccountSkinUuid = ga.MojangUUID
+				// Fallback: if no skin_url but user has Ely.by linked, use Ely.by skin
+				if gameAccountSkinURL == "" && elyLinked && elyUserRaw != "" {
+					gameAccountSkinURL = "https://skinsystem.ely.by/skins/" + elyUserRaw + ".png"
+				}
+				break
 			}
 		}
 	}
@@ -2265,32 +2279,32 @@ func (a *App) GetAccounts() []AccountInfo {
 		}
 		if gas, _ := a.GetCloudGameAccounts(); len(gas) > 0 {
 			for _, ga := range gas {
-				u := strings.TrimSpace(strings.ToLower(ga.Username))
-				if u != "" && !exclude[u] {
-					// Use Ely.by skin as fallback
-					skinURL := ga.SkinURL
-					if skinURL == "" && elyLinked && ga.MojangUUID != "" {
-						// Try to get Ely.by username from profile
-						if _, _, elyUsername, elyUsernameRaw := a.getCloudProfileNonGameUsernames(); elyUsername != "" {
-							skinURL = "https://skinsystem.ely.by/skins/" + elyUsernameRaw + ".png"
-						}
-					}
-					// Link UUID for UI: prefer Mojang profile id; else server/Minecraft UUID (matches Microsoft session when mojang_uuid was not stored)
-					linkUUID := strings.TrimSpace(ga.MojangUUID)
-					if linkUUID == "" {
-						linkUUID = strings.TrimSpace(ga.ServerUUID)
-					}
-					accounts = append(accounts, AccountInfo{
-						Type:          "cloud_game",
-						Username:      ga.Username,
-						Status:        "active",
-						IsDefault:     false,
-						SkinModel:     ga.SkinModel,
-						SkinURL:       skinURL,
-						SkinUuid:      linkUUID,
-						GameAccountID: ga.ID,
-					})
+				if !shouldShowCloudGameAccountRow(ga, exclude) {
+					continue
 				}
+				// Use Ely.by skin as fallback
+				skinURL := ga.SkinURL
+				if skinURL == "" && elyLinked && ga.MojangUUID != "" {
+					// Try to get Ely.by username from profile
+					if _, _, elyUsername, elyUsernameRaw := a.getCloudProfileNonGameUsernames(); elyUsername != "" {
+						skinURL = "https://skinsystem.ely.by/skins/" + elyUsernameRaw + ".png"
+					}
+				}
+				// Link UUID for UI: prefer Mojang profile id; else server/Minecraft UUID (matches Microsoft session when mojang_uuid was not stored)
+				linkUUID := strings.TrimSpace(ga.MojangUUID)
+				if linkUUID == "" {
+					linkUUID = strings.TrimSpace(ga.ServerUUID)
+				}
+				accounts = append(accounts, AccountInfo{
+					Type:          "cloud_game",
+					Username:      ga.Username,
+					Status:        "active",
+					IsDefault:     false,
+					SkinModel:     ga.SkinModel,
+					SkinURL:       skinURL,
+					SkinUuid:      linkUUID,
+					GameAccountID: ga.ID,
+				})
 			}
 		}
 	}
