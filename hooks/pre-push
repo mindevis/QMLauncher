@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# Pre-push hook to run quality checks
+
+# Allow skipping checks with SKIP_PRE_PUSH_CHECKS=1
+if [ "$SKIP_PRE_PUSH_CHECKS" = "1" ]; then
+    echo "⚠️  Skipping pre-push quality checks (SKIP_PRE_PUSH_CHECKS=1)"
+    exit 0
+fi
+
+echo "🔍 Running pre-push quality checks..."
+
+# Run basic checks (fmt, vet, test) - skip full lint for now
+if ! make fmt; then
+    echo "❌ Code formatting failed! Run 'make fmt' to fix."
+    exit 1
+fi
+
+if ! make vet; then
+    echo "❌ Go vet failed! Fix the issues."
+    exit 1
+fi
+
+if ! make test; then
+    echo "❌ Tests failed! Fix the test issues."
+    exit 1
+fi
+
+# Optional: run lint if SKIP_LINT is not set
+if [ "$SKIP_LINT" != "1" ]; then
+    echo "🔍 Running lint checks..."
+    if ! make lint 2>/dev/null; then
+        echo "⚠️  Lint issues found, but allowing push. Run 'make lint' to see details."
+        echo "💡 To skip lint: SKIP_LINT=1 git push"
+    fi
+fi
+
+echo "✅ Checks completed!"
+exit 0
+    echo "❌ Pre-push checks failed! Please fix issues before pushing."
+    echo "💡 Run 'make check' locally to see what needs to be fixed"
+    echo "💡 Or run individual checks: 'make fmt', 'make vet', 'make test'"
+    echo "💡 To skip checks: SKIP_PRE_PUSH_CHECKS=1 git push"
+    exit 1
+fi
+
+echo "✅ All checks passed! Pushing..."
+exit 0

@@ -1,0 +1,50 @@
+chore: 
+
+# ------------------------------------------------------------------------------
+# Conventional Commits — https://www.conventionalcommits.org/
+# Lines starting with # are stripped by Git from the final message.
+#
+# Replace the first line: keep the form <type>(<scope>): <summary>
+# Placeholder "chore" is only an example — use feat, fix, docs, build, ci, …
+#
+# Subject (required)
+#   <type>(<optional scope>): <description>
+#   - English only, imperative (“add” not “added”), ~50 chars ideal, max ~72
+#   - No trailing period after the subject line
+#   - scope: lowercase, package or area (launcher, auth, ui, ci, …)
+#
+# Types (common)
+#   feat     new user-visible behavior / API
+#   fix      bug fix
+#   docs     documentation, README, CHANGELOG, comments that are user-facing
+#   style    formatting, whitespace (no code meaning change)
+#   refactor code change that neither fixes a bug nor adds a feature
+#   perf     performance improvement
+#   test     tests only
+#   build    build system, dependencies (go.mod, Makefile, frontend)
+#   ci       CI / workflows
+#   chore    maintenance, tooling, otherwise uncategorized small changes
+#   revert   revert a prior commit (subject often: revert: <hash short> <original subject>)
+#
+# Breaking changes (pick one)
+#   feat!: breaking change in subject
+#   Or footer (blank line after body):
+#   BREAKING CHANGE: <what changed and what consumers must do>
+#
+# Body (optional): blank line below subject, wrap ~72 chars, explain why not what.
+#
+# Footers (optional): e.g. Fixes #123, Refs #456 — one per line after body.
+#
+# Examples
+#   feat(launcher): add NeoForge profile resolution
+#   fix(auth): handle expired MSA refresh token
+#   docs(readme): document release workflow
+#   build: bump wails to v2.11.0
+#   ci: publish linux-amd64 on tag v*
+#   chore: extract shared version helper
+#
+# Use as default template for this repository:
+#   git config commit.template commit-template.txt
+# One-off:
+#   git commit -t commit-template.txt
+# ------------------------------------------------------------------------------

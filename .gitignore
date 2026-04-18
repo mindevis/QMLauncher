@@ -1,0 +1,25 @@
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Go / Wails
+build/
+bin/
+*.syso
+
+# Local / runtime
+recent_servers.json
+qmlauncher
+qmlauncher-cli
+qmlauncher-test
+
+# Env
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store

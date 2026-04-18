@@ -1,0 +1,198 @@
+# Standalone QMLauncher repo: tag vX.Y.Z → GitHub Release with Linux + Windows binaries.
+# Asset names must match QMServer internal/qmlauncherdist (QMLauncher-linux-amd64, QMLauncher-windows-amd64.exe).
+
+name: Release QMLauncher
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  version:
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - name: Derive version from tag
+        id: ver
+        run: |
+          set -euo pipefail
+          REF="${GITHUB_REF_NAME}"
+          if ! [[ "$REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release requires tag vX.Y.Z (semver), got: $REF"
+            exit 1
+          fi
+          VERSION="${REF#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+  build-linux:
+    needs: version
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Linux GUI dependencies (Wails / WebKit2GTK)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libgtk-3-dev libwebkit2gtk-4.0-dev
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm ci && npm run build
+
+      - name: Build Linux amd64 binary
+        env:
+          BUILD_STAMP: ${{ github.sha }}
+        run: |
+          VERSION="${{ needs.version.outputs.version }}"
+          BUILD_STAMP="${GITHUB_SHA:0:7}"
+          mkdir -p build
+          GOOS=linux GOARCH=amd64 go build -ldflags \
+            "-X main.version=${VERSION} -X main.buildStamp=${BUILD_STAMP} -X QMLauncher/internal/version.Current=${VERSION}" \
+            -o build/QMLauncher-linux-amd64 .
+
+      - name: Package Linux release assets
+        id: pack
+        run: |
+          V="${{ needs.version.outputs.version }}"
+          BIN="build/QMLauncher-linux-amd64"
+          test -f "$BIN"
+          cp "$BIN" QMLauncher-linux-amd64
+          tar -czvf "qmlauncher-${V}-linux-amd64.tar.gz" QMLauncher-linux-amd64
+          rm -f QMLauncher-linux-amd64
+          sha256sum "$BIN" | tee "QMLauncher-linux-amd64.sha256"
+          sha256sum "qmlauncher-${V}-linux-amd64.tar.gz" | tee "qmlauncher-${V}-linux-amd64.tar.gz.sha256"
+          echo "tarball=qmlauncher-${V}-linux-amd64.tar.gz" >> "$GITHUB_OUTPUT"
+          echo "tar_sha=qmlauncher-${V}-linux-amd64.tar.gz.sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-release
+          path: |
+            build/QMLauncher-linux-amd64
+            QMLauncher-linux-amd64.sha256
+            qmlauncher-${{ needs.version.outputs.version }}-linux-amd64.tar.gz
+            qmlauncher-${{ needs.version.outputs.version }}-linux-amd64.tar.gz.sha256
+
+  build-windows:
+    needs: version
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm ci && npm run build
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0
+
+      - name: Build Windows amd64 (Wails)
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          BUILD_STAMP: ${{ github.sha }}
+        run: |
+          GOPATH="$(go env GOPATH | tr -d '\r')"
+          export PATH="$PATH:${GOPATH}/bin"
+          ST="${BUILD_STAMP:0:7}"
+          wails build -platform windows/amd64 -clean \
+            -ldflags "-X main.version=${VERSION} -X main.buildStamp=${ST} -X QMLauncher/internal/version.Current=${VERSION}"
+          test -f "build/bin/QMLauncher-windows-amd64.exe"
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-release
+          path: build/bin/QMLauncher-windows-amd64.exe
+
+  release:
+    needs: [version, build-linux, build-windows]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-release
+          path: release/linux
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-release
+          path: release/windows
+
+      - name: SHA256 for Windows installer
+        run: |
+          WEXE="release/windows/QMLauncher-windows-amd64.exe"
+          test -f "$WEXE"
+          sha256sum "$WEXE" | tee QMLauncher-windows-amd64.exe.sha256
+
+      - uses: sigstore/cosign-installer@v4.1.1
+
+      - name: Sign Linux binary (cosign keyless)
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign sign-blob --yes \
+            --output-signature release/linux/build/QMLauncher-linux-amd64.sig \
+            --output-certificate release/linux/build/QMLauncher-linux-amd64.pem \
+            release/linux/build/QMLauncher-linux-amd64
+
+      - name: Sign Windows binary (cosign keyless)
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign sign-blob --yes \
+            --output-signature release/windows/QMLauncher-windows-amd64.exe.sig \
+            --output-certificate release/windows/QMLauncher-windows-amd64.exe.pem \
+            release/windows/QMLauncher-windows-amd64.exe
+
+      - name: Create GitHub Release and upload assets
+        uses: softprops/action-gh-release@v3
+        with:
+          generate_release_notes: true
+          files: |
+            release/linux/build/QMLauncher-linux-amd64
+            release/linux/build/QMLauncher-linux-amd64.sig
+            release/linux/build/QMLauncher-linux-amd64.pem
+            release/linux/QMLauncher-linux-amd64.sha256
+            release/linux/qmlauncher-${{ needs.version.outputs.version }}-linux-amd64.tar.gz
+            release/linux/qmlauncher-${{ needs.version.outputs.version }}-linux-amd64.tar.gz.sha256
+            release/windows/QMLauncher-windows-amd64.exe
+            release/windows/QMLauncher-windows-amd64.exe.sig
+            release/windows/QMLauncher-windows-amd64.exe.pem
+            QMLauncher-windows-amd64.exe.sha256
