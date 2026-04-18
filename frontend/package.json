@@ -61,7 +61,7 @@
     "rcedit": "^5.0.2",
     "semantic-release": "^24.2.3",
     "tailwindcss": "^4.2.2",
-    "typescript": "~5.8.3",
+    "typescript": "~6.0.3",
     "vite": "^8.0.8"
   }
 }
