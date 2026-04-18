@@ -21,14 +21,24 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = React.createContext<ThemeProviderState>(initialState)
 
+function readStoredTheme(storageKey: string, defaultTheme: Theme): Theme {
+  try {
+    const v = localStorage.getItem(storageKey) as Theme | null
+    if (v === "dark" || v === "light" || v === "system") return v
+  } catch {
+    /* WebView / privacy mode can throw */
+  }
+  return defaultTheme
+}
+
 export function ThemeProvider({
   children,
   defaultTheme = "system",
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+  const [theme, setTheme] = useState<Theme>(() =>
+    readStoredTheme(storageKey, defaultTheme)
   )
 
   useEffect(() => {
@@ -52,7 +62,11 @@ export function ThemeProvider({
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
+      try {
+        localStorage.setItem(storageKey, theme)
+      } catch {
+        /* no-op */
+      }
       setTheme(theme)
     },
   }
