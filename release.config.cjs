@@ -9,6 +9,8 @@ module.exports = {
         // Extra rules run first; if none match, default rules still apply (feat/fix/perf, …).
         // Without this, Dependabot-style `chore(deps):` merges do not emit a new version.
         releaseRules: [
+          // Default analyzer does not release on `refactor:` (only feat/fix/perf).
+          { type: 'refactor', release: 'patch' },
           { type: 'chore', scope: 'deps', release: 'patch' },
           { type: 'chore', scope: 'deps-dev', release: 'patch' },
           { type: 'build', scope: 'deps', release: 'patch' },
