@@ -1,6 +1,7 @@
 # Bump version, changelog, Go `version.go` / `internal/version`, tag vX.Y.Z — same pattern as QMAdmin.
 # Push of the tag triggers `release-qmlauncher.yml` (binaries + GitHub Release).
-# A release is created only when conventional commits warrant it (e.g. fix:/feat:), not for ci:/docs: alone.
+# A release runs only when commits warrant a semver bump (feat/fix/perf, chore(deps)*, …).
+# Plain chore:/docs:/ci: without deps scope still skips a release — use fix/feat or chore(deps).
 
 name: Semantic release · QMLauncher
 
