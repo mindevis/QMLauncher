@@ -1,3 +1,11 @@
+## [1.0.8](https://github.com/mindevis/qmlauncher/compare/v1.0.7...v1.0.8) (2026-04-19)
+
+### Исправления
+
+* **release:** убран `[skip ci]` из коммита релиза и отключён пустой GitHub Release от semantic-release — сборки прикрепляются workflow по тегу.
+* **release:** ручной перезапуск релиза (`workflow_dispatch`) для тега `v*`.
+* **feat:** периодический опрос QMServer (серверы, новости, настройки) без перезапуска лаунчера; сброс кэша `/servers` и TTL 90 с.
+
 ## [1.0.7](https://github.com/mindevis/qmlauncher/compare/v1.0.6...v1.0.7) (2026-04-19)
 
 
