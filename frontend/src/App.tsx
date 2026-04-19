@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
 import type { ChangeEvent, CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
@@ -67,7 +67,10 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { preloadTranslations, useTranslate } from "./hooks/use-translate";
 import { ModeToggle } from "./components/mode-toggle";
-import { ModSelectionDialog } from "./components/ModSelectionDialog";
+import {
+  ModSelectionDialog,
+  type LaunchConfirmMeta,
+} from "./components/ModSelectionDialog";
 import { ServerModList, ModDetailDialog } from "./components/ServerModList";
 
 const SkinPreview3d = lazy(() =>
@@ -715,6 +718,10 @@ function App() {
   const [serversLoadError, setServersLoadError] = useState<string>("");
   const [instances, setInstances] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<AccountInfo[]>([]);
+  const launchableAccounts = useMemo(
+    () => dedupeLaunchableAccounts(accounts),
+    [accounts]
+  );
   const [microsoftAuthAvailable, setMicrosoftAuthAvailable] = useState(false);
   const [currentAccount, setCurrentAccount] = useState<{ name: string; email: string }>({ name: "User", email: "user@qmlauncher.local" });
   const [currentAccountType, setCurrentAccountType] = useState<string>("");
@@ -768,15 +775,6 @@ function App() {
     currentFile?: string;
   }>({ message: "" });
 
-  // Account picker states for selecting account before launch/connect
-  const [showAccountPickerDialog, setShowAccountPickerDialog] = useState(false);
-  const [accountPickerTarget, setAccountPickerTarget] = useState<{
-    instanceName?: string;
-    serverAddress?: string;
-    serverID?: number;
-    serverName?: string;
-  } | null>(null);
-  const [selectedAccountName, setSelectedAccountName] = useState<string>("");
   const [syncConfigFromServer, setSyncConfigFromServer] = useState(false);
   const [selectedServerDetails, setSelectedServerDetails] = useState<ServerInfo | null>(null);
   const [selectedModDetail, setSelectedModDetail] = useState<{ path: string; name: string; meta?: { description?: string; icon_url?: string; curseforge_url?: string; modrinth_url?: string } } | null>(null);
@@ -1336,18 +1334,30 @@ function App() {
 
   const handleLaunchInstance = async (instanceName: string) => {
     setSyncConfigFromServer(false);
-    const gameNames = dedupeLaunchableAccounts(accounts).map((a) => a.username);
-    setSelectedAccountName(gameNames[0] || "");
-    if (gameNames.length === 1) {
+    if (launchableAccounts.length === 0) {
+      showAlert("Ошибка", "Добавьте игровой аккаунт для запуска");
+      return;
+    }
+    if (launchableAccounts.length === 1) {
       await launchWithSelectedGameAccount(
         { instanceName, serverAddress: "", serverID: 0 },
-        gameNames[0],
+        launchableAccounts[0].username,
         false
       );
       return;
     }
-    setAccountPickerTarget({ instanceName, serverAddress: "", serverID: 0 });
-    setShowAccountPickerDialog(true);
+    const defaultUser =
+      launchableAccounts.find((a) => a.isDefault)?.username ??
+      launchableAccounts[0]?.username ??
+      "";
+    setPendingLaunch({
+      instanceName,
+      serverAddress: "",
+      serverID: 0,
+      syncConfigFromServer: false,
+      selectedAccountName: defaultUser,
+    });
+    setShowModSelectionDialog(true);
   };
 
   const connectToServer = async (server: ServerInfo) => {
@@ -1386,12 +1396,13 @@ function App() {
         return;
       }
 
-      // Step 2: Account picker (пропуск, если только один игровой аккаунт)
       const serverAddress = `${server.address}:${server.port}`;
       setSyncConfigFromServer(false);
-      const gameNames = dedupeLaunchableAccounts(accounts).map((a) => a.username);
-      setSelectedAccountName(gameNames[0] || "");
-      if (gameNames.length === 1) {
+      if (launchableAccounts.length === 0) {
+        showAlert("Ошибка", "Добавьте игровой аккаунт для подключения к серверу");
+        return;
+      }
+      if (launchableAccounts.length === 1) {
         await launchWithSelectedGameAccount(
           {
             instanceName,
@@ -1399,17 +1410,23 @@ function App() {
             serverID: server.serverID || 0,
             serverName: server.name,
           },
-          gameNames[0],
+          launchableAccounts[0].username,
           false
         );
       } else {
-        setAccountPickerTarget({
+        const defaultUser =
+          launchableAccounts.find((a) => a.isDefault)?.username ??
+          launchableAccounts[0]?.username ??
+          "";
+        setPendingLaunch({
           instanceName,
           serverAddress,
           serverID: server.serverID || 0,
           serverName: server.name,
+          syncConfigFromServer: false,
+          selectedAccountName: defaultUser,
         });
-        setShowAccountPickerDialog(true);
+        setShowModSelectionDialog(true);
       }
 
       // Refresh instances list after creation
@@ -2820,13 +2837,22 @@ function App() {
     }
   };
 
-  const handleAccountPickerCancel = () => {
-    setShowAccountPickerDialog(false);
-    setAccountPickerTarget(null);
-    setSelectedAccountName("");
-    setSyncConfigFromServer(false);
-    // Закрыть окно прогресса, если оно было открыто (например, при отмене после connectToServer)
-    setShowLaunchProgressDialog(false);
+  const prepareGameAccountForLaunch = async (
+    username: string,
+    persistLocalAsDefault: boolean
+  ) => {
+    const account = accounts.find((a) => a.username === username);
+    try {
+      if (persistLocalAsDefault && account?.type === "local") {
+        await SetDefaultAccount(username);
+        GetAccounts().then(setAccounts).catch(console.error);
+      }
+      if (account?.type === "microsoft") {
+        await LoginAccount(false);
+      }
+    } catch (err) {
+      console.error("prepareGameAccountForLaunch:", err);
+    }
   };
 
   const doLaunch = async (
@@ -2840,13 +2866,21 @@ function App() {
     },
     enabledResourcepacksOrder?: string[]
   ) => {
-    const params = launchParams || pendingLaunch || accountPickerTarget;
+    const params = launchParams || pendingLaunch;
     if (!params) return;
-    const instanceName = "instanceName" in params ? params.instanceName : "";
-    const serverAddress = "serverAddress" in params ? params.serverAddress : "";
-    const serverID = "serverID" in params ? params.serverID : 0;
-    const sync = "syncConfigFromServer" in params ? params.syncConfigFromServer : syncConfigFromServer;
-    const account = "selectedAccountName" in params ? params.selectedAccountName : selectedAccountName;
+    const lp = params as {
+      instanceName: string;
+      serverAddress: string;
+      serverID: number;
+      serverName?: string;
+      syncConfigFromServer: boolean;
+      selectedAccountName: string;
+    };
+    const instanceName = lp.instanceName ?? "";
+    const serverAddress = lp.serverAddress ?? "";
+    const serverID = lp.serverID ?? 0;
+    const sync = lp.syncConfigFromServer ?? syncConfigFromServer;
+    const account = lp.selectedAccountName ?? "";
     setShowLaunchProgressDialog(true);
     setLaunchProgress({ message: "Запуск инстанса..." });
     try {
@@ -2862,7 +2896,7 @@ function App() {
         account || "",
         disabledModsJSON,
         enabledRpOrderJSON,
-        (params && "serverName" in params ? params.serverName : "") || ""
+        lp.serverName ?? ""
       );
       if (result && result.toLowerCase().includes("error")) {
         setLaunchProgress({ message: `Ошибка: ${result}`, type: "error" });
@@ -2890,16 +2924,7 @@ function App() {
     gameAccountUsername: string,
     syncFromServer: boolean
   ) => {
-    const account = accounts.find((a) => a.username === gameAccountUsername);
-    try {
-      if (account && account.type === "local") {
-        await SetDefaultAccount(gameAccountUsername);
-      } else if (account && account.type === "microsoft") {
-        await LoginAccount(false);
-      }
-    } catch (err) {
-      console.error("Account selection error:", err);
-    }
+    await prepareGameAccountForLaunch(gameAccountUsername, false);
     const serverID = target.serverID || 0;
     const launchParams = {
       instanceName: target.instanceName || "",
@@ -2917,27 +2942,32 @@ function App() {
     }
   };
 
-  const confirmAccountAndLaunch = async () => {
-    if (!accountPickerTarget || !selectedAccountName) return;
-    const target = accountPickerTarget;
-    const user = selectedAccountName;
-    const sync = syncConfigFromServer;
-    setShowAccountPickerDialog(false);
-    setAccountPickerTarget(null);
-    await launchWithSelectedGameAccount(target, user, sync);
-  };
-
-  const handleModSelectionConfirm = (disabledMods: string[], enabledResourcepacksOrder?: string[]) => {
+  const handleModSelectionConfirm = async (
+    disabledMods: string[],
+    enabledResourcepacksOrder?: string[],
+    launchMeta?: LaunchConfirmMeta
+  ) => {
+    const pl = pendingLaunch;
     setShowModSelectionDialog(false);
-    doLaunch(disabledMods, pendingLaunch || undefined, enabledResourcepacksOrder);
+    if (!pl) return;
+    const username = launchMeta?.username ?? pl.selectedAccountName;
+    const sync = launchMeta?.syncFromServer ?? pl.syncConfigFromServer;
+    const saveDef = launchMeta?.saveAsDefault ?? false;
+    await prepareGameAccountForLaunch(username, saveDef);
+    const launchParams = {
+      ...pl,
+      selectedAccountName: username,
+      syncConfigFromServer: sync,
+    };
     setPendingLaunch(null);
+    doLaunch(disabledMods, launchParams, enabledResourcepacksOrder);
   };
 
   const handleModSelectionCancel = () => {
     setShowModSelectionDialog(false);
     setPendingLaunch(null);
-    setSelectedAccountName("");
     setSyncConfigFromServer(false);
+    setShowLaunchProgressDialog(false);
   };
 
   const renderAccounts = () => {
@@ -4004,62 +4034,6 @@ function App() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showAccountPickerDialog} onOpenChange={(open) => {
-        if (!open) {
-          handleAccountPickerCancel();
-        } else {
-          setShowAccountPickerDialog(open);
-        }
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Выберите аккаунт</DialogTitle>
-            <DialogDescription>
-              Выберите аккаунт для использования при запуске инстанса
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-2">
-              <Label htmlFor="account-select">Выберите аккаунт</Label>
-              <NativeSelect
-                id="account-select"
-                value={selectedAccountName}
-                onChange={(e) => setSelectedAccountName(e.target.value)}
-                className="w-full"
-              >
-                {dedupeLaunchableAccounts(accounts).map((a) => (
-                  <NativeSelectOption key={`${a.type}-${a.username}`} value={a.username}>
-                    {a.type === "microsoft" ? `${a.username} (${t.authMicrosoft})` : a.username}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            </div>
-            {accountPickerTarget && (accountPickerTarget.serverID ?? 0) > 0 && (
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  type="checkbox"
-                  id="sync-config-from-server"
-                  checked={syncConfigFromServer}
-                  onChange={(e) => setSyncConfigFromServer(e.target.checked)}
-                  className="h-4 w-4 rounded border-border"
-                />
-                <Label htmlFor="sync-config-from-server" className="font-normal cursor-pointer">
-                  Синхронизация конфигурации с сервера: {accountPickerTarget.serverName ?? "—"}
-                </Label>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={handleAccountPickerCancel}>
-              Отмена
-            </Button>
-            <Button onClick={confirmAccountAndLaunch} disabled={!accountPickerTarget || !selectedAccountName}>
-              Запустить
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       <ModSelectionDialog
         open={showModSelectionDialog}
         onOpenChange={(open) => {
@@ -4070,6 +4044,15 @@ function App() {
         apiBase={apiBase}
         onConfirm={handleModSelectionConfirm}
         onCancel={handleModSelectionCancel}
+        launchAccounts={launchableAccounts.map((a) => ({
+          username: a.username,
+          type: a.type,
+          isDefault: a.isDefault,
+        }))}
+        showLaunchAccountSection={launchableAccounts.length > 1}
+        initialAccountUsername={pendingLaunch?.selectedAccountName ?? ""}
+        initialSyncFromServer={pendingLaunch?.syncConfigFromServer ?? false}
+        showSyncFromServer={(pendingLaunch?.serverID ?? 0) > 0}
       />
 
       <Dialog open={showLaunchProgressDialog} onOpenChange={(open) => {

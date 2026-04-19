@@ -59,14 +59,38 @@ interface ModSelectionData {
   optionalShaderpacksEnabled: Record<string, boolean>;
 }
 
+export type LaunchAccountPick = {
+  username: string;
+  type: string;
+  isDefault?: boolean;
+};
+
+export type LaunchConfirmMeta = {
+  username: string;
+  syncFromServer: boolean;
+  /** Только для локальных офлайн-аккаунтов (SetDefaultAccount). */
+  saveAsDefault: boolean;
+};
+
 interface ModSelectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   serverID: number;
   serverName: string;
   apiBase: string;
-  onConfirm: (disabledPaths: string[], enabledResourcepacksOrder?: string[]) => void;
+  onConfirm: (
+    disabledPaths: string[],
+    enabledResourcepacksOrder?: string[],
+    launchMeta?: LaunchConfirmMeta
+  ) => void;
   onCancel: () => void;
+  /** Несколько игровых аккаунтов: показать выбор в этой же модалке. */
+  launchAccounts?: LaunchAccountPick[];
+  showLaunchAccountSection?: boolean;
+  initialAccountUsername?: string;
+  initialSyncFromServer?: boolean;
+  /** Чекбокс синхронизации конфигов с QMServer (только при положительном serverID). */
+  showSyncFromServer?: boolean;
 }
 
 export function ModSelectionDialog({
@@ -77,6 +101,11 @@ export function ModSelectionDialog({
   apiBase,
   onConfirm,
   onCancel,
+  launchAccounts = [],
+  showLaunchAccountSection = false,
+  initialAccountUsername = "",
+  initialSyncFromServer = false,
+  showSyncFromServer = false,
 }: ModSelectionDialogProps) {
   const [config, setConfig] = useState<ModConfig | null>(null);
   const [loading, setLoading] = useState(false);
@@ -89,11 +118,39 @@ export function ModSelectionDialog({
   const handleConfirmRef = useRef<() => void>(() => {});
   const autoConfirmedRef = useRef(false);
 
+  const [accountUsername, setAccountUsername] = useState("");
+  const [syncFromServer, setSyncFromServer] = useState(false);
+  const [saveAsDefaultAccount, setSaveAsDefaultAccount] = useState(false);
+
+  const selectedAccountType =
+    launchAccounts.find((a) => a.username === accountUsername)?.type ?? "";
+
+  const launchAccountsRef = useRef(launchAccounts);
+  launchAccountsRef.current = launchAccounts;
+
   useEffect(() => {
-    if (!open || serverID <= 0 || !apiBase) return;
-    setLoading(true);
-    const url = `${apiBase.replace(/\/$/, "")}/servers/${serverID}/mod-config`;
-    fetch(url)
+    if (!open || !showLaunchAccountSection) return;
+    const list = launchAccountsRef.current;
+    const initial =
+      (initialAccountUsername &&
+        list.some((a) => a.username === initialAccountUsername) &&
+        initialAccountUsername) ||
+      list.find((a) => a.isDefault)?.username ||
+      list[0]?.username ||
+      "";
+    setAccountUsername(initial);
+    setSyncFromServer(Boolean(initialSyncFromServer));
+    setSaveAsDefaultAccount(false);
+  }, [open, showLaunchAccountSection, initialAccountUsername, initialSyncFromServer]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    if (serverID > 0 && apiBase.trim()) {
+      setLoading(true);
+      const url = `${apiBase.replace(/\/$/, "")}/servers/${serverID}/mod-config`;
+      fetch(url)
       .then((res) => res.ok ? res.json() : Promise.reject(new Error("Failed to fetch")))
       .then((data: ModConfig) => {
         setConfig(data);
@@ -128,6 +185,20 @@ export function ModSelectionDialog({
         setSelectedPresetId("");
       })
       .finally(() => setLoading(false));
+      return;
+    }
+    setConfig({
+      mods_metadata: {},
+      mod_presets: [],
+      mod_paths: [],
+      resourcepacks_paths: [],
+      shaderpacks_paths: [],
+    });
+    setOptionalEnabled({});
+    setOptionalResourcepacksEnabled({});
+    setOptionalShaderpacksEnabled({});
+    setSelectedPresetId("");
+    setLoading(false);
   }, [open, serverID, apiBase]);
 
   function loadSavedSelection(sid: number): ModSelectionData | null {
@@ -363,7 +434,18 @@ export function ModSelectionDialog({
         /* ignore */
       }
     }
-    onConfirm(disabled, enabledRpOrdered.length > 0 ? enabledRpOrdered : undefined);
+    const launchMeta: LaunchConfirmMeta | undefined = showLaunchAccountSection
+      ? {
+          username: accountUsername.trim(),
+          syncFromServer,
+          saveAsDefault: saveAsDefaultAccount,
+        }
+      : undefined;
+    onConfirm(
+      disabled,
+      enabledRpOrdered.length > 0 ? enabledRpOrdered : undefined,
+      launchMeta
+    );
     onOpenChange(false);
   };
 
@@ -372,6 +454,7 @@ export function ModSelectionDialog({
   const hasOptionalResourcepacks = optionalRpPaths.length > 0;
   const hasOptionalShaderpacks = optionalSpPaths.length > 0;
   const hasAnyOptional = hasOptionalMods || hasPresets || hasOptionalResourcepacks || hasOptionalShaderpacks;
+  const needAccountUI = Boolean(showLaunchAccountSection);
 
   handleConfirmRef.current = handleConfirm;
 
@@ -381,11 +464,11 @@ export function ModSelectionDialog({
       setShouldShowDialog(false);
       return;
     }
-    if (loading || !config) {
+    if (loading || (serverID > 0 && !config)) {
       setShouldShowDialog(false);
       return;
     }
-    if (!hasAnyOptional) {
+    if (!hasAnyOptional && !needAccountUI) {
       setShouldShowDialog(false);
       if (!autoConfirmedRef.current) {
         autoConfirmedRef.current = true;
@@ -394,18 +477,78 @@ export function ModSelectionDialog({
       return;
     }
     setShouldShowDialog(true);
-  }, [open, loading, config, hasAnyOptional]);
+  }, [open, loading, config, hasAnyOptional, needAccountUI, serverID]);
+
+  const accountSectionDisabled =
+    needAccountUI && !accountUsername.trim();
 
   return (
     <Dialog open={open && shouldShowDialog} onOpenChange={onOpenChange}>
       <DialogContent className="flex flex-col min-w-[20rem] max-w-[min(95vw,900px)] max-h-[85vh] overflow-hidden p-4 sm:p-6">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle>Настройка модов и ресурсов</DialogTitle>
+          <DialogTitle>
+            {needAccountUI || serverID > 0
+              ? "Запуск: аккаунт и настройки"
+              : "Настройка модов и ресурсов"}
+          </DialogTitle>
           <DialogDescription>
-            Сервер: {serverName}. Выберите пресет, опциональные моды, ресурспаки и шейдеры для подключения.
+            {serverID > 0
+              ? `Сервер: ${serverName || "—"}. Выберите игровой аккаунт, при необходимости пресет и опциональные моды, ресурспаки и шейдеры.`
+              : needAccountUI
+                ? "Выберите игровой аккаунт для запуска инстанса."
+                : `Сервер: ${serverName}. Выберите пресет, опциональные моды, ресурспаки и шейдеры для подключения.`}
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 min-h-0 overflow-auto space-y-6 py-4">
+          {needAccountUI && (
+            <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+              <div className="space-y-2">
+                <Label htmlFor="launch-account-select">Игровой аккаунт</Label>
+                <NativeSelect
+                  id="launch-account-select"
+                  value={accountUsername}
+                  onChange={(e) => setAccountUsername(e.target.value)}
+                  className="w-full"
+                >
+                  {launchAccounts.map((a) => (
+                    <NativeSelectOption key={`${a.type}-${a.username}`} value={a.username}>
+                      {a.type === "microsoft"
+                        ? `${a.username} (Microsoft)`
+                        : a.username}
+                      {a.isDefault ? " — по умолчанию" : ""}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </div>
+              {showSyncFromServer && serverID > 0 && (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="launch-sync-config"
+                    checked={syncFromServer}
+                    onChange={(e) => setSyncFromServer(e.target.checked)}
+                    className="h-4 w-4 rounded border-border"
+                  />
+                  <Label htmlFor="launch-sync-config" className="font-normal cursor-pointer">
+                    Синхронизация конфигурации с сервера
+                    {serverName ? `: ${serverName}` : ""}
+                  </Label>
+                </div>
+              )}
+              {selectedAccountType === "local" ? (
+                <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-background/50 px-3 py-2">
+                  <Label htmlFor="save-default-local" className="text-sm font-normal cursor-pointer">
+                    Использовать этот локальный аккаунт по умолчанию при следующих запусках
+                  </Label>
+                  <Switch
+                    id="save-default-local"
+                    checked={saveAsDefaultAccount}
+                    onCheckedChange={setSaveAsDefaultAccount}
+                  />
+                </div>
+              ) : null}
+            </div>
+          )}
           {loading ? (
             <p className="text-sm text-muted-foreground">Загрузка настроек...</p>
           ) : (
@@ -584,7 +727,7 @@ export function ModSelectionDialog({
           <Button variant="outline" onClick={onCancel}>
             Отмена
           </Button>
-          <Button onClick={handleConfirm} disabled={loading}>
+          <Button onClick={handleConfirm} disabled={loading || accountSectionDisabled}>
             Запустить
           </Button>
         </DialogFooter>
