@@ -39,7 +39,6 @@ jobs:
         run: npm ci
 
       - name: Semantic release
-        working-directory: frontend
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -47,4 +46,4 @@ jobs:
           git fetch origin +refs/heads/main:refs/remotes/origin/main
           git checkout main
           git reset --hard origin/main
-          npx semantic-release
+          ./frontend/node_modules/.bin/semantic-release

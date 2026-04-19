@@ -1,16 +1,15 @@
 /** @type {import('semantic-release').Options} */
+// Loaded with repository root as semantic-release cwd so @semantic-release/git sees all modified paths.
 module.exports = {
   branches: ['main'],
   plugins: [
     '@semantic-release/commit-analyzer',
     '@semantic-release/release-notes-generator',
-    ['@semantic-release/changelog', {changelogFile: '../CHANGELOG.md'}],
-    ['@semantic-release/npm', {npmPublish: false}],
+    ['@semantic-release/changelog', { changelogFile: 'CHANGELOG.md' }],
+    ['@semantic-release/npm', { npmPublish: false, pkgRoot: 'frontend' }],
     [
       '@semantic-release/exec',
       {
-        // semantic-release cwd is frontend/ (CI working-directory). Run sync + git push from repo root.
-        execCwd: '..',
         prepareCmd:
           'node frontend/scripts/sync-go-version.mjs "<%= nextRelease.version %>"',
         publishCmd: 'git push origin main --follow-tags',
@@ -20,12 +19,12 @@ module.exports = {
       '@semantic-release/git',
       {
         assets: [
-          '../CHANGELOG.md',
-          '../CHANGELOG_EN.md',
-          '../version.go',
-          '../internal/version/version.go',
-          'package.json',
-          'package-lock.json',
+          'CHANGELOG.md',
+          'CHANGELOG_EN.md',
+          'version.go',
+          'internal/version/version.go',
+          'frontend/package.json',
+          'frontend/package-lock.json',
         ],
         message: 'chore(release): ${nextRelease.version} [skip ci]',
       },
@@ -39,4 +38,4 @@ module.exports = {
       },
     ],
   ],
-};
+}
