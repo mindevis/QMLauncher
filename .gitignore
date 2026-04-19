@@ -1,6 +1,9 @@
 # Frontend
 frontend/node_modules/
 frontend/dist/
+frontend/tsconfig*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
 
 # Go / Wails
 build/
