@@ -1,7 +1,7 @@
 {
   "name": "qmlauncher-gui",
   "private": true,
-  "version": "1.0.9",
+  "version": "1.0.10",
   "type": "module",
   "scripts": {
     "release": "cross-env CI=false semantic-release --no-ci",

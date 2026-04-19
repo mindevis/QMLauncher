@@ -1,3 +1,10 @@
+## [1.0.10](https://github.com/mindevis/qmlauncher/compare/v1.0.9...v1.0.10) (2026-04-19)
+
+
+### Bug Fixes
+
+* **ci:** dispatch Release QMLauncher after semantic-release tag ([c67cef3](https://github.com/mindevis/qmlauncher/commit/c67cef3bc579019ad68da053984b4500e2349b83))
+
 ## [1.0.9](https://github.com/mindevis/qmlauncher/compare/v1.0.8...v1.0.9) (2026-04-19)
 
 
