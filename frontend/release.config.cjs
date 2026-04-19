@@ -9,8 +9,10 @@ module.exports = {
     [
       '@semantic-release/exec',
       {
+        // semantic-release cwd is frontend/ (CI working-directory). Run sync + git push from repo root.
+        execCwd: '..',
         prepareCmd:
-          'node ./scripts/sync-go-version.mjs "<%= nextRelease.version %>"',
+          'node frontend/scripts/sync-go-version.mjs "<%= nextRelease.version %>"',
         publishCmd: 'git push origin main --follow-tags',
       },
     ],
