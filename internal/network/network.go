@@ -308,7 +308,8 @@ func QMServerBaseURL(host string, port int) string {
 }
 
 const (
-	serversCacheTTL   = 5 * time.Minute    // In-memory cache TTL
+	// Short TTL so launcher UI can refresh online/player counts without always calling InvalidateQMServersCache.
+	serversCacheTTL   = 90 * time.Second
 	serversDiskMaxAge = 7 * 24 * time.Hour // Max age of disk cache when API fails (7 days)
 	serversCacheFile  = "servers_cache.json"
 )

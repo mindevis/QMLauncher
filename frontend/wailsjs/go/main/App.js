@@ -134,6 +134,10 @@ export function GetQMServersError() {
   return window['go']['main']['App']['GetQMServersError']();
 }
 
+export function InvalidateQMServersCache() {
+  return window['go']['main']['App']['InvalidateQMServersCache']();
+}
+
 export function GetRecentServers() {
   return window['go']['main']['App']['GetRecentServers']();
 }

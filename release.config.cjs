@@ -37,16 +37,12 @@ module.exports = {
           'frontend/package.json',
           'frontend/package-lock.json',
         ],
-        message: 'chore(release): ${nextRelease.version} [skip ci]',
+        // No [skip ci]: tag push must run `.github/workflows/release-qmlauncher.yml`
+        // so GitHub Release gets Linux/Windows binaries (softprops upload).
+        message: 'chore(release): ${nextRelease.version}',
       },
     ],
-    [
-      '@semantic-release/github',
-      {
-        successCommentCondition: false,
-        failCommentCondition: false,
-        releasedLabels: false,
-      },
-    ],
+    // Do not use @semantic-release/github here: it creates a release without build artifacts.
+    // The tag push triggers `.github/workflows/release-qmlauncher.yml`, which attaches binaries.
   ],
 }

@@ -1231,6 +1231,11 @@ func (a *App) GetQMServersError() string {
 	return lastQMError
 }
 
+// InvalidateQMServersCache clears the cached QMServer /servers response so the next GetRecentServers fetches fresh data.
+func (a *App) InvalidateQMServersCache() {
+	network.InvalidateServersCache()
+}
+
 // GetRecentServers returns list of servers from QMServer Cloud
 func (a *App) GetRecentServers() []ServerInfo {
 	lastQMError = ""

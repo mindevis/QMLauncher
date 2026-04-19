@@ -37,7 +37,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { launcher } from "../wailsjs/go/models";
-import { GetInstances, GetInstanceDetails, LaunchInstanceWithAccount, GetRecentServers, GetQMServersError, EnsureInstanceForServer, GetAccounts, LoginAccount, LogoutAccount, CreateLocalAccount, DeleteLocalAccount, SetDefaultAccount, GetCurrentAccount, GetCloudProfile, OpenBrowserForQMServerCloud, OpenBrowserForMicrosoft, GetMicrosoftAuthAvailable, LogoutCloudAccount, SyncLocalAccountToCloud, SyncMicrosoftAccountToCloud, GetCloudGameAccounts, UpdateCloudGameAccount, DeleteCloudGameAccount, GetSkinProviderConfig, GetCloudElyLinked, GetNews, GetQMServerAPIBase, GetLauncherAPITarget, SetLauncherAPITarget, GetLauncherDebug, SetLauncherDebug, GetCurseForgeKeySettings, SetCurseForgeSettingsKey, GetCatalogStoreSettings, SetCatalogStoreSettings, SetLang, GetLang, GetLauncherVersion, GetLauncherAboutInfo, CheckLauncherUpdateAvailable, CreateCloudGameAccount, SetInstanceMemory, GetGameAccountInventory, CreateInstance, OpenPath, ApplyLauncherUpdate, DeleteInstance, GetCreateInstanceMinecraftVersions, GetCreateInstanceLoaderVersions, SetInstanceResourceEnabled, DeleteInstanceResource, ResolveInstanceResourceStoreLinks, OpenBrowserURL } from "../wailsjs/go/main/App";
+import { GetInstances, GetInstanceDetails, LaunchInstanceWithAccount, GetRecentServers, GetQMServersError, InvalidateQMServersCache, EnsureInstanceForServer, GetAccounts, LoginAccount, LogoutAccount, CreateLocalAccount, DeleteLocalAccount, SetDefaultAccount, GetCurrentAccount, GetCloudProfile, OpenBrowserForQMServerCloud, OpenBrowserForMicrosoft, GetMicrosoftAuthAvailable, LogoutCloudAccount, SyncLocalAccountToCloud, SyncMicrosoftAccountToCloud, GetCloudGameAccounts, UpdateCloudGameAccount, DeleteCloudGameAccount, GetSkinProviderConfig, GetCloudElyLinked, GetNews, GetQMServerAPIBase, GetLauncherAPITarget, SetLauncherAPITarget, GetLauncherDebug, SetLauncherDebug, GetCurseForgeKeySettings, SetCurseForgeSettingsKey, GetCatalogStoreSettings, SetCatalogStoreSettings, SetLang, GetLang, GetLauncherVersion, GetLauncherAboutInfo, CheckLauncherUpdateAvailable, CreateCloudGameAccount, SetInstanceMemory, GetGameAccountInventory, CreateInstance, OpenPath, ApplyLauncherUpdate, DeleteInstance, GetCreateInstanceMinecraftVersions, GetCreateInstanceLoaderVersions, SetInstanceResourceEnabled, DeleteInstanceResource, ResolveInstanceResourceStoreLinks, OpenBrowserURL } from "../wailsjs/go/main/App";
 import { EventsOn } from "../wailsjs/runtime/runtime";
 import { AppSidebar } from "./components/app-sidebar";
 import { ResourceStoreBrowser } from "./components/ResourceStoreBrowser";
@@ -1145,6 +1145,78 @@ function App() {
       setCloudProfileAvatar(undefined);
       setCloudIsPremium(false);
     });
+  }, []);
+
+  /** Периодически подтягиваем публичные данные QMServer (серверы, новости, флаги) без перезапуска лаунчера */
+  useEffect(() => {
+    const POLL_MS = 90_000;
+    const refreshCloudSnapshot = () => {
+      void (async () => {
+        try {
+          await InvalidateQMServersCache();
+        } catch {
+          /* ignore */
+        }
+        try {
+          const list = await GetRecentServers();
+          setServers(list);
+          if (list.length === 0) {
+            const err = await GetQMServersError();
+            setServersLoadError(normalizeQMServerErrorMessage(err || ""));
+          } else {
+            setServersLoadError("");
+          }
+        } catch (error) {
+          console.error("QMServer poll: servers", error);
+          setServers([]);
+          setServersLoadError(normalizeQMServerErrorMessage(String(error)));
+        }
+        try {
+          const items = await GetNews();
+          const list = Array.isArray(items) ? items : [];
+          setNews(
+            list.map((n: any, i: number) => ({
+              id: n?.id ?? i,
+              title: n?.title ?? "",
+              content: n?.content ?? "",
+              createdAt: n?.created_at ?? n?.createdAt ?? "",
+            }))
+          );
+        } catch {
+          /* оставляем предыдущие новости */
+        }
+        try {
+          const skin = await GetSkinProviderConfig();
+          if (skin && typeof skin === "object") setSkinProviders(skin as Record<string, boolean>);
+        } catch {
+          /* keep */
+        }
+        try {
+          const s = await GetCatalogStoreSettings();
+          setCatalogCurseforgeEnabled(s?.curseforge_enabled !== false);
+          setCatalogModrinthEnabled(s?.modrinth_enabled !== false);
+        } catch {
+          /* keep */
+        }
+        try {
+          const cf = await GetCurseForgeKeySettings();
+          setCurseForgeKeySavedInFile(!!cf?.key_saved_in_file);
+          setCurseForgeUseMyKeyDefault(!!cf?.use_my_key_default);
+          setCurseForgeEffectiveSource(
+            typeof cf?.effective_source === "string" ? cf.effective_source : "none"
+          );
+        } catch {
+          /* keep */
+        }
+        try {
+          setMicrosoftAuthAvailable(await GetMicrosoftAuthAvailable());
+        } catch {
+          /* keep */
+        }
+      })();
+    };
+    const id = window.setInterval(refreshCloudSnapshot, POLL_MS);
+    return () => window.clearInterval(id);
   }, []);
 
   useEffect(() => {

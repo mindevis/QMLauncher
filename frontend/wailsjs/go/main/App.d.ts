@@ -69,6 +69,8 @@ export function GetQMServerAPIBase():Promise<string>;
 
 export function GetQMServersError():Promise<string>;
 
+export function InvalidateQMServersCache():Promise<void>;
+
 export function GetRecentServers():Promise<Array<main.ServerInfo>>;
 
 export function GetSkinProviderConfig():Promise<Record<string, boolean>>;

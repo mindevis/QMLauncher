@@ -7,6 +7,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing semver tag to build and attach (e.g. v1.2.3)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -19,24 +25,33 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       version: ${{ steps.ver.outputs.version }}
+      tag: ${{ steps.ver.outputs.tag }}
     steps:
       - name: Derive version from tag
         id: ver
         run: |
           set -euo pipefail
-          REF="${GITHUB_REF_NAME}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            REF="${{ github.event.inputs.tag }}"
+          else
+            REF="${GITHUB_REF_NAME}"
+          fi
+          REF="${REF#refs/tags/}"
           if ! [[ "$REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Release requires tag vX.Y.Z (semver), got: $REF"
             exit 1
           fi
           VERSION="${REF#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$REF" >> "$GITHUB_OUTPUT"
 
   build-linux:
     needs: version
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && needs.version.outputs.tag || github.ref }}
 
       - uses: actions/setup-go@v6
         with:
@@ -101,6 +116,8 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && needs.version.outputs.tag || github.ref }}
 
       - uses: actions/setup-go@v6
         with:
@@ -163,6 +180,7 @@ jobs:
       - name: Create GitHub Release and upload assets
         uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && needs.version.outputs.tag || github.ref_name }}
           generate_release_notes: true
           files: |
             release/linux/build/QMLauncher-linux-amd64
