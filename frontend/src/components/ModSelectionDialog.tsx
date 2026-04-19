@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -84,6 +84,10 @@ export function ModSelectionDialog({
   const [optionalEnabled, setOptionalEnabled] = useState<Record<string, boolean>>({});
   const [optionalResourcepacksEnabled, setOptionalResourcepacksEnabled] = useState<Record<string, boolean>>({});
   const [optionalShaderpacksEnabled, setOptionalShaderpacksEnabled] = useState<Record<string, boolean>>({});
+  /** When false, конфиг ещё грузится или нечего настраивать — не показываем диалог (избегаем «пустой» модалки). */
+  const [shouldShowDialog, setShouldShowDialog] = useState(false);
+  const handleConfirmRef = useRef<() => void>(() => {});
+  const autoConfirmedRef = useRef(false);
 
   useEffect(() => {
     if (!open || serverID <= 0 || !apiBase) return;
@@ -369,8 +373,31 @@ export function ModSelectionDialog({
   const hasOptionalShaderpacks = optionalSpPaths.length > 0;
   const hasAnyOptional = hasOptionalMods || hasPresets || hasOptionalResourcepacks || hasOptionalShaderpacks;
 
+  handleConfirmRef.current = handleConfirm;
+
+  useEffect(() => {
+    if (!open) {
+      autoConfirmedRef.current = false;
+      setShouldShowDialog(false);
+      return;
+    }
+    if (loading || !config) {
+      setShouldShowDialog(false);
+      return;
+    }
+    if (!hasAnyOptional) {
+      setShouldShowDialog(false);
+      if (!autoConfirmedRef.current) {
+        autoConfirmedRef.current = true;
+        handleConfirmRef.current();
+      }
+      return;
+    }
+    setShouldShowDialog(true);
+  }, [open, loading, config, hasAnyOptional]);
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open && shouldShowDialog} onOpenChange={onOpenChange}>
       <DialogContent className="flex flex-col min-w-[20rem] max-w-[min(95vw,900px)] max-h-[85vh] overflow-hidden p-4 sm:p-6">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>Настройка модов и ресурсов</DialogTitle>
@@ -381,10 +408,6 @@ export function ModSelectionDialog({
         <div className="flex-1 min-h-0 overflow-auto space-y-6 py-4">
           {loading ? (
             <p className="text-sm text-muted-foreground">Загрузка настроек...</p>
-          ) : !hasAnyOptional ? (
-            <p className="text-sm text-muted-foreground">
-              Нет опциональных модов, ресурспаков или шейдеров для настройки. Нажмите «Запустить» для продолжения.
-            </p>
           ) : (
             <>
               {hasPresets && (
